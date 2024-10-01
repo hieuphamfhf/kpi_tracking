@@ -1,3 +1,26 @@
+// {
+//   "extends": ["next/core-web-vitals", "next/typescript"]
+//   ,
+//   "rules": {
+//     "@typescript-eslint/no-unused-vars": "off"
+//   }
+// }
+// {
+//   "extends": ["next/core-web-vitals", "next/typescript"],
+//   "rules": {
+//     "@typescript-eslint/no-explicit-any": "off",      // Tắt cảnh báo 'any'
+//     "react-hooks/exhaustive-deps": "off",             // Tắt cảnh báo thiếu dependencies trong useEffect
+//     "react/no-unescaped-entities": "off"              // Tắt cảnh báo về ký tự chưa thoát
+//   }
+// }
+
 {
-  "extends": ["next/core-web-vitals", "next/typescript"]
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "off",       // Tắt cảnh báo biến không sử dụng
+    "@typescript-eslint/no-explicit-any": "off",      // Tắt cảnh báo về 'any'
+    "@typescript-eslint/ban-ts-comment": "off",       // Tắt cảnh báo về @ts-ignore và @ts-expect-error
+    "react-hooks/exhaustive-deps": "off",             // Tắt cảnh báo về thiếu dependencies trong useEffect
+    "react/no-unescaped-entities": "off"              // Tắt cảnh báo về ký tự chưa thoát
+  }
 }

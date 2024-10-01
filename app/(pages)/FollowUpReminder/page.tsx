@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
-import TrainingTable from "./training-table";
-import { TrainingListResType } from "@/app/schemaValidations/trainning";
+import FollowUpReminderTable from "./FollowUpReminderTable";
+import { FollowUpReminderListResType } from "@/app/schemaValidations/FollowUpReminder";
 import { formatDateUTC } from "@/lib/extensions";
-import { trainingApiRequest } from "@/app/apiRequest/training";
+import { FollowUpReminderApiRequest } from "@/app/apiRequest/FollowUpReminder";
 
-export default function TrainingPage() {
-    const [trainings, setTrainings] = useState<TrainingListResType | any>();
+export default function FollowUpReminderPage() {
+    const [FollowUpReminder, setFollowUpReminder] = useState<FollowUpReminderListResType | any>();
     const [dp, setDp] = useState<string>('');
     
     const now = new Date();
@@ -24,49 +24,32 @@ export default function TrainingPage() {
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
     const [department, setDepartment] = useState<string>('')
 
-    // const fetchData = async () => {
-
-    //     try {
-    //         const { payload } = await trainingApiRequest.getList({ department, startDate, endDate });
-    //         setTrainings(payload);
-    //     } catch (error) {
-    //     }
-    //   };
-    //   useEffect(() => {
-    //     fetchData();
-    //   }, [endDate, startDate,department]);
-
     const fetchData = async () => {
+
         try {
-            console.log('Fetching data for:', { department, startDate, endDate });  // Kiểm tra tham số truyền vào
-            const { payload } = await trainingApiRequest.getList({ department, startDate, endDate });
-            console.log('Fetched data:', payload);  // Kiểm tra dữ liệu trả về
-            setTrainings(payload);  // Cập nhật dữ liệu vào state
+            const { payload } = await FollowUpReminderApiRequest.getList({ department, startDate, endDate });
+            setFollowUpReminder(payload);
         } catch (error) {
-            console.error('Error fetching data:', error);  // Bắt lỗi nếu có
         }
-    };
-    
-    // Khi người dùng thay đổi bộ phận, ngày bắt đầu hoặc kết thúc, gọi lại API
-    useEffect(() => {
+      };
+      useEffect(() => {
         fetchData();
-    }, [department, startDate, endDate]);
-    
-        
+      }, [endDate, startDate,department]);
+
     return (
         <div>
             <Tabs defaultValue="account" className="bg-gray-50">
                 <TabsContent value="account" className="bg-gray-50">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{`每月訓練課程查詢`}</CardTitle>
+                            <CardTitle>{`FollowUpReminderTable`}</CardTitle>
                             <CardDescription>
-                                {`通過篩選功能查詢並查看詳細信息。您可以匯出報告到 Excel。`}
+                                {`Make changes to your account here. Click save when you're done.`}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="space-y-1">
-                                <TrainingTable trainings={trainings}
+                                <FollowUpReminderTable FollowUpReminder={FollowUpReminder}
                                     onStartDate={setStartDate}
                                     onEndDate={setEndDate}
                                     onDepartment={setDepartment}

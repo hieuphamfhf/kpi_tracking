@@ -1,10 +1,10 @@
 import { TrainingListResType } from "@/app/schemaValidations/trainning";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, FileOutputIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { endOfMonth, format, startOfMonth } from 'date-fns';
@@ -13,6 +13,10 @@ import { DepartmentListResType } from "@/app/schemaValidations/department";
 import { departmentApiRequest } from "@/app/apiRequest/department";
 import * as XLSX from "xlsx"; // Import XLSX for Excel export
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input";
+import { Toaster, toast } from 'react-hot-toast';
+// import { FileOutputIcon } from 'lucide-react'; // Import biểu tượng
+
 export default function TrainingTable({ trainings, onStartDate, onEndDate, onDepartment }:
     {
         trainings: TrainingListResType;
@@ -26,6 +30,17 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
         to: endOfMonth(new Date()),
     });
     const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>()
+    // const [departmentList, setDepartmentList] = useState<DepartmentListResType>([]);  // Khởi tạo giá trị ban đầu rỗng
+    const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);  // Lọc bộ phận
+
+    const handleSearch = (query: string) => {
+        if (departmentList && query) {
+            const filtered = departmentList.filter(dept =>
+                dept.dpnm.toLowerCase().includes(query.toLowerCase()) || dept.dp.includes(query)
+            );
+            setFilteredDepartments(filtered);
+        }
+    };
 
     const handleDateSelect = (newDate: DateRange | undefined) => {
         setDate(newDate);
@@ -55,17 +70,81 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
         fetchItem();
     }, []);
 
+    // const handleChangeDepartment = (department: string) => {
+    //     onDepartment(department);
+    // };
     const handleChangeDepartment = (department: string) => {
-        onDepartment(department);
+        console.log('Selected department:', department);  // Kiểm tra giá trị dp
+        onDepartment(department);  // Cập nhật state cho department trong TrainingPage
     };
 
+
     // Function to export table data to Excel
+    // const handleExportToExcel = () => {
+    //     const ws = XLSX.utils.json_to_sheet(trainings);
+    //     const wb = XLSX.utils.book_new();
+    //     XLSX.utils.book_append_sheet(wb, ws, "Trainings");
+    //     XLSX.writeFile(wb, "trainings.xlsx");
+    // };
     const handleExportToExcel = () => {
-        const ws = XLSX.utils.json_to_sheet(trainings);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Trainings");
-        XLSX.writeFile(wb, "trainings.xlsx");
+        try {
+            // Định nghĩa tên cột bằng tiếng Trung
+            const headers = {
+                co: '公司',
+                dp: '部門代號',
+                dpnm: '部門名字',
+                yr: '年',
+                seq: '序',
+                prwpes: '講師VNW帳號',
+                prwpesnm: '講師',
+                traid: '訓練代課成代碼',
+                tranm: '訓練課程名稱',
+                tradst: '訓練主旨',
+                mon: '月份',
+                tradys: '訓練天數',
+                trahrs: '訓練時數',
+                traobj: '受訓者',
+                trasite: '地點',
+                tradpnm: '訓練部門名稱',
+            };
+
+            // Chuyển đổi dữ liệu `trainings` thành tên cột tiếng Trung
+            const dataWithChineseHeaders = trainings.map(item => ({
+                [headers.co]: item.co,
+                [headers.dp]: item.dp,
+                [headers.dpnm]: item.dpnm,
+                [headers.yr]: item.yr,
+                [headers.seq]: item.seq,
+                [headers.prwpes]: item.prwpes,
+                [headers.prwpesnm]: item.prwpesnm,
+                [headers.traid]: item.traid,
+                [headers.tranm]: item.tranm,
+                [headers.tradst]: item.tradst,
+                [headers.mon]: item.mon,
+                [headers.tradys]: item.tradys,
+                [headers.trahrs]: item.trahrs,
+                [headers.traobj]: item.traobj,
+                [headers.trasite]: item.trasite,
+                [headers.tradpnm]: item.tradpnm,
+            }));
+
+            // Xuất dữ liệu với các tiêu đề tiếng Trung
+            const ws = XLSX.utils.json_to_sheet(dataWithChineseHeaders);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Trainings");
+            XLSX.writeFile(wb, "每月訓練課程查詢.xlsx");
+
+            // Hiển thị thông báo xuất thành công
+            toast.success('匯出 Excel 成功!');
+
+        } catch (error) {
+            // Hiển thị thông báo lỗi nếu có lỗi trong quá trình xuất
+            toast.error('匯出 Excel 時發生錯誤');
+        }
     };
+
+
+
 
     return (
         <>
@@ -112,16 +191,21 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
                             <SelectValue placeholder="--Department--" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem key={0} value={' '}>--所有--</SelectItem>
-                            {departmentList?.map((item, index) => (
-                                <SelectItem key={index} value={item.dpnm}>
-                                    {item.dpnm}
+                            <Input className="w-[300px]" placeholder="按部門代號或部門名稱搜尋..." onChange={(e) => handleSearch(e.target.value)} /> {/* Thanh tìm kiếm */}
+                            <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
+                            {filteredDepartments?.map((item, index) => (
+                                <SelectItem key={index} value={item.dp}> {/* Use dp as the value */}
+                                    {item.dpnm} - {item.dp}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 </div>
-                <Button onClick={handleExportToExcel}>Export to Excel</Button> {/* Export Button */}
+                <Button onClick={handleExportToExcel} className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center">
+                    <FileOutputIcon className="mr-2 h-4 w-4" /> {/* Thêm biểu tượng bảng tính */}
+                    Export to Excel
+                </Button> {/* Export Button */}
+                <Toaster position="bottom-right" reverseOrder={false} />
             </div>
             <ScrollArea className="w-full h-[70vh] overflow-x-auto overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
@@ -149,8 +233,8 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
                         </TableHeader>
                         <TableBody>
                             {trainings?.map((item, index) => (
-                                <TableRow key={item.prwpes}>
-                                    <TableCell>{index + 1}</TableCell> {/* Display row index */}
+                                <TableRow key={`${item.prwpes}-${index}`}> {/* Sử dụng prwpes + index để đảm bảo key duy nhất */}
+                                    <TableCell>{index + 1}</TableCell> {/* Hiển thị chỉ số hàng */}
                                     <TableCell className="font-medium">{item.co}</TableCell>
                                     <TableCell>{item.dp}</TableCell>
                                     <TableCell>{item.dpnm}</TableCell>
@@ -171,6 +255,7 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
                             ))}
                         </TableBody>
                     </Table>
+
                 </div>
                 <ScrollBar orientation="horizontal" />
             </ScrollArea>

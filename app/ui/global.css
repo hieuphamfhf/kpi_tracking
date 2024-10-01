@@ -31,3 +31,13 @@ html, body {
   color: #87CEEB; 
   margin-top: 0.5rem; 
 }
+.select-content {
+  max-height: 300px;  /* Chiều cao cố định cho dropdown */
+  overflow-y: auto;   /* Cuộn trong dropdown */
+}
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+tr:nth-child(odd) {
+  background-color: #ffffff;
+}

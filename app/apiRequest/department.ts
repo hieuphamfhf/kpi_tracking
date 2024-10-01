@@ -2,8 +2,9 @@ import http from "@/lib/http";
 
 
 export const departmentApiRequest = {
-    getList: () => http.get<any>(`https://66e5305d5cc7f9b6273c95ef.mockapi.io/TrainingTracking/departments`, {
+    getList: () => http.get<any>(`http://10.198.170.99:5000/API/depts`, {
         baseUrl: "",
         cache: 'no-store',
     }),
 }
+// http://10.198.170.99:5000/API/depts

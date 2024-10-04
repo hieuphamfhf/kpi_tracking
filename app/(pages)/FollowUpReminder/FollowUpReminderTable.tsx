@@ -1,4 +1,4 @@
-import{FollowUpReminderListResType} from "@/app/schemaValidations/FollowUpReminder";
+import { FollowUpReminderListResType } from "@/app/schemaValidations/FollowUpReminder";
 import { cn } from "@/lib/utils";
 import { DepartmentListResType } from "@/app/schemaValidations/department";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -7,12 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import * as XLSX from "xlsx"; // Import XLSX for Excel export
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, FileOutputIcon } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { departmentApiRequest } from "@/app/apiRequest/department";
+import { Toaster, toast } from 'react-hot-toast';
+import { Input } from "@/components/ui/input";
 export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, onEndDate, onDepartment }:
     {
         FollowUpReminder: FollowUpReminderListResType;
@@ -26,6 +28,18 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
         to: endOfMonth(new Date()),
     });
     const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>()
+    const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);  // Lọc bộ phận
+
+    const handleSearch = (query: string) => {
+        if (departmentList && query) {
+            const filtered = departmentList.filter(dept =>
+                dept.dpnm.toLowerCase().includes(query.toLowerCase()) || dept.dp.includes(query)
+            );
+            setFilteredDepartments(filtered);
+        }
+    };
+
+
 
     const handleDateSelect = (newDate: DateRange | undefined) => {
         setDate(newDate);
@@ -56,16 +70,69 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
     }, []);
 
     const handleChangeDepartment = (department: string) => {
+
+        console.log("Selected department:", department); // Log the selected department 
         onDepartment(department);
     };
 
     // Function to export table data to Excel
+    // const handleExportToExcel = () => {
+    //     const ws = XLSX.utils.json_to_sheet(FollowUpReminder);
+    //     const wb = XLSX.utils.book_new();
+    //     XLSX.utils.book_append_sheet(wb, ws, "FollowUpReminder");
+    //     XLSX.writeFile(wb, "FollowUpReminder.xlsx");
+    // };
+
     const handleExportToExcel = () => {
-        const ws = XLSX.utils.json_to_sheet(FollowUpReminder);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "FollowUpReminder");
-        XLSX.writeFile(wb, "FollowUpReminder.xlsx");
+        try {
+            const headers = {
+                co: '公司',
+                dp: '部門代號',
+                dpnm: '部門名稱',
+                empid: 'VNW帳號',
+                nm: '姓名',
+                cptopnm: '案件名稱',
+                newdutid: '新職務代號',
+                newdutnm: '新職務名稱',
+                vhno: '案件編號',
+                kd: '類別',
+                sumr: '摘要',
+                cnt: '催辦次數',
+                foldat: '催辦日',
+                cancdat: '銷案日',
+            };
+
+            const dataWithChineseHeaders = FollowUpReminder.map(item => ({
+                [headers.co]: item.co,
+                [headers.dp]: item.dp,
+                [headers.dpnm]: item.dpnm,
+                [headers.empid]: item.empid,
+                [headers.nm]: item.nm,
+                [headers.cptopnm]: item.cptopnm,
+                [headers.newdutid]: item.newdutid,
+                [headers.newdutnm]: item.newdutnm,
+                [headers.vhno]: item.vhno,
+                [headers.kd]: item.kd,
+                [headers.sumr]: item.sumr,
+                [headers.cnt]: item.cnt,
+                [headers.foldat]: item.foldat,
+                [headers.cancdat]: item.cancdat,
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataWithChineseHeaders);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "多次催辦案件查詢");
+            XLSX.writeFile(wb, "3.1催辦表.xlsx");
+
+            toast.success('匯出 Excel 成功!');
+        } catch (error) {
+            toast.error('匯出 Excel 時發生錯誤');
+        }
     };
+
+
+
+
 
     return (
         <>
@@ -107,23 +174,33 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                             />
                         </PopoverContent>
                     </Popover>
+                    
                     <Select onValueChange={(value: string) => { handleChangeDepartment(value) }}>
                         <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="--Department--" />
+                            <SelectValue placeholder="--部門--" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem key={0} value={' '}>--所有--</SelectItem>
-                            {departmentList?.map((item, index) => (
-                                <SelectItem key={index} value={item.dpnm}>
-                                    {item.dpnm}
+                            <Input className="w-[300px]" placeholder="按部門代號或部門名稱搜尋..." onChange={(e) => handleSearch(e.target.value)} /> {/* Thanh tìm kiếm */}
+                            <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
+                            {filteredDepartments?.map((item, index) => (
+                                <SelectItem key={index} value={item.dp}> {/* Use dp as the value */}
+                                    {item.dpnm} - {item.dp}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
+
                 </div>
-                <Button onClick={handleExportToExcel}>Export to Excel</Button> {/* Export Button */}
+                {/* <Button onClick={handleExportToExcel}>Export to Excel</Button> Export Button
+                 */}
+
+                <Button onClick={handleExportToExcel} className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center">
+                    <FileOutputIcon className="mr-2 h-4 w-4" /> {/* Thêm biểu tượng bảng tính */}
+                    匯出到 Excel
+                </Button> {/* Export Button */}
+                <Toaster position="bottom-right" reverseOrder={false} />
             </div>
-            <ScrollArea className="w-full h-[70vh] overflow-x-auto overflow-y-auto rounded-md border">
+            <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
                     <Table className="table-auto whitespace-nowrap">
                         <TableHeader>
@@ -146,25 +223,33 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {FollowUpReminder?.map((item, index) => (
-                                <TableRow key={item.dp}>
-                                    <TableCell>{index + 1}</TableCell> {/* Display row index */}
-                                    <TableCell className="font-medium">{item.co}</TableCell>
-                                    <TableCell>{item.dp}</TableCell>
-                                    <TableCell>{item.dpnm}</TableCell>
-                                    <TableCell>{item.empid}</TableCell>
-                                    <TableCell>{item.nm}</TableCell>
-                                    <TableCell>{item.cptopnm}</TableCell>
-                                    <TableCell>{item.newdutid}</TableCell>
-                                    <TableCell>{item.newdutnm}</TableCell>
-                                    <TableCell>{item.vhno}</TableCell>
-                                    <TableCell>{item.kd}</TableCell>
-                                    <TableCell>{item.sumr}</TableCell>
-                                    <TableCell>{item.cnt}</TableCell>
-                                    <TableCell>{item.foldat}</TableCell>
-                                    <TableCell>{item.cancdat}</TableCell>
-                                </TableRow>
-                            ))}
+                            {FollowUpReminder?.map((item, index) => {
+                                try {
+                                    return (
+                                        <TableRow key={`${item.empid}-${index}`}>
+                                            <TableCell>{index + 1}</TableCell>
+                                            <TableCell className="font-medium">{item.co}</TableCell>
+                                            <TableCell>{item.dp}</TableCell>
+                                            <TableCell>{item.dpnm}</TableCell>
+                                            <TableCell>{item.empid}</TableCell>
+                                            <TableCell>{item.nm}</TableCell>
+                                            <TableCell>{item.cptopnm}</TableCell>
+                                            <TableCell>{item.newdutid}</TableCell>
+                                            <TableCell>{item.newdutnm}</TableCell>
+                                            <TableCell>{item.vhno}</TableCell>
+                                            <TableCell>{item.kd}</TableCell>
+                                            <TableCell>{item.sumr}</TableCell>
+                                            <TableCell>{item.cnt}</TableCell>
+                                            <TableCell>{item.foldat}</TableCell>
+                                            <TableCell>{item.cancdat}</TableCell>
+                                        </TableRow>
+                                    );
+                                } catch (error) {
+                                    console.error('Render error for item:', item, error);
+                                    return null;
+                                }
+                            })}
+
                         </TableBody>
                     </Table>
                 </div>

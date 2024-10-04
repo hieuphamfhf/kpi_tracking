@@ -24,27 +24,45 @@ export default function FollowUpReminderPage() {
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
     const [department, setDepartment] = useState<string>('')
 
+    // const fetchData = async () => {
+
+    //     try {
+    //         const { payload } = await FollowUpReminderApiRequest.getList({ department, startDate, endDate });
+    //         setFollowUpReminder(payload);
+    //     } catch (error) {
+    //     }
+    //   };
+    //   useEffect(() => {
+    //     fetchData();
+    //   }, [endDate, startDate,department]);
+
     const fetchData = async () => {
-
         try {
+            console.log('Fetching data for:', { department, startDate, endDate });  // Kiểm tra tham số truyền vào
             const { payload } = await FollowUpReminderApiRequest.getList({ department, startDate, endDate });
-            setFollowUpReminder(payload);
+            console.log('Fetched data:', payload);  // Kiểm tra dữ liệu trả về
+            setFollowUpReminder(payload);  // Cập nhật dữ liệu vào state
         } catch (error) {
+            console.error('Error fetching data:', error);  // Bắt lỗi nếu có
         }
-      };
-      useEffect(() => {
+    };
+    
+    // Khi người dùng thay đổi bộ phận, ngày bắt đầu hoặc kết thúc, gọi lại API
+    useEffect(() => {
         fetchData();
-      }, [endDate, startDate,department]);
+    }, [department, startDate, endDate]);
+    
 
+    
     return (
         <div>
             <Tabs defaultValue="account" className="bg-gray-50">
                 <TabsContent value="account" className="bg-gray-50">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{`FollowUpReminderTable`}</CardTitle>
+                            <CardTitle>{`多次催辦案件查詢`}</CardTitle>
                             <CardDescription>
-                                {`Make changes to your account here. Click save when you're done.`}
+                                {`通過篩選功能查詢並查看詳細信息。您可以匯出報告到 Excel。`}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2">

@@ -7,12 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import * as XLSX from "xlsx"; // Import XLSX for Excel export
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon,FileOutputIcon } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { departmentApiRequest } from "@/app/apiRequest/department";
+import { Input } from "@/components/ui/input";
+import { Toaster, toast } from 'react-hot-toast';
 export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate, onDepartment }:
     {
         OverTimeDuty: OverTimeDutyListResType;
@@ -26,7 +28,16 @@ export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate
         to: endOfMonth(new Date()),
     });
     const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>()
+    const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);  // Lọc bộ phận
 
+    const handleSearch = (query: string) => {
+        if (departmentList && query) {
+            const filtered = departmentList.filter(dept =>
+                dept.dpnm.toLowerCase().includes(query.toLowerCase()) || dept.dp.includes(query)
+            );
+            setFilteredDepartments(filtered);
+        }
+    };
     const handleDateSelect = (newDate: DateRange | undefined) => {
         setDate(newDate);
 
@@ -59,14 +70,78 @@ export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate
         onDepartment(department);
     };
 
-    // Function to export table data to Excel
-    const handleExportToExcel = () => {
-        const ws = XLSX.utils.json_to_sheet(OverTimeDuty);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "OverTimeDuty");
-        XLSX.writeFile(wb, "OverTimeDuty.xlsx");
-    };
 
+    const handleExportToExcel = () => {
+        try {
+            // Định nghĩa headers với kiểu 'keyof OverTimeDutyListResType[0]' để chỉ rõ các khóa hợp lệ
+            const headers: Record<keyof OverTimeDutyListResType[0], string> = {
+                co: '公司',
+                ovrdat: '加班日期',
+                ovrfrhh: '加班起時',
+                ovrtohh: '加班迄時',
+                ovrid: 'OVRID',
+                ovrrs: 'OVRRS',
+                ovh: 'OVH',
+                ofF12MK: 'OFF12MK',
+                dp: '部門代號',
+                dpnm: '部門名稱',
+                frmno: '加班單編號',
+                xrem: '加班原因',
+                empid: 'VNW帳號',
+                nm: '姓名',
+                naty: '國籍',
+                newdutid: '新職務代號',
+                newdutnm: '新職務名稱',
+                araid: 'ARAID',
+                beorder: 'BEORDER',
+                beordeR1: 'BEORDER1',
+            };
+    
+            const dataWithChineseHeaders = OverTimeDuty?.map(item => {
+                const mappedItem: Record<string, string> = {};
+                // Sử dụng Object.keys và ép kiểu với keyof typeof headers để tránh lỗi
+                (Object.keys(headers) as (keyof typeof headers)[]).forEach((key) => {
+                    mappedItem[headers[key]] = item[key] || ''; // Đảm bảo rằng chỉ số là hợp lệ
+                });
+                return mappedItem;
+            });
+    
+            const ws = XLSX.utils.json_to_sheet(dataWithChineseHeaders);
+    
+            
+    
+            // Kiểm tra và xử lý giá trị ws['!ref']
+            const refValue = ws['!ref'] || "A1"; // Cung cấp giá trị mặc định nếu !ref là undefined
+            const range = XLSX.utils.decode_range(refValue);
+    
+            // Làm đậm hàng tiêu đề và căn giữa
+            const headerCellStyle = {
+                font: { bold: true },
+                alignment: { horizontal: 'center' },
+                fill: { fgColor: { rgb: "FFFFAA00" } } // Màu nền vàng cho tiêu đề
+            };
+            for (let col = range.s.c; col <= range.e.c; col++) {
+                const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
+                ws[cellRef].s = headerCellStyle;
+            }
+    
+            // Đóng băng hàng tiêu đề
+            ws['!freeze'] = { xSplit: 0, ySplit: 1 }; // Đóng băng hàng đầu tiên
+    
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "5.加班單");
+    
+            // Ghi file Excel
+            XLSX.writeFile(wb, "5.加班單.xlsx");
+            toast.success('匯出 Excel 成功!');
+        } catch (error) {
+            toast.error('匯出 Excel 時發生錯誤');
+        }
+    };
+    
+    
+    
+    
     return (
         <>
             <div className="flex items-center py-4 justify-between">
@@ -107,7 +182,7 @@ export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate
                             />
                         </PopoverContent>
                     </Popover>
-                    <Select onValueChange={(value: string) => { handleChangeDepartment(value) }}>
+                    {/* <Select onValueChange={(value: string) => { handleChangeDepartment(value) }}>
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="--Department--" />
                         </SelectTrigger>
@@ -119,36 +194,64 @@ export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate
                                 </SelectItem>
                             ))}
                         </SelectContent>
+                    </Select> */}
+                    <Select onValueChange={(value: string) => { handleChangeDepartment(value) }}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="--部門--" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <Input className="w-[300px]" placeholder="按部門代號或部門名稱搜尋..." onChange={(e) => handleSearch(e.target.value)} /> {/* Thanh tìm kiếm */}
+                            <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
+                            {filteredDepartments?.map((item, index) => (
+                                <SelectItem key={index} value={item.dp}> {/* Use dp as the value */}
+                                    {item.dpnm} - {item.dp}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
                     </Select>
                 </div>
-                <Button onClick={handleExportToExcel}>Export to Excel</Button> {/* Export Button */}
+                {/* <Button onClick={handleExportToExcel}>Export to Excel</Button> Export Button */}
+                <Button onClick={handleExportToExcel} className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center">
+                    <FileOutputIcon className="mr-2 h-4 w-4" /> {/* Thêm biểu tượng bảng tính */}
+                    匯出到 Excel
+                </Button> {/* Export Button */}
+                
+                <Toaster position="bottom-right" reverseOrder={false} />
+
             </div>
-            <ScrollArea className="w-full h-[70vh] overflow-x-auto overflow-y-auto rounded-md border">
+            <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
                     <Table className="table-auto whitespace-nowrap">
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-16">#</TableHead> {/* Fixed width for columns */}
                                 <TableHead className="w-48">公司</TableHead>
-                                <TableHead className="w-40">VNW帳號</TableHead>
-                                <TableHead className="w-56">姓名</TableHead>
-                                <TableHead className="w-24">借用日期</TableHead>
-                                <TableHead className="w-24">部門代號</TableHead>
-                                <TableHead className="w-36">部門名稱</TableHead>
-                                <TableHead className="w-48">新職務代號</TableHead>
+                                <TableHead className="w-40">加班日期</TableHead>
+                                <TableHead className="w-56">加班起時</TableHead>
+                                <TableHead className="w-24">加班迄時</TableHead>
+                                <TableHead className="w-24">OVRID</TableHead>
+                                <TableHead className="w-36">OVRRS</TableHead>
+                                <TableHead className="w-48">OVH</TableHead>
+                                <TableHead className="w-40">OFF12MK</TableHead>
+                                <TableHead className="w-56">部門代號</TableHead>
+                                <TableHead className="w-24">部門名稱</TableHead>
+                                <TableHead className="w-24">加班單編號</TableHead>
+                                <TableHead className="w-36">加班原因</TableHead>
+                                <TableHead className="w-48">VNW帳號</TableHead>
+                                <TableHead className="w-40">姓名</TableHead>
+                                <TableHead className="w-40">國籍</TableHead>
+                                <TableHead className="w-40">新職務代號</TableHead>
                                 <TableHead className="w-40">新職務名稱</TableHead>
-                                <TableHead className="w-56">臨時卡號碼</TableHead>
-                                <TableHead className="w-24">原因</TableHead>
-
-                                {/* <TableHead className="w-24">摘要</TableHead>
-                                <TableHead className="w-36">催辦次數</TableHead>
-                                <TableHead className="w-56">催辦日</TableHead>
-                                <TableHead className="w-56">銷案日</TableHead> */}
+                                <TableHead className="w-40">ARAID</TableHead>
+                                <TableHead className="w-40">BEORDER</TableHead>
+                                <TableHead className="w-56">BEORDER1</TableHead>
+                               
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {OverTimeDuty?.map((item, index) => (
-                                <TableRow key={item.dp}>
+                                // <TableRow key={item.dp}>
+                                <TableRow key={`${item.empid}-${index}`}>
                                     <TableCell>{index + 1}</TableCell> {/* Display row index */}
                                     <TableCell className="font-medium">{item.co}</TableCell>
                                     <TableCell>{item.ovrdat}</TableCell>

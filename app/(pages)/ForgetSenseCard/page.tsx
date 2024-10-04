@@ -24,17 +24,34 @@ export default function ForgetSenseCardPage() {
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
     const [department, setDepartment] = useState<string>('')
 
-    const fetchData = async () => {
+    // const fetchData = async () => {
 
+    //     try {
+    //         const { payload } = await ForgetSenseCardApiRequest.getList({ department, startDate, endDate });
+    //         setForgetSenseCard(payload);
+    //     } catch (error) {
+    //     }
+    //   };
+    //   useEffect(() => {
+    //     fetchData();
+    //   }, [endDate, startDate,department]);
+    const fetchData = async () => {
         try {
+            console.log('Fetching data for:', { department, startDate, endDate });  // Kiểm tra tham số truyền vào
             const { payload } = await ForgetSenseCardApiRequest.getList({ department, startDate, endDate });
-            setForgetSenseCard(payload);
+            console.log('Fetched data:', payload);  // Kiểm tra dữ liệu trả về
+            setForgetSenseCard(payload);  // Cập nhật dữ liệu vào state
         } catch (error) {
+            console.error('Error fetching data:', error);  // Bắt lỗi nếu có
         }
-      };
-      useEffect(() => {
+    };
+    
+    // Khi người dùng thay đổi bộ phận, ngày bắt đầu hoặc kết thúc, gọi lại API
+    useEffect(() => {
         fetchData();
-      }, [endDate, startDate,department]);
+    }, [department, startDate, endDate]);
+    
+        
 
     return (
         <div>
@@ -42,9 +59,9 @@ export default function ForgetSenseCardPage() {
                 <TabsContent value="account" className="bg-gray-50">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{`ForgetSenseCard`}</CardTitle>
+                            <CardTitle>{`忘刷卡表`}</CardTitle>
                             <CardDescription>
-                                {`Make changes to your account here. Click save when you're done.`}
+                                {`通過篩選功能查詢並查看詳細信息。您可以匯出報告到 Excel。`}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2">

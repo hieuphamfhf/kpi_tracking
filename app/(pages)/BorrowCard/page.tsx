@@ -36,15 +36,26 @@ export default function BorrowCardPage() {
         fetchData();
       }, [endDate, startDate,department]);
 
+    // const fetchData = async () => {
+    //     try {
+    //         console.log('Fetching data for:', { department, startDate, endDate });  // Kiểm tra tham số truyền vào
+    //         const { payload } = await BorrowCardApiRequest.getList({ department, startDate, endDate });
+    //         console.log('Fetched data:', payload);  // Kiểm tra dữ liệu trả về
+    //         setBorrowCard(payload);  // Cập nhật dữ liệu vào state
+    //     } catch (error) {
+    //         console.error('Error fetching data:', error);  // Bắt lỗi nếu có
+    //     }
+    // };
+
     return (
         <div>
             <Tabs defaultValue="account" className="bg-gray-50">
                 <TabsContent value="account" className="bg-gray-50">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{`BorrowCards`}</CardTitle>
+                            <CardTitle>{`借用卡表`}</CardTitle>
                             <CardDescription>
-                                {`Make changes to your account here. Click save when you're done.`}
+                                {`通過篩選功能查詢並查看詳細信息。您可以匯出報告到 Excel。`}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2">

@@ -222,7 +222,7 @@ export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate
             <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
                     <Table className="table-auto whitespace-nowrap">
-                        <TableHeader>
+                        <TableHeader className="custom-table-header">
                             <TableRow>
                                 <TableHead className="w-16">#</TableHead> {/* Fixed width for columns */}
                                 <TableHead className="w-48">公司</TableHead>
@@ -248,7 +248,7 @@ export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate
                                
                             </TableRow>
                         </TableHeader>
-                        <TableBody>
+                        <TableBody className="custom-table-body">
                             {OverTimeDuty?.map((item, index) => (
                                 // <TableRow key={item.dp}>
                                 <TableRow key={`${item.empid}-${index}`}>

@@ -162,7 +162,7 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
 
     return (
         <>
-            <div className="flex items-center py-4 justify-between">
+            <div className="flex items-center py-1 justify-between">
                 <div className="flex gap-5">
                     <Popover>
                         <PopoverTrigger asChild>
@@ -226,7 +226,7 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
             <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
                     <Table className="table-auto whitespace-nowrap">
-                        <TableHeader>
+                        <TableHeader className="custom-table-header">
                             <TableRow>
                                 <TableHead className="w-16">#</TableHead> {/* Fixed width for columns */}
                                 <TableHead className="w-48">公司</TableHead> {/* Company */}
@@ -253,7 +253,7 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
                                 <TableHead className="w-36">CANCDAT</TableHead> {/* CANCDAT */}
                             </TableRow>
                         </TableHeader>
-                        <TableBody>
+                        <TableBody className="custom-table-body">
                             {trainings?.map((item, index) => (
                                <TableRow key={`${item.prwpes}-${index}`}> {/* Unique key for each row */}
                                <TableCell>{index + 1}</TableCell> {/* Row index */}

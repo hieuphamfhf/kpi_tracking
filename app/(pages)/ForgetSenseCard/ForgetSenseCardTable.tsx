@@ -207,7 +207,7 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
             <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
                     <Table className="table-auto whitespace-nowrap">
-                        <TableHeader>
+                        <TableHeader className="custom-table-header">
                             <TableRow>
                                 <TableHead className="w-16">#</TableHead> {/* Fixed width for columns */}
                                 <TableHead className="w-48">公司</TableHead>
@@ -227,7 +227,7 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
                                 <TableHead className="w-56">銷案日</TableHead> */}
                             </TableRow>
                         </TableHeader>
-                        <TableBody>
+                        <TableBody className="custom-table-body">
                             {ForgetSenseCard?.map((item, index) => (
                                 <TableRow key={`${item.empid}-${index}`}>
                                     <TableCell>{index + 1}</TableCell> {/* Display row index */}

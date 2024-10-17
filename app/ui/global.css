@@ -43,3 +43,45 @@ tr:nth-child(odd) {
   background-color: #ffffff;
 }
 
+
+
+/* CSS để cố định hàng tiêu đề table*/
+
+/* CSS chỉ áp dụng cho tiêu đề bảng (thead) */
+/* Đảm bảo CSS chỉ áp dụng cho các phần tử th trong bảng */
+/* Làm cho tiêu đề bảng nổi bật hơn */
+/* Áp dụng chỉ cho bảng có class .custom-table */
+/* Áp dụng chỉ cho bảng có class .custom-table */
+/* Áp dụng chỉ cho bảng có class .custom-table */
+/* Áp dụng cho bảng có class .custom-table */
+
+/* CSS cho tiêu đề của bảng */
+.custom-table-header th {
+  font-weight: bold;        /* Chữ đậm cho header */
+  font-size: 1.1em;         /* Tăng kích thước chữ cho header */
+  background-color: #f0f0f0; /* Màu nền xám nhạt chỉ cho header */
+  color: #333;              /* Màu chữ tối cho dễ đọc */
+  padding: 12px 8px;        /* Tạo khoảng cách đều trong header */
+  text-align: center;       /* Căn giữa nội dung */
+  border-bottom: 2px solid #ddd; /* Đường viền dưới cho header */
+  border-right: 1px solid #ddd;  /* Đường viền giữa các cột của header */
+}
+
+/* CSS cho các hàng dữ liệu (body của bảng) */
+.custom-table-body td {
+  padding: 10px 8px;        /* Tạo khoảng cách cho các ô dữ liệu */
+  text-align: left;         /* Căn trái nội dung cho các ô dữ liệu */
+  border-bottom: 1px solid #ddd; /* Đường viền dưới cho từng hàng */
+  border-right: 1px solid #ddd;  /* Đường viền giữa các cột */
+}
+
+/* Đảm bảo ô cuối cùng không có viền phải */
+.custom-table-header th:last-child,
+.custom-table-body td:last-child {
+  border-right: none;
+}
+
+/* Đường kẻ phân cách cho hàng cuối cùng */
+.custom-table-body tr:last-child td {
+  border-bottom: none; /* Xóa đường viền cuối cùng để trông gọn gàng hơn */
+}

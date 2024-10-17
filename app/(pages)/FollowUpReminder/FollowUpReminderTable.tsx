@@ -15,20 +15,60 @@ import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
-export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, onEndDate, onDepartment }:
-    {
-        FollowUpReminder: FollowUpReminderListResType;
-        onStartDate: (value: string) => void;
-        onEndDate: (value: string) => void;
-        onDepartment: (value: string) => void;
-    }
-) {
-    const [date, setDate] = useState<DateRange | undefined>({
-        from: startOfMonth(new Date()),
-        to: endOfMonth(new Date()),
-    });
-    const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>()
-    const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);  // Lọc bộ phận
+export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, onEndDate, onDepartment, onCompany, company }: {
+    FollowUpReminder: FollowUpReminderListResType;
+    onStartDate: (value: string) => void;
+    onEndDate: (value: string) => void;
+    onDepartment: (value: string) => void;
+    onCompany: (value: string) => void;
+    company: string; // Thêm prop công ty vào component con
+}) {
+
+    const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>([]);
+    const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);
+    // Khai báo state trong component FollowUpReminderTable
+    const [department, setDepartment] = useState<string>(''); // Thêm state cho department
+   
+    // Fetch danh sách bộ phận từ API
+    useEffect(() => {
+        if (company) {
+            fetchDepartmentsByCompany(); // Gọi hàm mà không truyền tham số vào
+        }
+    }, [company]);
+
+
+
+    const handleCompanyChange = (selectedCompany: string) => {
+        if (selectedCompany === "ALL") {
+            onCompany(''); // Đặt lại giá trị công ty
+            onDepartment(''); // Đặt lại bộ phận khi không có công ty nào được chọn
+            setDepartment(''); // Đặt lại state bộ phận khi không có công ty nào được chọn
+            setFilteredDepartments([]); // Xóa danh sách bộ phận
+        } else {
+            onCompany(selectedCompany); // Cập nhật state với công ty đã chọn
+            onDepartment(''); // Đặt lại bộ phận khi người dùng chọn công ty mới
+            setDepartment(''); // Đặt lại state bộ phận khi người dùng chọn công ty mới
+            fetchDepartmentsByCompany(); // Lấy danh sách bộ phận dựa trên công ty đã chọn
+        }
+    };
+
+
+
+    const fetchDepartmentsByCompany = async () => {
+        try {
+            const { payload } = await departmentApiRequest.getList(); // Không truyền tham số vào hàm getList()
+            setFilteredDepartments(payload); // Cập nhật danh sách bộ phận dựa trên công ty đã chọn
+        } catch (error) {
+            console.error('Error fetching department list: ', error);
+        }
+    };
+
+
+
+    const handleDepartmentChange = (value: string) => {
+        onDepartment(value); // Gọi callback để cập nhật bộ phận trong parent component
+        console.log('Selected department:', value);
+    };
 
     const handleSearch = (query: string) => {
         if (departmentList && query) {
@@ -36,24 +76,24 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                 dept.dpnm.toLowerCase().includes(query.toLowerCase()) || dept.dp.includes(query)
             );
             setFilteredDepartments(filtered);
+        } else {
+            setFilteredDepartments(departmentList || []); // Nếu không có tìm kiếm, hiển thị tất cả bộ phận
         }
     };
 
 
 
-    const handleDateSelect = (newDate: DateRange | undefined) => {
-        setDate(newDate);
 
-        if (newDate?.from) {
-            const formattedStartDate = format(newDate.from, "yyyyMMdd");
-            onStartDate(formattedStartDate.substring(1)); // Set the start date
-        }
 
-        if (newDate?.to) {
-            const formattedEndDate = format(newDate.to, "yyyyMMdd");
-            onEndDate(formattedEndDate.substring(1)); // Set the end date
-        }
-    };
+
+    const [date, setDate] = useState<DateRange | undefined>({
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
+    });
+    // const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>()
+    // const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);  // Lọc bộ phận
+
+
 
     useEffect(() => {
         const fetchItem = async () => {
@@ -75,13 +115,34 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
         onDepartment(department);
     };
 
-    // Function to export table data to Excel
-    // const handleExportToExcel = () => {
-    //     const ws = XLSX.utils.json_to_sheet(FollowUpReminder);
-    //     const wb = XLSX.utils.book_new();
-    //     XLSX.utils.book_append_sheet(wb, ws, "FollowUpReminder");
-    //     XLSX.writeFile(wb, "FollowUpReminder.xlsx");
+
+    // const handleSearch = (query: string) => {
+    //     if (departmentList && query) {
+    //         const filtered = departmentList.filter(dept =>
+    //             dept.dpnm.toLowerCase().includes(query.toLowerCase()) || dept.dp.includes(query)
+    //         );
+    //         setFilteredDepartments(filtered);
+    //     }
     // };
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    const handleDateSelect = (newDate: DateRange | undefined) => {
+        setDate(newDate);
+
+        if (newDate?.from) {
+            const formattedStartDate = format(newDate.from, "yyyyMMdd");
+            onStartDate(formattedStartDate.substring(1)); // Set the start date
+        }
+
+        if (newDate?.to) {
+            const formattedEndDate = format(newDate.to, "yyyyMMdd");
+            onEndDate(formattedEndDate.substring(1)); // Set the end date
+        }
+    };
+
+
+
 
     const handleExportToExcel = () => {
         try {
@@ -174,21 +235,61 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                             />
                         </PopoverContent>
                     </Popover>
-                    
-                    <Select onValueChange={(value: string) => { handleChangeDepartment(value) }}>
+                    {/* Dropdown để chọn công ty */}
+                    {/* Dropdown để chọn công ty */}
+                    <Select
+                        onValueChange={handleCompanyChange}
+                    >
                         <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="--部門--" />
+                            <SelectValue placeholder="--選擇公司--" />
                         </SelectTrigger>
                         <SelectContent>
-                            <Input className="w-[300px]" placeholder="按部門代號或部門名稱搜尋..." onChange={(e) => handleSearch(e.target.value)} /> {/* Thanh tìm kiếm */}
-                            <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
-                            {filteredDepartments?.map((item, index) => (
-                                <SelectItem key={index} value={item.dp}> {/* Use dp as the value */}
-                                    {item.dpnm} - {item.dp}
-                                </SelectItem>
-                            ))}
+                            <SelectItem key="all" value="ALL">--所有公司--</SelectItem>
+                            <SelectItem key="lg" value="LG">LG</SelectItem>
+                            <SelectItem key="samsung" value="Samsung">0D</SelectItem>
                         </SelectContent>
                     </Select>
+
+                    {/* Dropdown để chọn bộ phận */}
+                    <Select
+                        onValueChange={(value: string) => {
+                            handleDepartmentChange(value);
+                            setDepartment(value); // Cập nhật state khi người dùng chọn bộ phận
+                        }}
+                        value={department || ''} // Sử dụng state department
+                        disabled={!company} // Vô hiệu hóa nếu công ty chưa được chọn
+                    >
+                        <SelectTrigger className={`w-[200px] ${company && !department ? 'border-2 border-red-500' : ''}`}>
+                            <SelectValue placeholder={company ? "--選擇部門--" : "請先選擇公司"} />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-64"> {/* Đặt chiều cao tối đa của danh sách */}
+                            <div className="sticky top-0 bg-white z-10 p-2"> {/* Giữ cố định ô tìm kiếm ở đầu */}
+                                <Input
+                                    className="w-full px-2 py-1 mb-2 border-b"
+                                    placeholder="搜尋部門..."
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                />
+                            </div>
+                            <div className="max-h-48 overflow-y-auto"> {/* Danh sách các bộ phận có thể cuộn */}
+                                {/* <SelectItem key="all" value="ALL">--Tất cả bộ phận--</SelectItem> */}
+                                {filteredDepartments?.map((item, index) => (
+                                    <SelectItem key={index} value={item.dp}>
+                                        {item.dpnm} - {item.dp}
+                                    </SelectItem>
+                                ))}
+                            </div>
+                        </SelectContent>
+                    </Select>
+                    {/* Thông báo hướng dẫn chọn bộ phận nếu công ty đã chọn nhưng chưa chọn bộ phận */}
+                    {company && !department && (
+                        <div className="text-red-500 mt-2">
+                           請選擇部門以繼續。
+                        </div>
+                    )}
+
+
+
+
 
                 </div>
                 {/* <Button onClick={handleExportToExcel}>Export to Excel</Button> Export Button
@@ -198,12 +299,15 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                     <FileOutputIcon className="mr-2 h-4 w-4" /> {/* Thêm biểu tượng bảng tính */}
                     匯出到 Excel
                 </Button> {/* Export Button */}
+               
+
                 <Toaster position="bottom-right" reverseOrder={false} />
             </div>
-            <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
+            <ScrollArea className={`w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border 
+    ${(company && company !== 'ALL' && !department) ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
                     <Table className="table-auto whitespace-nowrap">
-                        <TableHeader>
+                        <TableHeader className="custom-table-header">
                             <TableRow>
                                 <TableHead className="w-16">#</TableHead> {/* Fixed width for columns */}
                                 <TableHead className="w-48">公司</TableHead>
@@ -222,7 +326,7 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                                 <TableHead className="w-56">銷案日</TableHead>
                             </TableRow>
                         </TableHeader>
-                        <TableBody>
+                        <TableBody className="custom-table-body">
                             {FollowUpReminder?.map((item, index) => {
                                 try {
                                     return (
@@ -249,6 +353,8 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                                     return null;
                                 }
                             })}
+
+
 
                         </TableBody>
                     </Table>

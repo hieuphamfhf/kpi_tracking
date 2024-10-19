@@ -24,17 +24,21 @@ export default function ForgetSenseCardPage() {
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
     const [department, setDepartment] = useState<string>('')
 
-    // const fetchData = async () => {
+    
+    const handleDepartmentChange = (departmentValue: string) => {
+        // Xử lý thay đổi bộ phận được truyền từ `TrainingTable`
+        setDepartment(departmentValue);
+    };
 
-    //     try {
-    //         const { payload } = await ForgetSenseCardApiRequest.getList({ department, startDate, endDate });
-    //         setForgetSenseCard(payload);
-    //     } catch (error) {
-    //     }
-    //   };
-    //   useEffect(() => {
-    //     fetchData();
-    //   }, [endDate, startDate,department]);
+    const handleStartDateChange = (startDateValue: string) => {
+        // Xử lý thay đổi ngày bắt đầu được truyền từ `TrainingTable`
+        setStartDate(startDateValue);
+    };
+
+    const handleEndDateChange = (endDateValue: string) => {
+        // Xử lý thay đổi ngày kết thúc được truyền từ `TrainingTable`
+        setEndDate(endDateValue);
+    };
     const fetchData = async () => {
         try {
             console.log('Fetching data for:', { department, startDate, endDate });  // Kiểm tra tham số truyền vào
@@ -67,9 +71,9 @@ export default function ForgetSenseCardPage() {
                         <CardContent className="space-y-2">
                             <div className="space-y-1">
                                 <ForgetSenseCardTable ForgetSenseCard={ForgetSenseCard}
-                                    onStartDate={setStartDate}
-                                    onEndDate={setEndDate}
-                                    onDepartment={setDepartment}
+                                    onStartDate={handleStartDateChange}
+                                    onEndDate={handleEndDateChange}
+                                    onDepartment={handleDepartmentChange}
                                 />
                             </div>
                         </CardContent>

@@ -24,17 +24,7 @@ export default function OverTimeDutyPage() {
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
     const [department, setDepartment] = useState<string>('')
 
-    // const fetchData = async () => {
-
-    //     try {
-    //         const { payload } = await OverTimeDutyApiRequest.getList({ department, startDate, endDate });
-    //         setOverTimeDuty(payload);
-    //     } catch (error) {
-    //     }
-    //   };
-    //   useEffect(() => {
-    //     fetchData();
-    //   }, [endDate, startDate,department]);
+  
 
     const fetchData = async () => {
         try {
@@ -51,6 +41,22 @@ export default function OverTimeDutyPage() {
     useEffect(() => {
         fetchData();
     }, [department, startDate, endDate]);
+
+    
+    const handleDepartmentChange = (departmentValue: string) => {
+        // Xử lý thay đổi bộ phận được truyền từ `TrainingTable`
+        setDepartment(departmentValue);
+    };
+
+    const handleStartDateChange = (startDateValue: string) => {
+        // Xử lý thay đổi ngày bắt đầu được truyền từ `TrainingTable`
+        setStartDate(startDateValue);
+    };
+
+    const handleEndDateChange = (endDateValue: string) => {
+        // Xử lý thay đổi ngày kết thúc được truyền từ `TrainingTable`
+        setEndDate(endDateValue);
+    };
     return (
         <div>
             <Tabs defaultValue="account" className="bg-gray-50">
@@ -65,9 +71,9 @@ export default function OverTimeDutyPage() {
                         <CardContent className="space-y-2">
                             <div className="space-y-1">
                                 <OverTimeDutyTable OverTimeDuty={OverTimeDuty}
-                                    onStartDate={setStartDate}
-                                    onEndDate={setEndDate}
-                                    onDepartment={setDepartment}
+                                     onStartDate={handleStartDateChange}
+                                     onEndDate={handleEndDateChange}
+                                     onDepartment={handleDepartmentChange}
                                 />
                             </div>
                         </CardContent>

@@ -85,7 +85,7 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
         };
         fetchItem();
     }, []);
-    
+
 
     // const handleChangeDepartment = (department: string) => {
     //     onDepartment(department);
@@ -256,7 +256,7 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
                                     placeholder="搜尋部門..."
                                     onChange={(e) => handleSearch(e.target.value)}
                                 />
-                                 <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
+                                <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
                             </div>
                             <div className="max-h-48 overflow-y-auto"> {/* Danh sách các bộ phận có thể cuộn */}
                                 {/* <SelectItem key="all" value="ALL">--Tất cả bộ phận--</SelectItem> */}

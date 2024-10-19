@@ -1,4 +1,4 @@
-import{ForgetSenseCardListResType} from "@/app/schemaValidations/ForgetSenseCard";
+import { ForgetSenseCardListResType } from "@/app/schemaValidations/ForgetSenseCard";
 import { cn } from "@/lib/utils";
 import { DepartmentListResType } from "@/app/schemaValidations/department";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import * as XLSX from "xlsx"; // Import XLSX for Excel export
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon,FileOutputIcon } from "lucide-react";
+import { CalendarIcon, FileOutputIcon } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -58,10 +58,12 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
         const fetchItem = async () => {
             try {
                 const { payload } = await departmentApiRequest.getList();
-                if (payload)
-                    setDepartmentList(payload);
+                if (payload) {
+                    setDepartmentList(payload); // Lưu toàn bộ danh sách
+                    setFilteredDepartments(payload); // Hiển thị danh sách mặc định khi lần đầu truy cập
+                }
             } catch (error) {
-                console.error('edit page: ', error);
+                console.error('Error fetching department list:', error);
                 setDepartmentList(null);
             }
         };
@@ -72,14 +74,31 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
         onDepartment(department);
     };
 
-    // Function to export table data to Excel
-    // const handleExportToExcel = () => {
-    //     const ws = XLSX.utils.json_to_sheet(ForgetSenseCard);
-    //     const wb = XLSX.utils.book_new();
-    //     XLSX.utils.book_append_sheet(wb, ws, "ForgetSenseCard");
-    //     XLSX.writeFile(wb, "ForgetSenseCard .xlsx");
-    // };
-    
+
+    ///////////////////////////////////20241019
+
+    const [isSearching, setIsSearching] = useState(false);
+    // const [resultCount, setResultCount] = useState(0); // Khai báo trạng thái lưu số lượng kết quả
+    const [isNoResults, setIsNoResults] = useState(false); // Trạng thái để kiểm tra không có kết quả
+
+    const handleSearchByParentDepartment = (parentCode: string) => {
+        if (departmentList && parentCode) {
+            const filtered = departmentList.filter(dept =>
+                dept.dp.startsWith(parentCode) // Lọc các bộ phận bắt đầu với mã bộ phận cha
+            );
+            setFilteredDepartments(filtered);
+        }
+    };
+
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        // Cập nhật trạng thái tìm kiếm
+        setIsSearching(value.trim().length > 0); // Chỉ chuyển thành `true` nếu có nội dung nhập vào
+        // Gửi giá trị tìm kiếm đến TrainingPage thông qua callback
+        onDepartment(value); // Cập nhật giá trị department từ ô tìm kiếm
+    };
+
     const handleExportToExcel = () => {
         try {
             // Define the column headers in Chinese
@@ -96,7 +115,7 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
                 ymd: '日期',
                 tm: 'TM',
             };
-    
+
             // Map the data to the Chinese headers
             const dataWithChineseHeaders = ForgetSenseCard.map(item => ({
                 [headers.co]: item.co,
@@ -111,22 +130,22 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
                 [headers.ymd]: item.ymd,
                 [headers.tm]: item.tm,
             }));
-    
+
             // Export data to Excel with Chinese headers
             const ws = XLSX.utils.json_to_sheet(dataWithChineseHeaders);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "4.2忘刷卡表");
             XLSX.writeFile(wb, "4.2忘刷卡表.xlsx");
-    
+
             // Show success notification
             toast.success('匯出 Excel 成功!');
-    
+
         } catch (error) {
             // Show error notification if export fails
             toast.error('匯出 Excel 時發生錯誤');
         }
     };
-    
+
     return (
         <>
             <div className="flex items-center py-4 justify-between">
@@ -167,34 +186,38 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
                             />
                         </PopoverContent>
                     </Popover>
-                    {/* <Select onValueChange={(value: string) => { handleChangeDepartment(value) }}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="--Department--" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem key={0} value={' '}>--所有--</SelectItem>
-                            {departmentList?.map((item, index) => (
-                                <SelectItem key={index} value={item.dpnm}>
-                                    {item.dpnm}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select> */
-                    }
-                    <Select onValueChange={(value: string) => { handleChangeDepartment(value) }}>
-                        <SelectTrigger className="w-[180px]">
+
+                    <Select
+                        onValueChange={(value: string) => { handleChangeDepartment(value) }}
+                        disabled={isSearching} // Khóa dropdown khi người dùng đang nhập
+                    > <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="--部門--" />
                         </SelectTrigger>
-                        <SelectContent>
-                            <Input className="w-[300px]" placeholder="按部門代號或部門名稱搜尋..." onChange={(e) => handleSearch(e.target.value)} /> {/* Thanh tìm kiếm */}
-                            <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
-                            {filteredDepartments?.map((item, index) => (
-                                <SelectItem key={index} value={item.dp}> {/* Use dp as the value */}
-                                    {item.dpnm} - {item.dp}
-                                </SelectItem>
-                            ))}
+                        <SelectContent className="max-h-64"> {/* Đặt chiều cao tối đa của danh sách */}
+                            <div className="sticky top-0 bg-white z-10 p-2"> {/* Giữ cố định ô tìm kiếm ở đầu */}
+                                <Input
+                                    className="w-full px-2 py-1 mb-2 border-b"
+                                    placeholder="搜尋部門..."
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                />
+                                <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
+                            </div>
+                            <div className="max-h-48 overflow-y-auto"> {/* Danh sách các bộ phận có thể cuộn */}
+                                {/* <SelectItem key="all" value="ALL">--Tất cả bộ phận--</SelectItem> */}
+                                {filteredDepartments?.map((item, index) => (
+                                    <SelectItem key={index} value={item.dp}>
+                                        {item.dpnm} - {item.dp}
+                                    </SelectItem>
+                                ))}
+                            </div>
                         </SelectContent>
                     </Select>
+                    {/* Thêm ô tìm kiếm mã bộ phận */}
+                    <Input
+                        className="w-[150px]"
+                        placeholder="輸入部門代號..."
+                        onChange={handleInputChange}
+                    />
                 </div>
                 {/* <Button onClick={handleExportToExcel}>Export to Excel</Button> Export Button */}
                 <Button onClick={handleExportToExcel} className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center">

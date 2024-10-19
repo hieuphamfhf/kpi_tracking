@@ -13,7 +13,7 @@ import { trainingApiRequest } from "@/app/apiRequest/training";
 export default function TrainingPage() {
     const [trainings, setTrainings] = useState<TrainingListResType | any>();
     const [dp, setDp] = useState<string>('');
-    
+
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const firstDayFormatted = formatDateUTC(firstDay);
@@ -23,18 +23,6 @@ export default function TrainingPage() {
     const [startDate, setStartDate] = useState<string>(firstDayFormatted.substring(1));
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
     const [department, setDepartment] = useState<string>('')
-
-    // const fetchData = async () => {
-
-    //     try {
-    //         const { payload } = await trainingApiRequest.getList({ department, startDate, endDate });
-    //         setTrainings(payload);
-    //     } catch (error) {
-    //     }
-    //   };
-    //   useEffect(() => {
-    //     fetchData();
-    //   }, [endDate, startDate,department]);
 
     const fetchData = async () => {
         try {
@@ -46,13 +34,28 @@ export default function TrainingPage() {
             console.error('Error fetching data:', error);  // Bắt lỗi nếu có
         }
     };
-    
+
     // Khi người dùng thay đổi bộ phận, ngày bắt đầu hoặc kết thúc, gọi lại API
     useEffect(() => {
         fetchData();
     }, [department, startDate, endDate]);
+
+    const handleDepartmentChange = (departmentValue: string) => {
+        // Xử lý thay đổi bộ phận được truyền từ `TrainingTable`
+        setDepartment(departmentValue);
+    };
+
+    const handleStartDateChange = (startDateValue: string) => {
+        // Xử lý thay đổi ngày bắt đầu được truyền từ `TrainingTable`
+        setStartDate(startDateValue);
+    };
+
+    const handleEndDateChange = (endDateValue: string) => {
+        // Xử lý thay đổi ngày kết thúc được truyền từ `TrainingTable`
+        setEndDate(endDateValue);
+    };
     
-        
+
     return (
         <div>
             <Tabs defaultValue="account" className="bg-gray-50">
@@ -66,17 +69,16 @@ export default function TrainingPage() {
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="space-y-1">
-                                <TrainingTable trainings={trainings}
-                                    onStartDate={setStartDate}
-                                    onEndDate={setEndDate}
-                                    onDepartment={setDepartment}
+                                <TrainingTable 
+                                    trainings={trainings}
+                                    onStartDate={handleStartDateChange}
+                                    onEndDate={handleEndDateChange}
+                                    onDepartment={handleDepartmentChange}
                                 />
                             </div>
                         </CardContent>
-
                     </Card>
                 </TabsContent>
-
             </Tabs>
         </div>
     );

@@ -56,19 +56,36 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
         }
     };
 
+
+    // useEffect(() => {
+    //     const fetchItem = async () => {
+    //         try {
+    //             const { payload } = await departmentApiRequest.getList();
+    //             if (payload)
+    //                 setDepartmentList(payload);
+    //         } catch (error) {
+    //             console.error('edit page: ', error);
+    //             setDepartmentList(null);
+    //         }
+    //     };
+    //     fetchItem();
+    // }, []);
     useEffect(() => {
         const fetchItem = async () => {
             try {
                 const { payload } = await departmentApiRequest.getList();
-                if (payload)
-                    setDepartmentList(payload);
+                if (payload) {
+                    setDepartmentList(payload); // Lưu toàn bộ danh sách
+                    setFilteredDepartments(payload); // Hiển thị danh sách mặc định khi lần đầu truy cập
+                }
             } catch (error) {
-                console.error('edit page: ', error);
+                console.error('Error fetching department list:', error);
                 setDepartmentList(null);
             }
         };
         fetchItem();
     }, []);
+    
 
     // const handleChangeDepartment = (department: string) => {
     //     onDepartment(department);
@@ -77,6 +94,31 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
         console.log('Selected department:', department);  // Kiểm tra giá trị dp
         onDepartment(department);  // Cập nhật state cho department trong TrainingPage
     };
+
+    ///////////////////////////////////20241019
+
+    const [isSearching, setIsSearching] = useState(false);
+    // const [resultCount, setResultCount] = useState(0); // Khai báo trạng thái lưu số lượng kết quả
+    const [isNoResults, setIsNoResults] = useState(false); // Trạng thái để kiểm tra không có kết quả
+
+    const handleSearchByParentDepartment = (parentCode: string) => {
+        if (departmentList && parentCode) {
+            const filtered = departmentList.filter(dept =>
+                dept.dp.startsWith(parentCode) // Lọc các bộ phận bắt đầu với mã bộ phận cha
+            );
+            setFilteredDepartments(filtered);
+        }
+    };
+
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        // Cập nhật trạng thái tìm kiếm
+        setIsSearching(value.trim().length > 0); // Chỉ chuyển thành `true` nếu có nội dung nhập vào
+        // Gửi giá trị tìm kiếm đến TrainingPage thông qua callback
+        onDepartment(value); // Cập nhật giá trị department từ ô tìm kiếm
+    };
+
 
 
     // Function to export table data to Excel
@@ -200,20 +242,40 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
                             />
                         </PopoverContent>
                     </Popover>
-                    <Select onValueChange={(value: string) => { handleChangeDepartment(value) }}>
+                    <Select
+                        onValueChange={(value: string) => { handleChangeDepartment(value) }}
+                        disabled={isSearching} // Khóa dropdown khi người dùng đang nhập
+                    >
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="--部門--" />
                         </SelectTrigger>
-                        <SelectContent>
-                            <Input className="w-[300px]" placeholder="按部門代號或部門名稱搜尋..." onChange={(e) => handleSearch(e.target.value)} /> {/* Thanh tìm kiếm */}
-                            <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
-                            {filteredDepartments?.map((item, index) => (
-                                <SelectItem key={index} value={item.dp}> {/* Use dp as the value */}
-                                    {item.dpnm} - {item.dp}
-                                </SelectItem>
-                            ))}
+                        <SelectContent className="max-h-64"> {/* Đặt chiều cao tối đa của danh sách */}
+                            <div className="sticky top-0 bg-white z-10 p-2"> {/* Giữ cố định ô tìm kiếm ở đầu */}
+                                <Input
+                                    className="w-full px-2 py-1 mb-2 border-b"
+                                    placeholder="搜尋部門..."
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                />
+                                 <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
+                            </div>
+                            <div className="max-h-48 overflow-y-auto"> {/* Danh sách các bộ phận có thể cuộn */}
+                                {/* <SelectItem key="all" value="ALL">--Tất cả bộ phận--</SelectItem> */}
+                                {filteredDepartments?.map((item, index) => (
+                                    <SelectItem key={index} value={item.dp}>
+                                        {item.dpnm} - {item.dp}
+                                    </SelectItem>
+                                ))}
+                            </div>
                         </SelectContent>
                     </Select>
+                    {/* Thêm ô tìm kiếm mã bộ phận */}
+                    <Input
+                        className="w-[150px]"
+                        placeholder="輸入部門代號..."
+                        onChange={handleInputChange}
+                    />
+
+
                 </div>
                 <Button onClick={handleExportToExcel} className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center">
                     <FileOutputIcon className="mr-2 h-4 w-4" /> {/* Thêm biểu tượng bảng tính */}
@@ -222,7 +284,7 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
                 <Toaster position="bottom-right" reverseOrder={false} />
             </div>
 
-           
+
             <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
                     <Table className="table-auto whitespace-nowrap">
@@ -255,31 +317,31 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
                         </TableHeader>
                         <TableBody className="custom-table-body">
                             {trainings?.map((item, index) => (
-                               <TableRow key={`${item.prwpes}-${index}`}> {/* Unique key for each row */}
-                               <TableCell>{index + 1}</TableCell> {/* Row index */}
-                               <TableCell className="font-medium">{item.co}</TableCell> {/* Company */}
-                               <TableCell>{item.dp}</TableCell> {/* Department Code */}
-                               <TableCell>{item.dpnm}</TableCell> {/* Department Name */}
-                               <TableCell>{item.yr}</TableCell> {/* Year */}
-                               <TableCell>{item.seq}</TableCell> {/* Month */}
-                               <TableCell>{item.prwpes}</TableCell> {/* Instructor VNW Account */}
-                               <TableCell>{item.prwpesnm}</TableCell> {/* Instructor Name */}
-                               <TableCell>{item.traid}</TableCell> {/* Training Course Code */}
-                               <TableCell>{item.tranm}</TableCell> {/* Training Course Name */}
-                               <TableCell>{item.tradst}</TableCell> {/* Training Subject */}
-                               <TableCell>{item.mon}</TableCell> {/* Month */}
-                               <TableCell>{item.tradys}</TableCell> {/* Training Days */}
-                               <TableCell>{item.trahrs}</TableCell> {/* Training Hours */}
-                               <TableCell>{item.traobj}</TableCell> {/* Trainee */}
-                               <TableCell>{item.num}</TableCell> {/* Number of Trainees */}
-                               <TableCell>{item.trasite}</TableCell> {/* Location */}
-                               <TableCell>{item.tradpnm}</TableCell> {/* Training Department Name */}
-                               <TableCell>{item.traf}</TableCell> {/* traf */}
-                               <TableCell>{item.proym}</TableCell> {/* Planned Training Date */}
-                               <TableCell>{item.fnhdat}</TableCell> {/* Actual Training Date */}
-                               <TableCell>{item.xrem}</TableCell> {/* Instructor */}
-                               <TableCell>{item.cancdat}</TableCell> {/* CANCDAT */}
-                           </TableRow>
+                                <TableRow key={`${item.prwpes}-${index}`}> {/* Unique key for each row */}
+                                    <TableCell>{index + 1}</TableCell> {/* Row index */}
+                                    <TableCell className="font-medium">{item.co}</TableCell> {/* Company */}
+                                    <TableCell>{item.dp}</TableCell> {/* Department Code */}
+                                    <TableCell>{item.dpnm}</TableCell> {/* Department Name */}
+                                    <TableCell>{item.yr}</TableCell> {/* Year */}
+                                    <TableCell>{item.seq}</TableCell> {/* Month */}
+                                    <TableCell>{item.prwpes}</TableCell> {/* Instructor VNW Account */}
+                                    <TableCell>{item.prwpesnm}</TableCell> {/* Instructor Name */}
+                                    <TableCell>{item.traid}</TableCell> {/* Training Course Code */}
+                                    <TableCell>{item.tranm}</TableCell> {/* Training Course Name */}
+                                    <TableCell>{item.tradst}</TableCell> {/* Training Subject */}
+                                    <TableCell>{item.mon}</TableCell> {/* Month */}
+                                    <TableCell>{item.tradys}</TableCell> {/* Training Days */}
+                                    <TableCell>{item.trahrs}</TableCell> {/* Training Hours */}
+                                    <TableCell>{item.traobj}</TableCell> {/* Trainee */}
+                                    <TableCell>{item.num}</TableCell> {/* Number of Trainees */}
+                                    <TableCell>{item.trasite}</TableCell> {/* Location */}
+                                    <TableCell>{item.tradpnm}</TableCell> {/* Training Department Name */}
+                                    <TableCell>{item.traf}</TableCell> {/* traf */}
+                                    <TableCell>{item.proym}</TableCell> {/* Planned Training Date */}
+                                    <TableCell>{item.fnhdat}</TableCell> {/* Actual Training Date */}
+                                    <TableCell>{item.xrem}</TableCell> {/* Instructor */}
+                                    <TableCell>{item.cancdat}</TableCell> {/* CANCDAT */}
+                                </TableRow>
                             ))}
                         </TableBody>
                     </Table>

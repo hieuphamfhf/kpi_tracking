@@ -9,7 +9,7 @@ export default function Header() {
         <div className="flex items-center space-x-4">
           <img src="/img/logo.png" alt="Logo" className="h-10" /> 
           <h1 className="text-lg font-bold text-gray-700">
-            河靜鋼鐵企業入口網站(EIP)
+          效能管理與報告系統(HRK)
           </h1>
         </div>
 

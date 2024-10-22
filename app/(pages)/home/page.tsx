@@ -1,3 +1,3 @@
 export default function Page() {
-    return <p>Dashboard Page</p>;
+    return <p>功能目前正在開發中。</p>;
   }

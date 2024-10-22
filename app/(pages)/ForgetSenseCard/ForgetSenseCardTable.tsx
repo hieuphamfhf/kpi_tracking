@@ -15,7 +15,7 @@ import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
-
+import { Search } from "lucide-react"; // Import icon Search từ lucide-react
 export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onEndDate, onDepartment }:
     {
         ForgetSenseCard: ForgetSenseCardListResType;
@@ -148,7 +148,7 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
 
     return (
         <>
-            <div className="flex items-center py-4 justify-between">
+            <div className="flex items-center py-2 justify-between">
                 <div className="flex gap-5">
                     <Popover>
                         <PopoverTrigger asChild>

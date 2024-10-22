@@ -15,6 +15,7 @@ import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react"; // Import icon Search từ lucide-react
 export default function BorrowCardTable({ BorrowCard, onStartDate, onEndDate, onDepartment }:
     {
         BorrowCard: BorrowCardListResType;
@@ -240,11 +241,17 @@ export default function BorrowCardTable({ BorrowCard, onStartDate, onEndDate, on
                         </SelectContent>
                     </Select>
                     {/* Thêm ô tìm kiếm mã bộ phận */}
-                    <Input
-                        className="w-[150px]"
-                        placeholder="輸入部門代號..."
-                        onChange={handleInputChange}
-                    />
+                    {/* Thêm ô tìm kiếm mã bộ phận */}
+                    <div className="relative w-[150px]">
+                        {/* Icon tìm kiếm */}
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Input
+                            className="w-[150px]"
+                            placeholder="輸入部門代號..."
+                            onChange={handleInputChange}
+                        />
+                    </div>
+
                 </div>
                 {/* <Button onClick={handleExportToExcel}>Export to Excel</Button> Export Button */}
                 <Button onClick={handleExportToExcel} className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center">

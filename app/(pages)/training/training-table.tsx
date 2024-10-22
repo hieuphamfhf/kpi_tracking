@@ -16,7 +16,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input";
 import { Toaster, toast } from 'react-hot-toast';
 // import { FileOutputIcon } from 'lucide-react'; // Import biểu tượng
-
+import { Search } from "lucide-react"; // Import icon Search từ lucide-react
 export default function TrainingTable({ trainings, onStartDate, onEndDate, onDepartment }:
     {
         trainings: TrainingListResType;
@@ -204,7 +204,7 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
 
     return (
         <>
-            <div className="flex items-center py-1 justify-between">
+            <div className="flex items-center py-2 justify-between">
                 <div className="flex gap-5">
                     <Popover>
                         <PopoverTrigger asChild>
@@ -269,11 +269,17 @@ export default function TrainingTable({ trainings, onStartDate, onEndDate, onDep
                         </SelectContent>
                     </Select>
                     {/* Thêm ô tìm kiếm mã bộ phận */}
-                    <Input
+                    <div className="relative w-[150px]">
+                        {/* Icon tìm kiếm */}
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Input
                         className="w-[150px]"
                         placeholder="輸入部門代號..."
                         onChange={handleInputChange}
                     />
+
+                    </div>
+                    
 
 
                 </div>

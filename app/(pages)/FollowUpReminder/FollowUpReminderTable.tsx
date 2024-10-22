@@ -15,6 +15,7 @@ import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react"; // Import icon Search từ lucide-react
 export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, onEndDate, onDepartment, onCompany, company }: {
     FollowUpReminder: FollowUpReminderListResType;
     onStartDate: (value: string) => void;
@@ -26,9 +27,10 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
 
     const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>([]);
     const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);
-    // Khai báo state trong component FollowUpReminderTable
-    const [department, setDepartment] = useState<string>(''); // Thêm state cho department
-   
+    const [department, setDepartment] = useState<string>(''); // Lưu giá trị mã bộ phận từ dropdown hoặc input
+    const [searchQuery, setSearchQuery] = useState<string>(''); // Lưu từ khóa tìm kiếm
+
+
     // Fetch danh sách bộ phận từ API
     useEffect(() => {
         if (company) {
@@ -65,19 +67,30 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
 
 
 
+    // Hàm này xử lý cả khi chọn từ dropdown lẫn nhập vào ô tìm kiếm
     const handleDepartmentChange = (value: string) => {
-        onDepartment(value); // Gọi callback để cập nhật bộ phận trong parent component
-        console.log('Selected department:', value);
+        setDepartment(value); // Cập nhật mã bộ phận khi chọn từ dropdown
+        setSearchQuery(value); // Đồng bộ với ô tìm kiếm
+        onDepartment(value); // Gọi callback để cập nhật mã bộ phận
     };
 
+
+
+    // Cập nhật hàm handleSearch để tìm kiếm theo mã bộ phận
+    // Xử lý tìm kiếm khi người dùng nhập mã bộ phận
     const handleSearch = (query: string) => {
+        setSearchQuery(query); // Cập nhật từ khóa tìm kiếm
+        setDepartment(query);  // Cập nhật mã bộ phận khi nhập từ khóa
+        onDepartment(query);   // Gọi callback để cập nhật mã bộ phận
+
+        // Nếu nhập từ khóa, lọc danh sách bộ phận hiện có
         if (departmentList && query) {
             const filtered = departmentList.filter(dept =>
-                dept.dpnm.toLowerCase().includes(query.toLowerCase()) || dept.dp.includes(query)
+                dept.dp.toLowerCase().includes(query.toLowerCase())
             );
-            setFilteredDepartments(filtered);
+            setFilteredDepartments(filtered); // Cập nhật danh sách bộ phận đã lọc
         } else {
-            setFilteredDepartments(departmentList || []); // Nếu không có tìm kiếm, hiển thị tất cả bộ phận
+            setFilteredDepartments(departmentList || []);
         }
     };
 
@@ -197,7 +210,7 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
 
     return (
         <>
-            <div className="flex items-center py-4 justify-between">
+            <div className="flex items-center py-2 justify-between">
                 <div className="flex gap-5">
                     <Popover>
                         <PopoverTrigger asChild>
@@ -250,28 +263,41 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                         </SelectContent>
                     </Select>
 
+                    {/* Ô nhập liệu tìm kiếm mã bộ phận */}
+                    {/* <Input
+                        placeholder="輸入部門代號..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className={`w-[200px] ${company && !department ? 'border-2 border-red-500' : ''}`} // Thêm viền đỏ khi chưa có mã bộ phận
+    
+                        disabled={!company} // Vô hiệu hóa nếu chưa chọn công ty
+                    /> */}
+
+                    <div className="relative w-[200px]">
+                        {/* Icon tìm kiếm */}
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+
+                        {/* Ô nhập liệu tìm kiếm */}
+                        <Input
+                            placeholder="輸入部門代號..."
+                            value={searchQuery}
+                            onChange={(e) => handleSearch(e.target.value)}
+                            className={`pr-8 pl-3 ${company && !department ? 'border-2 border-red-500' : ''}`} // Thêm padding-left cho icon
+                            disabled={!company} // Vô hiệu hóa nếu chưa chọn công ty
+                        />
+                    </div>
                     {/* Dropdown để chọn bộ phận */}
+
                     <Select
-                        onValueChange={(value: string) => {
-                            handleDepartmentChange(value);
-                            setDepartment(value); // Cập nhật state khi người dùng chọn bộ phận
-                        }}
-                        value={department || ''} // Sử dụng state department
-                        disabled={!company} // Vô hiệu hóa nếu công ty chưa được chọn
+                        onValueChange={handleDepartmentChange}
+                        value={department || ''} // Sử dụng state department để đồng bộ
+                        disabled={!company} // Vô hiệu hóa nếu chưa chọn công ty
                     >
                         <SelectTrigger className={`w-[200px] ${company && !department ? 'border-2 border-red-500' : ''}`}>
                             <SelectValue placeholder={company ? "--選擇部門--" : "請先選擇公司"} />
                         </SelectTrigger>
-                        <SelectContent className="max-h-64"> {/* Đặt chiều cao tối đa của danh sách */}
-                            <div className="sticky top-0 bg-white z-10 p-2"> {/* Giữ cố định ô tìm kiếm ở đầu */}
-                                <Input
-                                    className="w-full px-2 py-1 mb-2 border-b"
-                                    placeholder="搜尋部門..."
-                                    onChange={(e) => handleSearch(e.target.value)}
-                                />
-                            </div>
-                            <div className="max-h-48 overflow-y-auto"> {/* Danh sách các bộ phận có thể cuộn */}
-                                {/* <SelectItem key="all" value="ALL">--Tất cả bộ phận--</SelectItem> */}
+                        <SelectContent className="max-h-64">
+                            <div className="max-h-48 overflow-y-auto">
                                 {filteredDepartments?.map((item, index) => (
                                     <SelectItem key={index} value={item.dp}>
                                         {item.dpnm} - {item.dp}
@@ -281,11 +307,12 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                         </SelectContent>
                     </Select>
                     {/* Thông báo hướng dẫn chọn bộ phận nếu công ty đã chọn nhưng chưa chọn bộ phận */}
-                    {company && !department && (
+                    {/* {!company && (
                         <div className="text-red-500 mt-2">
-                           請選擇部門以繼續。
+                            Vui lòng chọn công ty trước khi tìm kiếm hoặc chọn bộ phận.
                         </div>
-                    )}
+                    )} */}
+
 
 
 
@@ -299,7 +326,7 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                     <FileOutputIcon className="mr-2 h-4 w-4" /> {/* Thêm biểu tượng bảng tính */}
                     匯出到 Excel
                 </Button> {/* Export Button */}
-               
+
 
                 <Toaster position="bottom-right" reverseOrder={false} />
             </div>

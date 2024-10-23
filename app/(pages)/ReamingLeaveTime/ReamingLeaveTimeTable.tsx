@@ -30,28 +30,66 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
     });
     const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>()
     const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);  // Lọc bộ phận
+    const [selectedDepartment, setSelectedDepartment] = useState<string>(''); // Lưu giá trị bộ phận đã chọn
+    const [isSearchActive, setIsSearchActive] = useState(false); // Trạng thái để bật tắt bộ lọc thời gian
+    const [isDataEmpty, setIsDataEmpty] = useState(true); // Ban đầu bảng dữ liệu sẽ trống
 
+    // Hàm xử lý lọc danh sách bộ phận theo từ khóa
     const handleSearch = (query: string) => {
         if (departmentList && query) {
             const filtered = departmentList.filter(dept =>
                 dept.dpnm.toLowerCase().includes(query.toLowerCase()) || dept.dp.includes(query)
             );
             setFilteredDepartments(filtered);
+            setIsSearchActive(true); // Kích hoạt trạng thái tìm kiếm khi có từ khóa
+            setIsDataEmpty(false); // Hiển thị bảng dữ liệu khi có tìm kiếm
+
+            // Áp dụng bộ lọc thời gian ngay lập tức khi có từ khóa, kể cả khi chỉ có 1 ký tự
+            if (date) {
+                handleDateSelect(date); // Áp dụng bộ lọc thời gian với giá trị đã chọn
+            }
+        } else {
+            setFilteredDepartments([]);
+            setIsSearchActive(false); // Không kích hoạt trạng thái tìm kiếm nếu không có từ khóa
+            setIsDataEmpty(true); // Bảng dữ liệu sẽ trống nếu không có từ khóa
+
+            // Bỏ qua việc gọi API lọc theo thời gian nếu không có từ khóa
+            onstartYM('');
+            onendYM('');
         }
     };
+
+
+
+
+
+
     const handleDateSelect = (newDate: DateRange | undefined) => {
-        setDate(newDate);
+        setDate(newDate);  // Giữ giá trị thời gian đã chọn
 
-        if (newDate?.from) {
-            const formattedstartYM = format(newDate.from, "yyyyMM");
-            onstartYM(formattedstartYM.substring(1)); // Set the start date
-        }
-
-        if (newDate?.to) {
-            const formattedendYM = format(newDate.to, "yyyyMM");
-            onendYM(formattedendYM.substring(1)); // Set the end date
+        // Kiểm tra điều kiện trước khi gọi API
+        if (selectedDepartment || isSearchActive) {  // Gọi API nếu có tìm kiếm hoặc chọn bộ phận
+            if (newDate?.from) {
+                const formattedstartYM = format(newDate.from, "yyyyMM");
+                onstartYM(formattedstartYM.substring(1)); // Gọi API với ngày bắt đầu
+            }
+            if (newDate?.to) {
+                const formattedendYM = format(newDate.to, "yyyyMM");
+                onendYM(formattedendYM.substring(1)); // Gọi API với ngày kết thúc
+            }
+        } else {
+            console.log("Bỏ qua lọc thời gian vì không có từ khóa hoặc bộ phận.");
         }
     };
+
+
+
+
+
+
+
+
+
 
     useEffect(() => {
         const fetchItem = async () => {
@@ -69,9 +107,27 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
         fetchItem();
     }, []);
 
+    // Hàm chọn bộ phận từ dropdown
     const handleChangeDepartment = (department: string) => {
+        setSelectedDepartment(department); // Cập nhật giá trị bộ phận đã chọn
+        setIsSearchActive(!!department); // Kích hoạt trạng thái tìm kiếm nếu có bộ phận được chọn
         onDepartment(department);
+        setIsDataEmpty(!department); // Bảng dữ liệu sẽ trống nếu không có bộ phận
+
+        // Khi có bộ phận hợp lệ, áp dụng lại bộ lọc thời gian nếu đã chọn
+        if (department && date) {
+            handleDateSelect(date); // Áp dụng bộ lọc thời gian với giá trị đã chọn
+        } else {
+            // Bỏ qua việc gọi API lọc theo thời gian
+            onstartYM('');
+            onendYM('');
+        }
     };
+
+
+
+
+
 
     ///////////////////////////////////20241019
 
@@ -89,12 +145,13 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
     };
 
 
+    // Hàm đồng bộ ô tìm kiếm với dropdown
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        // Cập nhật trạng thái tìm kiếm
-        setIsSearching(value.trim().length > 0); // Chỉ chuyển thành `true` nếu có nội dung nhập vào
-        // Gửi giá trị tìm kiếm đến TrainingPage thông qua callback
-        onDepartment(value); // Cập nhật giá trị department từ ô tìm kiếm
+        // const value = e.target.value;
+        const value = e.target.value.toUpperCase();  // Chuyển từ khóa người dùng nhập về chữ hoa
+        handleSearch(value);
+        setSelectedDepartment(value); // Cập nhật giá trị của dropdown theo từ khóa
+        onDepartment(value); // Gửi giá trị của department
     };
     const handleExportToExcel = () => {
         try {
@@ -164,15 +221,54 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
         <>
             <div className="flex items-center py-2 justify-between">
                 <div className="flex gap-5">
+
+                    {/* Thêm ô tìm kiếm mã bộ phận */}
+                    <div className="relative w-[150px]">
+                        {/* Icon tìm kiếm */}
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Input
+                            className="w-[150px]"
+                            placeholder="輸入部門代號..."
+                            value={selectedDepartment}
+                            onChange={handleInputChange}
+                        />
+                    </div>
+
+                    <Select
+                        onValueChange={handleChangeDepartment}
+                        value={selectedDepartment}
+                    >   <SelectTrigger className="w-[250px]">
+                            <SelectValue placeholder="--部門--" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-64"> {/* Đặt chiều cao tối đa của danh sách */}
+                            <div className="sticky top-0 bg-white z-10 p-2"> {/* Giữ cố định ô tìm kiếm ở đầu */}
+                                <Input
+                                    className="w-full px-2 py-1 mb-2 border-b"
+                                    placeholder="搜尋部門..."
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                />
+                                {/* <SelectItem key={0} value={' '}>--所有--</SelectItem> Option to select all */}
+                            </div>
+                            <div className="max-h-48 overflow-y-auto"> {/* Danh sách các bộ phận có thể cuộn */}
+                                {/* <SelectItem key="all" value="ALL">--Tất cả bộ phận--</SelectItem> */}
+                                {filteredDepartments?.map((item, index) => (
+                                    <SelectItem key={index} value={item.dp}>
+                                        {item.dpnm} - {item.dp}
+                                    </SelectItem>
+                                ))}
+                            </div>
+                        </SelectContent>
+                    </Select>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 id="date"
                                 variant={"outline"}
                                 className={cn(
-                                    "w-[300px] justify-start text-left font-normal",
-                                    !date && "text-muted-foreground"
+                                    "w-[250px] justify-start text-left font-normal",
+                                    (!selectedDepartment && !isSearchActive) && "text-muted-foreground cursor-not-allowed"
                                 )}
+                                disabled={!selectedDepartment && !isSearchActive} // Vô hiệu hóa nếu không có tìm kiếm hoặc chọn bộ phận
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {date?.from ? (
@@ -185,9 +281,10 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
                                         format(date.from, "yyyy-MM-dd")
                                     )
                                 ) : (
-                                    <span>Pick a date</span>
+                                    <span>Pick Day</span>
                                 )}
                             </Button>
+
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
@@ -200,43 +297,6 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
                             />
                         </PopoverContent>
                     </Popover>
-                    {/* Thêm ô tìm kiếm mã bộ phận */}
-                    <div className="relative w-[150px]">
-                        {/* Icon tìm kiếm */}
-                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <Input
-                            className="w-[150px]"
-                            placeholder="輸入部門代號..."
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                    
-                    <Select
-                        onValueChange={(value: string) => { handleChangeDepartment(value) }}
-                        disabled={isSearching} // Khóa dropdown khi người dùng đang nhập
-                    >   <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="--部門--" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-64"> {/* Đặt chiều cao tối đa của danh sách */}
-                            <div className="sticky top-0 bg-white z-10 p-2"> {/* Giữ cố định ô tìm kiếm ở đầu */}
-                                <Input
-                                    className="w-full px-2 py-1 mb-2 border-b"
-                                    placeholder="搜尋部門..."
-                                    onChange={(e) => handleSearch(e.target.value)}
-                                />
-                                <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
-                            </div>
-                            <div className="max-h-48 overflow-y-auto"> {/* Danh sách các bộ phận có thể cuộn */}
-                                {/* <SelectItem key="all" value="ALL">--Tất cả bộ phận--</SelectItem> */}
-                                {filteredDepartments?.map((item, index) => (
-                                    <SelectItem key={index} value={item.dp}>
-                                        {item.dpnm} - {item.dp}
-                                    </SelectItem>
-                                ))}
-                            </div>
-                        </SelectContent>
-                    </Select>
-
 
                 </div>
                 {/* <Button onClick={handleExportToExcel}>Export to Excel</Button> Export Button */}

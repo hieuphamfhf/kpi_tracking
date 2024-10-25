@@ -1,62 +1,87 @@
 "use client"
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
+import OverTimeDutyTable from "./OverTimeDutyTable";
 import { OverTimeDutyListResType } from "@/app/schemaValidations/OverTimeDuty";
 import { formatDateUTC } from "@/lib/extensions";
 import { OverTimeDutyApiRequest } from "@/app/apiRequest/OverTimeDuty";
-import OverTimeDutyTable from './OverTimeDutyTable';
 
 export default function OverTimeDutyPage() {
     const [OverTimeDuty, setOverTimeDuty] = useState<OverTimeDutyListResType | any>();
-    const [dp, setDp] = useState<string>('');
-    
+    const [co, setCo] = useState<string>(''); // State cho công ty
+    const [department, setDepartment] = useState<string>(''); // State cho bộ phận
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const firstDayFormatted = formatDateUTC(firstDay);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     const lastDayFormatted = formatDateUTC(lastDay);
-
     const [startDate, setStartDate] = useState<string>(firstDayFormatted.substring(1));
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
-    const [department, setDepartment] = useState<string>('')
-
-  
-
     const fetchData = async () => {
         try {
-            console.log('Fetching data for:', { department, startDate, endDate });  // Kiểm tra tham số truyền vào
-            const { payload } = await OverTimeDutyApiRequest.getList({ department, startDate, endDate });
-            console.log('Fetched data:', payload);  // Kiểm tra dữ liệu trả về
-            setOverTimeDuty(payload);  // Cập nhật dữ liệu vào state
+            // Nếu cả công ty và bộ phận đều để trống, chỉ lọc theo thời gian
+            if (!co && !department) {
+                if (!OverTimeDuty || OverTimeDuty.length === 0) { // Chỉ log nếu chưa có dữ liệu trước đó
+                    console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
+                }
+
+                const queryParams = {
+                    co: '',
+                    department: '',
+                    startDate: startDate || '',
+                    endDate: endDate || '',
+                };
+
+                const { payload } = await OverTimeDutyApiRequest.getList(queryParams);
+                console.log('Dữ liệu nhận được từ API (lọc theo thời gian):', payload);
+                setOverTimeDuty(payload);
+                return;
+            }
+
+            // Kiểm tra nếu cả công ty và bộ phận đều được chọn
+            if (co && department) {
+                const queryParams = {
+                    co: co,
+                    department: department,
+                    startDate: startDate || '',
+                    endDate: endDate || '',
+                };
+
+                console.log('Gửi yêu cầu đến API với các tham số:', queryParams);
+                const { payload } = await OverTimeDutyApiRequest.getList(queryParams);
+                console.log('Dữ liệu nhận được từ API:', payload);
+                setOverTimeDuty(payload);
+            } else {
+                console.warn('Vui lòng chọn cả công ty và bộ phận để lọc chính xác.');
+            }
         } catch (error) {
-            console.error('Error fetching data:', error);  // Bắt lỗi nếu có
+            console.error('Lỗi khi lấy dữ liệu:', error);
         }
     };
 
-    // Khi người dùng thay đổi bộ phận, ngày bắt đầu hoặc kết thúc, gọi lại API
+    const handleCompanyChange = (selectedCompany: string) => {
+        if (selectedCompany === "ALL") {
+            setCo(''); // Đặt giá trị rỗng để chỉ ra rằng không có công ty nào được chọn
+            setDepartment(''); // Đặt lại bộ phận khi công ty không được chọn
+        } else {
+            setCo(selectedCompany); // Cập nhật state với công ty đã chọn
+        }
+    };
+
+    const handleDepartmentChange = (selectedDepartment: string) => {
+        setDepartment(selectedDepartment); // Cập nhật state với bộ phận đã chọn
+    };
+
     useEffect(() => {
+        // Kiểm tra nếu tất cả các bộ lọc bị bỏ trống thì chỉ lọc theo thời gian
+        if (!co && !department) {
+            console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
+        }
         fetchData();
-    }, [department, startDate, endDate]);
+    }, [co, department, startDate, endDate]);
 
-    
-    const handleDepartmentChange = (departmentValue: string) => {
-        // Xử lý thay đổi bộ phận được truyền từ `TrainingTable`
-        setDepartment(departmentValue);
-    };
-
-    const handleStartDateChange = (startDateValue: string) => {
-        // Xử lý thay đổi ngày bắt đầu được truyền từ `TrainingTable`
-        setStartDate(startDateValue);
-    };
-
-    const handleEndDateChange = (endDateValue: string) => {
-        // Xử lý thay đổi ngày kết thúc được truyền từ `TrainingTable`
-        setEndDate(endDateValue);
-    };
     return (
         <div>
             <Tabs defaultValue="account" className="bg-gray-50">
@@ -65,23 +90,29 @@ export default function OverTimeDutyPage() {
                         <CardHeader>
                             <CardTitle>{`加班單`}</CardTitle>
                             <CardDescription>
-                                {`通過篩選功能查詢並查看詳細信息。您可以匯出報告到 Excel。`}
+                                {`選擇公司和部門以篩選數據，或同時留空以顯示所有數據。您可以匯出報告到 Excel。`}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="space-y-1">
-                                <OverTimeDutyTable OverTimeDuty={OverTimeDuty}
-                                     onStartDate={handleStartDateChange}
-                                     onEndDate={handleEndDateChange}
-                                     onDepartment={handleDepartmentChange}
+                                <OverTimeDutyTable
+                                    OverTimeDuty={OverTimeDuty}
+                                    onStartDate={setStartDate}
+                                    onEndDate={setEndDate}
+                                    onDepartment={handleDepartmentChange}
+                                    onCompany={handleCompanyChange}
+                                    company={co} // Truyền giá trị của công ty xuống component con
                                 />
                             </div>
                         </CardContent>
-
                     </Card>
                 </TabsContent>
-
             </Tabs>
+            {((co && !department) || (!co && department)) && (
+                <div className="text-red-500 mt-2">
+                    Vui lòng chọn cả công ty và bộ phận hoặc để trống cả hai để xem toàn bộ dữ liệu.
+                </div>
+            )}
         </div>
     );
 }

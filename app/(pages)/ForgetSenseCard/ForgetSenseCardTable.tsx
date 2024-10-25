@@ -28,13 +28,50 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
         from: startOfMonth(new Date()),
         to: endOfMonth(new Date()),
     });
+    
     const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>()
     const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);  // Lọc bộ phận
+    const [searchTerm, setSearchTerm] = useState<string>(''); // Trạng thái lưu từ khóa tìm kiếm
+    
+    
+    useEffect(() => {
+        const fetchItem = async () => {
+            try {
+                const { payload } = await departmentApiRequest.getList();
+                if (payload) {
+                    setDepartmentList(payload); // Lưu toàn bộ danh sách
+                    setFilteredDepartments(payload); // Hiển thị danh sách mặc định khi lần đầu truy cập
+                }
+            } catch (error) {
+                console.error('Error fetching department list:', error);
+                setDepartmentList(null);
+            }
+        };
+        fetchItem();
+    }, []);
+    ///////////////////////////////////20241019
+    const [isSearching, setIsSearching] = useState(false);
+    // const [resultCount, setResultCount] = useState(0); // Khai báo trạng thái lưu số lượng kết quả
+    const [isNoResults, setIsNoResults] = useState(false); // Trạng thái để kiểm tra không có kết quả
+
+    const handleSearchByParentDepartment = (parentCode: string) => {
+        if (departmentList && parentCode) {
+            const filtered = departmentList.filter(dept =>
+                dept.dp.startsWith(parentCode) // Lọc các bộ phận bắt đầu với mã bộ phận cha
+            );
+            setFilteredDepartments(filtered);
+        }
+    };
+
+    const handleChangeDepartment = (department: string) => {
+        onDepartment(department);
+    };
 
     const handleSearch = (query: string) => {
+        // setSearchTerm(query);  // Cập nhật giá trị tìm kiếm
         if (departmentList && query) {
             const filtered = departmentList.filter(dept =>
-                dept.dpnm.toLowerCase().includes(query.toLowerCase()) || dept.dp.includes(query)
+                dept.dpnm.toLowerCase().startsWith(query.toLowerCase()) || dept.dp.startsWith(query)    
             );
             setFilteredDepartments(filtered);
         }
@@ -53,48 +90,12 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
             onEndDate(formattedEndDate.substring(1)); // Set the end date
         }
     };
-
-    useEffect(() => {
-        const fetchItem = async () => {
-            try {
-                const { payload } = await departmentApiRequest.getList();
-                if (payload) {
-                    setDepartmentList(payload); // Lưu toàn bộ danh sách
-                    setFilteredDepartments(payload); // Hiển thị danh sách mặc định khi lần đầu truy cập
-                }
-            } catch (error) {
-                console.error('Error fetching department list:', error);
-                setDepartmentList(null);
-            }
-        };
-        fetchItem();
-    }, []);
-
-    const handleChangeDepartment = (department: string) => {
-        onDepartment(department);
-    };
-
-
-    ///////////////////////////////////20241019
-
-    const [isSearching, setIsSearching] = useState(false);
-    // const [resultCount, setResultCount] = useState(0); // Khai báo trạng thái lưu số lượng kết quả
-    const [isNoResults, setIsNoResults] = useState(false); // Trạng thái để kiểm tra không có kết quả
-
-    const handleSearchByParentDepartment = (parentCode: string) => {
-        if (departmentList && parentCode) {
-            const filtered = departmentList.filter(dept =>
-                dept.dp.startsWith(parentCode) // Lọc các bộ phận bắt đầu với mã bộ phận cha
-            );
-            setFilteredDepartments(filtered);
-        }
-    };
-
-
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
+        // const value = e.target.value;
+        const value = e.target.value.toUpperCase(); // Chuyển từ khóa nhập về chữ hoa
         // Cập nhật trạng thái tìm kiếm
         setIsSearching(value.trim().length > 0); // Chỉ chuyển thành `true` nếu có nội dung nhập vào
+        handleSearch(value); // Tìm kiếm bộ phận dựa trên từ khóa
         // Gửi giá trị tìm kiếm đến TrainingPage thông qua callback
         onDepartment(value); // Cập nhật giá trị department từ ô tìm kiếm
     };
@@ -150,13 +151,49 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
         <>
             <div className="flex items-center py-2 justify-between">
                 <div className="flex gap-5">
+                    {/* Thêm ô tìm kiếm mã bộ phận */}
+                    <div className="relative w-[150px]">
+                        {/* Icon tìm kiếm */}
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Input
+                            className="w-[150px]"
+                            placeholder="輸入部門代號..."
+                            onChange={handleInputChange}
+                        />
+                    </div>
+
+                    <Select
+                        onValueChange={(value: string) => { handleChangeDepartment(value) }}
+                    > <SelectTrigger className="w-[250px]">
+                            <SelectValue placeholder="--部門--" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-64"> {/* Đặt chiều cao tối đa của danh sách */}
+                            <div className="sticky top-0 bg-white z-10 p-2"> {/* Giữ cố định ô tìm kiếm ở đầu */}
+                                <Input
+                                    className="w-full px-2 py-1 mb-2 border-b"
+                                    placeholder="搜尋部門..."
+                                    onChange={(e) => handleSearch(e.target.value)}
+                                />
+                                <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
+                            </div>
+                            <div className="max-h-48 overflow-y-auto"> {/* Danh sách các bộ phận có thể cuộn */}
+                                {/* <SelectItem key="all" value="ALL">--Tất cả bộ phận--</SelectItem> */}
+                                {filteredDepartments?.map((item, index) => (
+                                    <SelectItem key={index} value={item.dp}>
+                                        {item.dpnm} - {item.dp}
+                                    </SelectItem>
+                                ))}
+                            </div>
+                        </SelectContent>
+                    </Select>
+
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 id="date"
                                 variant={"outline"}
                                 className={cn(
-                                    "w-[300px] justify-start text-left font-normal",
+                                    "w-[250px] justify-start text-left font-normal",
                                     !date && "text-muted-foreground"
                                 )}
                             >
@@ -186,38 +223,6 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
                             />
                         </PopoverContent>
                     </Popover>
-
-                    <Select
-                        onValueChange={(value: string) => { handleChangeDepartment(value) }}
-                        disabled={isSearching} // Khóa dropdown khi người dùng đang nhập
-                    > <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="--部門--" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-64"> {/* Đặt chiều cao tối đa của danh sách */}
-                            <div className="sticky top-0 bg-white z-10 p-2"> {/* Giữ cố định ô tìm kiếm ở đầu */}
-                                <Input
-                                    className="w-full px-2 py-1 mb-2 border-b"
-                                    placeholder="搜尋部門..."
-                                    onChange={(e) => handleSearch(e.target.value)}
-                                />
-                                <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
-                            </div>
-                            <div className="max-h-48 overflow-y-auto"> {/* Danh sách các bộ phận có thể cuộn */}
-                                {/* <SelectItem key="all" value="ALL">--Tất cả bộ phận--</SelectItem> */}
-                                {filteredDepartments?.map((item, index) => (
-                                    <SelectItem key={index} value={item.dp}>
-                                        {item.dpnm} - {item.dp}
-                                    </SelectItem>
-                                ))}
-                            </div>
-                        </SelectContent>
-                    </Select>
-                    {/* Thêm ô tìm kiếm mã bộ phận */}
-                    <Input
-                        className="w-[150px]"
-                        placeholder="輸入部門代號..."
-                        onChange={handleInputChange}
-                    />
                 </div>
                 {/* <Button onClick={handleExportToExcel}>Export to Excel</Button> Export Button */}
                 <Button onClick={handleExportToExcel} className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center">
@@ -225,7 +230,6 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
                     匯出到 Excel
                 </Button> {/* Export Button */}
                 <Toaster position="bottom-right" reverseOrder={false} />
-
             </div>
             <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
@@ -244,10 +248,6 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
                                 <TableHead className="w-56">KD</TableHead>
                                 <TableHead className="w-24">日期</TableHead>
                                 <TableHead className="w-40">TM</TableHead>
-                                {/* <TableHead className="w-24">摘要</TableHead>
-                                <TableHead className="w-36">催辦次數</TableHead>
-                                <TableHead className="w-56">催辦日</TableHead>
-                                <TableHead className="w-56">銷案日</TableHead> */}
                             </TableRow>
                         </TableHeader>
                         <TableBody className="custom-table-body">

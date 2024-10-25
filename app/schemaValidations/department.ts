@@ -8,9 +8,11 @@
 import { z } from "zod";
 
 export const DepartmentSchema = z.object({
-    dp: z.string(), // Thêm trường dp (mã bộ phận)
-    dpnm: z.string(), // Trường dpnm (tên bộ phận)
+    co: z.string(), // Thêm trường mã công ty
+    dp: z.string(), // Mã bộ phận
+    dpnm: z.string(), // Tên bộ phận
 });
+
 
 export const DepartmentListRes = z.array(DepartmentSchema);
 export type DepartmentListResType = z.TypeOf<typeof DepartmentListRes>;

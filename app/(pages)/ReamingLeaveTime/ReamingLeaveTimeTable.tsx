@@ -34,21 +34,39 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
     const [isSearchActive, setIsSearchActive] = useState(false); // Trạng thái để bật tắt bộ lọc thời gian
     const [isDataEmpty, setIsDataEmpty] = useState(true); // Ban đầu bảng dữ liệu sẽ trống
 
+    useEffect(() => {
+        const fetchItem = async () => {
+            try {
+                const { payload } = await departmentApiRequest.getList();
+                if (payload) {
+                    setDepartmentList(payload); // Lưu toàn bộ danh sách
+                    setFilteredDepartments(payload); // Hiển thị danh sách mặc định khi lần đầu truy cập
+                }
+            } catch (error) {
+                console.error('Error fetching department list:', error);
+                setDepartmentList(null);
+            }
+        };
+        fetchItem();
+    }, []);
+
     // Hàm xử lý lọc danh sách bộ phận theo từ khóa
     const handleSearch = (query: string) => {
         if (departmentList && query) {
+            // Lọc danh sách, chỉ hiển thị các bộ phận bắt đầu bằng từ khóa nhập vào
             const filtered = departmentList.filter(dept =>
-                dept.dpnm.toLowerCase().includes(query.toLowerCase()) || dept.dp.includes(query)
+                dept.dpnm.toLowerCase().startsWith(query.toLowerCase()) || dept.dp.startsWith(query)
             );
             setFilteredDepartments(filtered);
             setIsSearchActive(true); // Kích hoạt trạng thái tìm kiếm khi có từ khóa
             setIsDataEmpty(false); // Hiển thị bảng dữ liệu khi có tìm kiếm
 
-            // Áp dụng bộ lọc thời gian ngay lập tức khi có từ khóa, kể cả khi chỉ có 1 ký tự
+            // Áp dụng bộ lọc thời gian ngay lập tức khi có từ khóa
             if (date) {
                 handleDateSelect(date); // Áp dụng bộ lọc thời gian với giá trị đã chọn
             }
         } else {
+            // Nếu từ khóa trống, xóa danh sách bộ phận và reset trạng thái
             setFilteredDepartments([]);
             setIsSearchActive(false); // Không kích hoạt trạng thái tìm kiếm nếu không có từ khóa
             setIsDataEmpty(true); // Bảng dữ liệu sẽ trống nếu không có từ khóa
@@ -58,11 +76,6 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
             onendYM('');
         }
     };
-
-
-
-
-
 
     const handleDateSelect = (newDate: DateRange | undefined) => {
         setDate(newDate);  // Giữ giá trị thời gian đã chọn
@@ -83,30 +96,6 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
     };
 
 
-
-
-
-
-
-
-
-
-    useEffect(() => {
-        const fetchItem = async () => {
-            try {
-                const { payload } = await departmentApiRequest.getList();
-                if (payload) {
-                    setDepartmentList(payload); // Lưu toàn bộ danh sách
-                    setFilteredDepartments(payload); // Hiển thị danh sách mặc định khi lần đầu truy cập
-                }
-            } catch (error) {
-                console.error('Error fetching department list:', error);
-                setDepartmentList(null);
-            }
-        };
-        fetchItem();
-    }, []);
-
     // Hàm chọn bộ phận từ dropdown
     const handleChangeDepartment = (department: string) => {
         setSelectedDepartment(department); // Cập nhật giá trị bộ phận đã chọn
@@ -125,8 +114,14 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
     };
 
 
-
-
+    // Hàm đồng bộ ô tìm kiếm với dropdown
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // const value = e.target.value;
+        const value = e.target.value.toUpperCase();  // Chuyển từ khóa người dùng nhập về chữ hoa
+        handleSearch(value);
+        setSelectedDepartment(value); // Cập nhật giá trị của dropdown theo từ khóa
+        onDepartment(value); // Gửi giá trị của department
+    };
 
 
     ///////////////////////////////////20241019
@@ -145,14 +140,7 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onstartYM, one
     };
 
 
-    // Hàm đồng bộ ô tìm kiếm với dropdown
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // const value = e.target.value;
-        const value = e.target.value.toUpperCase();  // Chuyển từ khóa người dùng nhập về chữ hoa
-        handleSearch(value);
-        setSelectedDepartment(value); // Cập nhật giá trị của dropdown theo từ khóa
-        onDepartment(value); // Gửi giá trị của department
-    };
+
     const handleExportToExcel = () => {
         try {
             // Định nghĩa headers với kiểu 'keyof ReamingLeaveTimeListResType[0]' để chỉ rõ các khóa hợp lệ

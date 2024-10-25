@@ -74,14 +74,20 @@ export default function ReamingLeaveTimePage() {
         setDepartment(selectedDepartment); // Cập nhật state với bộ phận đã chọn
     };
 
-    useEffect(() => {
-        // Kiểm tra nếu tất cả các bộ lọc bị bỏ trống thì chỉ lọc theo thời gian
-        if (!co && !department) {
-            console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
-        }
-        fetchData();
-    }, [co, department, startYM, endYM]);
+    // useEffect(() => {
+    //     // Kiểm tra nếu tất cả các bộ lọc bị bỏ trống thì chỉ lọc theo thời gian
+    //     if (!co && !department) {
+    //         console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
+    //     }
+    //     fetchData();
+    // }, [co, department, startYM, endYM]);
 
+    useEffect(() => {
+        // Chỉ gọi API nếu đã chọn cả công ty và bộ phận
+        if (co && department) {
+            fetchData();
+        }
+    }, [co, department, startYM, endYM]);
     return (
         <div>
             <Tabs defaultValue="account" className="bg-gray-50">

@@ -29,6 +29,7 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
     const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);
     const [department, setDepartment] = useState<string>(''); // Lưu giá trị mã bộ phận từ dropdown hoặc input
     const [searchQuery, setSearchQuery] = useState<string>(''); // Lưu từ khóa tìm kiếm
+    const isDatePickerDisabled = !(searchQuery || department); // Bộ lọc thời gian chỉ mở khi có giá trị trong ô tìm kiếm hoặc dropdown
     // Fetch danh sách bộ phận từ API
     useEffect(() => {
         if (company) {
@@ -189,7 +190,7 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                             <SelectValue placeholder="--選擇公司--" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem key="all" value="ALL">--所有公司--</SelectItem>
+                            {/* <SelectItem key="all" value="ALL">--所有公司--</SelectItem> */}
                             <SelectItem key="lg" value="LG">LG</SelectItem>
                             <SelectItem key="OD" value="OD">OD</SelectItem>
                             <SelectItem key="LT" value="LT">LT</SelectItem>
@@ -240,6 +241,7 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
                                     "w-[200px] justify-start text-left font-normal",
                                     !date && "text-muted-foreground"
                                 )}
+                                disabled={isDatePickerDisabled} // Vô hiệu hóa khi chưa nhập hoặc chọn bộ phận
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {date?.from ? (

@@ -83,12 +83,12 @@ export default function FollowUpReminderPage() {
 
 
     useEffect(() => {
-        // Kiểm tra nếu tất cả các bộ lọc bị bỏ trống thì chỉ lọc theo thời gian
-        if (!co && !department) {
-            console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
+        // Chỉ gọi API nếu đã chọn cả công ty và bộ phận
+        if (co && department) {
+            fetchData();
         }
-        fetchData();
     }, [co, department, startDate, endDate]);
+    
 
     return (
         <div>

@@ -3,14 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
-import TrainingTable from "./training-table";
-import { TrainingListResType } from "@/app/schemaValidations/trainning";
+import TrainingTable from "./TrainingTable";
+import { TrainingListResType } from "@/app/schemaValidations/Training";
 import { formatDateUTC } from "@/lib/extensions";
-import { trainingApiRequest } from "@/app/apiRequest/training";
-// import trainingPage from './page';
+import { TrainingApiRequest } from "@/app/apiRequest/Training";
 
-export default function trainingPage() {
-    const [training, settraining] = useState<TrainingListResType | any>();
+export default function TrainingPage() {
+    const [Training, setTraining] = useState<TrainingListResType | any>();
     const [co, setCo] = useState<string>(''); // State cho công ty
     const [department, setDepartment] = useState<string>(''); // State cho bộ phận
     const now = new Date();
@@ -18,15 +17,13 @@ export default function trainingPage() {
     const firstDayFormatted = formatDateUTC(firstDay);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     const lastDayFormatted = formatDateUTC(lastDay);
-
     const [startDate, setStartDate] = useState<string>(firstDayFormatted.substring(1));
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
-
     const fetchData = async () => {
         try {
             // Nếu cả công ty và bộ phận đều để trống, chỉ lọc theo thời gian
             if (!co && !department) {
-                if (!training || training.length === 0) { // Chỉ log nếu chưa có dữ liệu trước đó
+                if (!Training || Training.length === 0) { // Chỉ log nếu chưa có dữ liệu trước đó
                     console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
                 }
 
@@ -37,9 +34,9 @@ export default function trainingPage() {
                     endDate: endDate || '',
                 };
 
-                const { payload } = await trainingApiRequest.getList(queryParams);
+                const { payload } = await TrainingApiRequest.getList(queryParams);
                 console.log('Dữ liệu nhận được từ API (lọc theo thời gian):', payload);
-                settraining(payload);
+                setTraining(payload);
                 return;
             }
 
@@ -53,9 +50,9 @@ export default function trainingPage() {
                 };
 
                 console.log('Gửi yêu cầu đến API với các tham số:', queryParams);
-                const { payload } = await trainingApiRequest.getList(queryParams);
+                const { payload } = await TrainingApiRequest.getList(queryParams);
                 console.log('Dữ liệu nhận được từ API:', payload);
-                settraining(payload);
+                setTraining(payload);
             } else {
                 console.warn('Vui lòng chọn cả công ty và bộ phận để lọc chính xác.');
             }
@@ -63,9 +60,6 @@ export default function trainingPage() {
             console.error('Lỗi khi lấy dữ liệu:', error);
         }
     };
-
-
-
 
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
@@ -79,9 +73,6 @@ export default function trainingPage() {
     const handleDepartmentChange = (selectedDepartment: string) => {
         setDepartment(selectedDepartment); // Cập nhật state với bộ phận đã chọn
     };
-
-
-
 
     useEffect(() => {
         // Kiểm tra nếu tất cả các bộ lọc bị bỏ trống thì chỉ lọc theo thời gian
@@ -105,14 +96,13 @@ export default function trainingPage() {
                         <CardContent className="space-y-2">
                             <div className="space-y-1">
                                 <TrainingTable
-                                    training={training}
+                                    Training={Training}
                                     onStartDate={setStartDate}
                                     onEndDate={setEndDate}
                                     onDepartment={handleDepartmentChange}
                                     onCompany={handleCompanyChange}
                                     company={co} // Truyền giá trị của công ty xuống component con
                                 />
-
                             </div>
                         </CardContent>
                     </Card>

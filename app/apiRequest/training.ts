@@ -8,7 +8,7 @@ import http from "@/lib/http";
 //     }),
 // }
 
-export const trainingApiRequest = {
+export const TrainingApiRequest = {
     getList: ({ co, department, startDate, endDate }: { co: string; department?: string; startDate: string; endDate: string }) => {
         let url = `http://10.198.170.99:5000/API/training?co=${co}&startDate=${startDate}&endDate=${endDate}`;
 

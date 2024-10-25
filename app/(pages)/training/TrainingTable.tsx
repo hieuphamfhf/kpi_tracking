@@ -1,4 +1,4 @@
-import { TrainingListResType } from "@/app/schemaValidations/trainning";
+import { TrainingListResType } from "@/app/schemaValidations/Training";
 import { cn } from "@/lib/utils";
 import { DepartmentListResType } from "@/app/schemaValidations/department";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -16,8 +16,8 @@ import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react"; // Import icon Search từ lucide-react
-export default function TrainingTable({ training, onStartDate, onEndDate, onDepartment, onCompany, company }: {
-    training: TrainingListResType;
+export default function TrainingTable({ Training, onStartDate, onEndDate, onDepartment, onCompany, company }: {
+    Training: TrainingListResType;
     onStartDate: (value: string) => void;
     onEndDate: (value: string) => void;
     onDepartment: (value: string) => void;
@@ -159,7 +159,7 @@ export default function TrainingTable({ training, onStartDate, onEndDate, onDepa
             };
 
             // Chuyển đổi dữ liệu `trainings` thành tên cột tiếng Trung
-            const dataWithChineseHeaders = training.map(item => ({
+            const dataWithChineseHeaders = Training.map(item => ({
                 [headers.co]: item.co,
                 [headers.dp]: item.dp,
                 [headers.dpnm]: item.dpnm,
@@ -329,7 +329,7 @@ export default function TrainingTable({ training, onStartDate, onEndDate, onDepa
                             </TableRow>
                         </TableHeader>
                         <TableBody className="custom-table-body">
-                            {training?.map((item, index) => (
+                            {Training?.map((item, index) => (
                                 <TableRow key={`${item.prwpes}-${index}`}> {/* Unique key for each row */}
                                     <TableCell>{index + 1}</TableCell> {/* Row index */}
                                     <TableCell className="font-medium">{item.co}</TableCell> {/* Company */}

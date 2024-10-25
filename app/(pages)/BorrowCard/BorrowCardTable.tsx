@@ -29,6 +29,7 @@ export default function BorrowCardTable({ BorrowCard, onStartDate, onEndDate, on
     const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);
     const [department, setDepartment] = useState<string>(''); // Lưu giá trị mã bộ phận từ dropdown hoặc input
     const [searchQuery, setSearchQuery] = useState<string>(''); // Lưu từ khóa tìm kiếm
+    const isDatePickerDisabled = !(searchQuery || department); // Bộ lọc thời gian chỉ mở khi có giá trị trong ô tìm kiếm hoặc dropdown
     // Fetch danh sách bộ phận từ API
     useEffect(() => {
         if (company) {
@@ -238,6 +239,7 @@ export default function BorrowCardTable({ BorrowCard, onStartDate, onEndDate, on
                                     "w-[200px] justify-start text-left font-normal",
                                     !date && "text-muted-foreground"
                                 )}
+                                disabled={isDatePickerDisabled} // Vô hiệu hóa khi chưa nhập hoặc chọn bộ phận
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {date?.from ? (
@@ -266,13 +268,18 @@ export default function BorrowCardTable({ BorrowCard, onStartDate, onEndDate, on
                         </PopoverContent>
                     </Popover>
                 </div>
-                <Button onClick={handleExportToExcel} className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center">
-                    <FileOutputIcon className="mr-2 h-4 w-4" /> {/* Thêm biểu tượng bảng tính */}
+                <Button
+                    onClick={handleExportToExcel}
+                    className={`py-2 px-4 transition-colors duration-200 flex items-center ${!(company && department) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-100 text-black hover:bg-gray-300'}`}
+                    disabled={!(company && department)}
+                >
+                    <FileOutputIcon className="mr-2 h-4 w-4" />
                     匯出到 Excel
-                </Button> {/* Export Button */}
+                </Button>
                 <Toaster position="bottom-right" reverseOrder={false} />
             </div>
-            <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
+            <ScrollArea className={`w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border 
+    ${(company && company !== 'ALL' && !department) ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
                     <Table className="table-auto whitespace-nowrap">
                         <TableHeader className="custom-table-header">

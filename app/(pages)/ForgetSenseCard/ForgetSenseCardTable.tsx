@@ -16,65 +16,103 @@ import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react"; // Import icon Search từ lucide-react
-export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onEndDate, onDepartment }:
-    {
-        ForgetSenseCard: ForgetSenseCardListResType;
-        onStartDate: (value: string) => void;
-        onEndDate: (value: string) => void;
-        onDepartment: (value: string) => void;
-    }
-) {
+export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onEndDate, onDepartment, onCompany, company }: {
+    ForgetSenseCard: ForgetSenseCardListResType;
+    onStartDate: (value: string) => void;
+    onEndDate: (value: string) => void;
+    onDepartment: (value: string) => void;
+    onCompany: (value: string) => void;
+    company: string; // Thêm prop công ty vào component con
+}) {
+
+    const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>([]);
+    const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);
+    const [department, setDepartment] = useState<string>(''); // Lưu giá trị mã bộ phận từ dropdown hoặc input
+    const [searchQuery, setSearchQuery] = useState<string>(''); // Lưu từ khóa tìm kiếm
+    // Fetch danh sách bộ phận từ API
+    useEffect(() => {
+        if (company) {
+            fetchDepartmentsByCompany(); // Gọi hàm mà không truyền tham số vào
+        }
+    }, [company]);
+
+    const handleCompanyChange = (selectedCompany: string) => {
+        if (selectedCompany === "ALL") {
+            onCompany(''); // Reset công ty
+            onDepartment(''); // Reset bộ phận
+            setDepartment(''); // Xóa lựa chọn bộ phận
+            setSearchQuery(''); // Xóa từ khóa tìm kiếm
+            setFilteredDepartments([]); // Xóa danh sách bộ phận
+        } else {
+            onCompany(selectedCompany); // Cập nhật công ty đã chọn
+            onDepartment(''); // Xóa bộ phận khi chọn công ty mới
+            setDepartment(''); // Reset state bộ phận
+            setSearchQuery(''); // Reset state từ khóa tìm kiếm
+            fetchDepartmentsByCompany(); // Lấy bộ phận theo công ty đã chọn
+        }
+    };
+
+    type Department = {
+        co: string;  // Mã công ty
+        dp: string;  // Mã bộ phận
+        dpnm: string; // Tên bộ phận
+    };
+
+    const fetchDepartmentsByCompany = async () => {
+        try {
+            const { payload }: { payload: Department[] } = await departmentApiRequest.getList();
+            const filtered = payload.filter((department: Department) => department.co === company); // Sử dụng code công ty dưới dạng chuỗi
+            setFilteredDepartments(filtered); // Cập nhật danh sách bộ phận
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách bộ phận: ', error);
+        }
+    };
+
+    // Hàm này xử lý cả khi chọn từ dropdown lẫn nhập vào ô tìm kiếm
+    const handleDepartmentChange = (value: string) => {
+        setDepartment(value); // Cập nhật mã bộ phận khi chọn từ dropdown
+        setSearchQuery(value); // Đồng bộ với ô tìm kiếm
+        onDepartment(value); // Gọi callback để cập nhật mã bộ phận
+    };
+    // Xử lý tìm kiếm khi người dùng nhập mã bộ phận
+    const handleSearch = (upperCaseQuery: string) => {
+        setDepartment(upperCaseQuery);  // Cập nhật mã bộ phận với giá trị đã chuyển thành chữ hoa
+        onDepartment(upperCaseQuery);   // Gọi callback để cập nhật mã bộ phận
+
+        // Nếu nhập từ khóa, lọc danh sách bộ phận hiện có theo công ty đã chọn
+        if (departmentList && upperCaseQuery) {
+            const filtered = departmentList.filter(dept =>
+                dept.co === company && // Chỉ lấy bộ phận thuộc công ty đã chọn
+                (dept.dpnm.toLowerCase().startsWith(upperCaseQuery.toLowerCase()) || dept.dp.startsWith(upperCaseQuery))
+            );
+            setFilteredDepartments(filtered); // Cập nhật danh sách bộ phận đã lọc
+        } else {
+            setFilteredDepartments(departmentList?.filter(dept => dept.co === company) || []); // Lọc theo công ty đã chọn
+        }
+    };
     const [date, setDate] = useState<DateRange | undefined>({
         from: startOfMonth(new Date()),
         to: endOfMonth(new Date()),
     });
-    
-    const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>()
-    const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);  // Lọc bộ phận
-    const [searchTerm, setSearchTerm] = useState<string>(''); // Trạng thái lưu từ khóa tìm kiếm
-    
-    
+
     useEffect(() => {
         const fetchItem = async () => {
             try {
                 const { payload } = await departmentApiRequest.getList();
-                if (payload) {
-                    setDepartmentList(payload); // Lưu toàn bộ danh sách
-                    setFilteredDepartments(payload); // Hiển thị danh sách mặc định khi lần đầu truy cập
-                }
+                if (payload)
+                    setDepartmentList(payload);
             } catch (error) {
-                console.error('Error fetching department list:', error);
+                console.error('edit page: ', error);
                 setDepartmentList(null);
             }
         };
         fetchItem();
     }, []);
-    ///////////////////////////////////20241019
-    const [isSearching, setIsSearching] = useState(false);
-    // const [resultCount, setResultCount] = useState(0); // Khai báo trạng thái lưu số lượng kết quả
-    const [isNoResults, setIsNoResults] = useState(false); // Trạng thái để kiểm tra không có kết quả
-
-    const handleSearchByParentDepartment = (parentCode: string) => {
-        if (departmentList && parentCode) {
-            const filtered = departmentList.filter(dept =>
-                dept.dp.startsWith(parentCode) // Lọc các bộ phận bắt đầu với mã bộ phận cha
-            );
-            setFilteredDepartments(filtered);
-        }
-    };
 
     const handleChangeDepartment = (department: string) => {
-        onDepartment(department);
-    };
 
-    const handleSearch = (query: string) => {
-        // setSearchTerm(query);  // Cập nhật giá trị tìm kiếm
-        if (departmentList && query) {
-            const filtered = departmentList.filter(dept =>
-                dept.dpnm.toLowerCase().startsWith(query.toLowerCase()) || dept.dp.startsWith(query)    
-            );
-            setFilteredDepartments(filtered);
-        }
+        console.log("Selected department:", department); // Log the selected department 
+        onDepartment(department);
     };
 
     const handleDateSelect = (newDate: DateRange | undefined) => {
@@ -89,15 +127,6 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
             const formattedEndDate = format(newDate.to, "yyyyMMdd");
             onEndDate(formattedEndDate.substring(1)); // Set the end date
         }
-    };
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // const value = e.target.value;
-        const value = e.target.value.toUpperCase(); // Chuyển từ khóa nhập về chữ hoa
-        // Cập nhật trạng thái tìm kiếm
-        setIsSearching(value.trim().length > 0); // Chỉ chuyển thành `true` nếu có nội dung nhập vào
-        handleSearch(value); // Tìm kiếm bộ phận dựa trên từ khóa
-        // Gửi giá trị tìm kiếm đến TrainingPage thông qua callback
-        onDepartment(value); // Cập nhật giá trị department từ ô tìm kiếm
     };
 
     const handleExportToExcel = () => {
@@ -151,33 +180,48 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
         <>
             <div className="flex items-center py-2 justify-between">
                 <div className="flex gap-5">
-                    {/* Thêm ô tìm kiếm mã bộ phận */}
-                    <div className="relative w-[150px]">
+
+                    {/* Dropdown để chọn công ty */}
+                    <Select
+                        onValueChange={handleCompanyChange}
+                    >
+                        <SelectTrigger className="w-[150px]">
+                            <SelectValue placeholder="--選擇公司--" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem key="all" value="ALL">--所有公司--</SelectItem>
+                            <SelectItem key="lg" value="LG">LG</SelectItem>
+                            <SelectItem key="OD" value="OD">OD</SelectItem>
+                            <SelectItem key="LT" value="LT">LT</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    {/* Ô nhập liệu tìm kiếm */}
+                    <div className="relative w-[200px]">
                         {/* Icon tìm kiếm */}
                         <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <Input
-                            className="w-[150px]"
                             placeholder="輸入部門代號..."
-                            onChange={handleInputChange}
+                            value={searchQuery}
+                            onChange={(e) => {
+                                const upperCaseValue = e.target.value.toUpperCase(); // Chuyển thành chữ hoa ngay khi người dùng nhập
+                                setSearchQuery(upperCaseValue); // Cập nhật giá trị vào state
+                                handleSearch(upperCaseValue);  // Gọi hàm tìm kiếm với giá trị đã chuyển đổi
+                            }}
+                            className={`pr-8 pl-3 ${company && !department ? 'border-2 border-red-500' : ''}`} // Thêm padding-left cho icon
+                            disabled={!company} // Vô hiệu hóa nếu chưa chọn công ty
                         />
                     </div>
-
+                    {/* Dropdown để chọn bộ phận */}
                     <Select
-                        onValueChange={(value: string) => { handleChangeDepartment(value) }}
-                    > <SelectTrigger className="w-[250px]">
-                            <SelectValue placeholder="--部門--" />
+                        onValueChange={handleDepartmentChange}
+                        value={department || ''} // Đồng bộ với state department
+                        disabled={!company} // Vô hiệu hóa nếu chưa chọn công ty
+                    >
+                        <SelectTrigger className={`w-[300px] ${company && !department ? 'border-2 border-red-500' : ''}`}>
+                            <SelectValue placeholder={company ? "--選擇部門--" : "請先選擇公司"} />
                         </SelectTrigger>
-                        <SelectContent className="max-h-64"> {/* Đặt chiều cao tối đa của danh sách */}
-                            <div className="sticky top-0 bg-white z-10 p-2"> {/* Giữ cố định ô tìm kiếm ở đầu */}
-                                <Input
-                                    className="w-full px-2 py-1 mb-2 border-b"
-                                    placeholder="搜尋部門..."
-                                    onChange={(e) => handleSearch(e.target.value)}
-                                />
-                                <SelectItem key={0} value={' '}>--所有--</SelectItem> {/* Option to select all */}
-                            </div>
-                            <div className="max-h-48 overflow-y-auto"> {/* Danh sách các bộ phận có thể cuộn */}
-                                {/* <SelectItem key="all" value="ALL">--Tất cả bộ phận--</SelectItem> */}
+                        <SelectContent className="max-h-64">
+                            <div className="max-h-48 overflow-y-auto">
                                 {filteredDepartments?.map((item, index) => (
                                     <SelectItem key={index} value={item.dp}>
                                         {item.dpnm} - {item.dp}
@@ -186,14 +230,14 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
                             </div>
                         </SelectContent>
                     </Select>
-
+                    {/* Dropdown để chọn khoảng thời gian */}
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 id="date"
                                 variant={"outline"}
                                 className={cn(
-                                    "w-[250px] justify-start text-left font-normal",
+                                    "w-[200px] justify-start text-left font-normal",
                                     !date && "text-muted-foreground"
                                 )}
                             >
@@ -224,7 +268,6 @@ export default function ForgetSenseCardTable({ ForgetSenseCard, onStartDate, onE
                         </PopoverContent>
                     </Popover>
                 </div>
-                {/* <Button onClick={handleExportToExcel}>Export to Excel</Button> Export Button */}
                 <Button onClick={handleExportToExcel} className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center">
                     <FileOutputIcon className="mr-2 h-4 w-4" /> {/* Thêm biểu tượng bảng tính */}
                     匯出到 Excel

@@ -83,11 +83,16 @@ export default function ReamingLeaveTimePage() {
     // }, [co, department, startYM, endYM]);
 
     useEffect(() => {
-        // Chỉ gọi API nếu đã chọn cả công ty và bộ phận
-        if (co && department) {
+        console.log('startYM:', startYM); // Kiểm tra định dạng trước khi gửi
+        console.log('endYM:', endYM); // Kiểm tra định dạng trước khi gửi
+    
+        // Kiểm tra xem các trường cần thiết đã có giá trị trước khi gọi API
+        if (co && department && startYM && endYM) {
             fetchData();
         }
     }, [co, department, startYM, endYM]);
+    
+    
     return (
         <div>
             <Tabs defaultValue="account" className="bg-gray-50">

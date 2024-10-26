@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import * as XLSX from "xlsx"; // Import XLSX for Excel export
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, FileOutputIcon } from "lucide-react";
+import { CalendarIcon, CalendarRangeIcon, FileOutputIcon } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -30,6 +30,21 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
     const [department, setDepartment] = useState<string>(''); // Lưu giá trị mã bộ phận từ dropdown hoặc input
     const [searchQuery, setSearchQuery] = useState<string>(''); // Lưu từ khóa tìm kiếm
     const isDatePickerDisabled = !(searchQuery || department); // Bộ lọc thời gian chỉ mở khi có giá trị trong ô tìm kiếm hoặc dropdown
+    // const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
+    // const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1).padStart(2, '0'));
+    const [selectedYear, setSelectedYear] = useState<string>(""); // Không có giá trị mặc định cho năm
+    const [selectedMonth, setSelectedMonth] = useState<string>(""); // Không có giá trị mặc định cho tháng
+    const [startYear, setStartYear] = useState<string>(""); // Năm bắt đầu
+    const [startMonth, setStartMonth] = useState<string>(""); // Tháng bắt đầu
+    const [endYear, setEndYear] = useState<string>(""); // Năm kết thúc
+    const [endMonth, setEndMonth] = useState<string>(""); // Tháng kết thúc
+    const [startYM, setStartYM] = useState<string>(""); // Không đặt giá trị mặc định
+    const [endYM, setEndYM] = useState<string>(""); // Không đặt giá trị mặc định
+    const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
+
+    const isTimeFilterSelected = startYear && startMonth && endYear && endMonth; // Kiểm tra đã chọn đủ thời gian chưa
+    const isExportDisabled = !(company && department && isTimeFilterSelected);
+
 
     // Fetch danh sách bộ phận từ API
     useEffect(() => {
@@ -37,22 +52,6 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
             fetchDepartmentsByCompany(); // Gọi hàm mà không truyền tham số vào
         }
     }, [company]);
-
-    const handleCompanyChange = (selectedCompany: string) => {
-        if (selectedCompany === "ALL") {
-            onCompany(''); // Reset công ty
-            onDepartment(''); // Reset bộ phận
-            setDepartment(''); // Xóa lựa chọn bộ phận
-            setSearchQuery(''); // Xóa từ khóa tìm kiếm
-            setFilteredDepartments([]); // Xóa danh sách bộ phận
-        } else {
-            onCompany(selectedCompany); // Cập nhật công ty đã chọn
-            onDepartment(''); // Xóa bộ phận khi chọn công ty mới
-            setDepartment(''); // Reset state bộ phận
-            setSearchQuery(''); // Reset state từ khóa tìm kiếm
-            fetchDepartmentsByCompany(); // Lấy bộ phận theo công ty đã chọn
-        }
-    };
 
     type Department = {
         co: string;  // Mã công ty
@@ -67,6 +66,62 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
             setFilteredDepartments(filtered); // Cập nhật danh sách bộ phận
         } catch (error) {
             console.error('Lỗi khi lấy danh sách bộ phận: ', error);
+        }
+    };
+    // Hàm xử lý nút hiển thị thời gian đã chọn
+    const getSelectedDateRange = () => {
+        if (startYear && startMonth && endYear && endMonth) {
+            return `從 ${startMonth}/${startYear} 到 ${endMonth}/${endYear}`;
+        }
+        return "選擇時間範圍";
+    };
+
+    const handleStartYearChange = (year: string) => {
+        const threeDigitYear = year.slice(-3); // Lấy 3 ký tự cuối của năm
+        setStartYear(year); // Cập nhật state `startYear` để hiển thị trong dropdown
+        if (startMonth) {
+            onStartYM(`${threeDigitYear}${startMonth}`); // Định dạng thành `yyymm`
+        }
+    };
+
+    const handleStartMonthChange = (month: string) => {
+        const paddedMonth = month.padStart(2, '0'); // Đảm bảo tháng có 2 ký tự
+        setStartMonth(paddedMonth);
+        if (startYear) {
+            const threeDigitYear = startYear.slice(-3); // Lấy 3 ký tự cuối của `startYear`
+            onStartYM(`${threeDigitYear}${paddedMonth}`); // Định dạng thành `yyymm`
+        }
+    };
+
+    const handleEndYearChange = (year: string) => {
+        const threeDigitYear = year.slice(-3); // Lấy 3 ký tự cuối của năm
+        setEndYear(year); // Cập nhật state `endYear` để hiển thị trong dropdown
+        if (endMonth) {
+            onEndYM(`${threeDigitYear}${endMonth}`); // Định dạng thành `yyymm`
+        }
+    };
+
+    const handleEndMonthChange = (month: string) => {
+        const paddedMonth = month.padStart(2, '0'); // Đảm bảo tháng có 2 ký tự
+        setEndMonth(paddedMonth);
+        if (endYear) {
+            const threeDigitYear = endYear.slice(-3); // Lấy 3 ký tự cuối của `endYear`
+            onEndYM(`${threeDigitYear}${paddedMonth}`); // Định dạng thành `yyymm`
+        }
+    };
+    const handleCompanyChange = (selectedCompany: string) => {
+        if (selectedCompany === "ALL") {
+            onCompany(''); // Reset công ty
+            onDepartment(''); // Reset bộ phận
+            setDepartment(''); // Xóa lựa chọn bộ phận
+            setSearchQuery(''); // Xóa từ khóa tìm kiếm
+            setFilteredDepartments([]); // Xóa danh sách bộ phận
+        } else {
+            onCompany(selectedCompany); // Cập nhật công ty đã chọn
+            onDepartment(''); // Xóa bộ phận khi chọn công ty mới
+            setDepartment(''); // Reset state bộ phận
+            setSearchQuery(''); // Reset state từ khóa tìm kiếm
+            fetchDepartmentsByCompany(); // Lấy bộ phận theo công ty đã chọn
         }
     };
 
@@ -121,7 +176,7 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
         setDate(newDate);
 
         if (newDate?.from) {
-            const formattedStartYM = format(newDate.from, "yyyyMMdd");
+            const formattedStartYM = format(newDate.from, "yyyyMM");
             onStartYM(formattedStartYM.substring(1)); // Set the start date
         }
 
@@ -130,7 +185,6 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
             onEndYM(formattedEndYM.substring(1)); // Set the end date
         }
     };
-
     const handleExportToExcel = () => {
         try {
             // Định nghĩa headers với kiểu 'keyof ReamingLeaveTimeListResType[0]' để chỉ rõ các khóa hợp lệ
@@ -209,7 +263,7 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
                             <SelectValue placeholder="--選擇公司--" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem key="all" value="ALL">--所有公司--</SelectItem>
+                            {/* <SelectItem key="all" value="ALL">--所有公司--</SelectItem> */}
                             <SelectItem key="lg" value="LG">LG</SelectItem>
                             <SelectItem key="OD" value="OD">OD</SelectItem>
                             <SelectItem key="LT" value="LT">LT</SelectItem>
@@ -251,48 +305,89 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
                         </SelectContent>
                     </Select>
                     {/* Dropdown để chọn khoảng thời gian */}
-                    <Popover>
+                    <Popover open={isPopoverOpen && !!company} // Chỉ mở Popover nếu có công ty
+                        onOpenChange={(open) => setIsPopoverOpen(open)}>
                         <PopoverTrigger asChild>
                             <Button
-                                id="date"
-                                variant={"outline"}
-                                className={cn(
-                                    "w-[200px] justify-start text-left font-normal",
-                                    !date && "text-muted-foreground"
-                                )}
-                                disabled={isDatePickerDisabled} // Vô hiệu hóa khi chưa nhập hoặc chọn bộ phận
+                                disabled={!company} // Vô hiệu hóa nút khi chưa chọn công ty
+                                className={`w-[200px] py-2 px-4 flex items-center transition-colors duration-200 bg-gray-100 text-black hover:bg-gray-300 ${company && !isTimeFilterSelected ? 'border-2 border-red-500' : ''
+                                    } ${!company ? 'cursor-not-allowed' : ''}`}
                             >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date?.from ? (
-                                    date.to ? (
-                                        <>
-                                            {format(date.from, "yyyy-MM-dd")} -{" "}
-                                            {format(date.to, "yyyy-MM-dd")}
-                                        </>
-                                    ) : (
-                                        format(date.from, "yyyy-MM-dd")
-                                    )
-                                ) : (
-                                    <span>Pick a date</span>
-                                )}
+                                {getSelectedDateRange()}
+                                <CalendarRangeIcon className="ml-2 h-5 w-5" /> {/* Icon đồng hồ bên trái */}
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                initialFocus
-                                mode="range"
-                                defaultMonth={date?.from}
-                                selected={date}
-                                onSelect={handleDateSelect}
-                                numberOfMonths={2}
-                            />
+
+                        <PopoverContent>
+                            {/* Nhóm thời gian bắt đầu */}
+                            <div className="mb-4">
+                                <p className="font-semibold">開始時間</p>
+                                <div className="flex gap-2">
+                                    <Select onValueChange={handleStartYearChange} value={startYear}>
+                                        <SelectTrigger className="w-[100px]">
+                                            <SelectValue placeholder="年" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {[...Array(5)].map((_, idx) => {
+                                                const year = String(new Date().getFullYear() - idx);
+                                                return <SelectItem key={year} value={year}>{year}</SelectItem>;
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select onValueChange={handleStartMonthChange} value={startMonth}>
+                                        <SelectTrigger className="w-[100px]">
+                                            <SelectValue placeholder="月" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Array.from({ length: 12 }, (_, i) => (
+                                                <SelectItem key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                                                    {`月 ${i + 1}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            {/* Nhóm thời gian kết thúc */}
+                            <div className="mb-4">
+                                <p className="font-semibold">結束時間</p>
+                                <div className="flex gap-2">
+                                    <Select onValueChange={handleEndYearChange} value={endYear}>
+                                        <SelectTrigger className="w-[100px]">
+                                            <SelectValue placeholder="年" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {[...Array(5)].map((_, idx) => {
+                                                const year = String(new Date().getFullYear() - idx);
+                                                return <SelectItem key={year} value={year}>{year}</SelectItem>;
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Select onValueChange={handleEndMonthChange} value={endMonth}>
+                                        <SelectTrigger className="w-[100px]">
+                                            <SelectValue placeholder="月" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Array.from({ length: 12 }, (_, i) => (
+                                                <SelectItem key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                                                    {`月 ${i + 1}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                         </PopoverContent>
                     </Popover>
+
                 </div>
                 <Button
                     onClick={handleExportToExcel}
-                    className={`py-2 px-4 transition-colors duration-200 flex items-center ${!(company && department) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-100 text-black hover:bg-gray-300'}`}
-                    disabled={!(company && department)}
+                    className={`py-2 px-4 transition-colors duration-200 flex items-center ${!(company && department && isTimeFilterSelected) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-100 text-black hover:bg-gray-300'}`}
+                    disabled={!(company && department && isTimeFilterSelected)}
                 >
                     <FileOutputIcon className="mr-2 h-4 w-4" />
                     匯出到 Excel

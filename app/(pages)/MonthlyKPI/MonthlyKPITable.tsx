@@ -54,7 +54,7 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
     const getPreviousMonthTitle = () => {
         if (!startMonth) {
             return "月份";
-        }    
+        }
         let previousMonth = parseInt(startMonth, 10) - 1;
         let displayMonth = previousMonth > 0 ? String(previousMonth).padStart(2, '0') : '12';
         return ` ${displayMonth} 月份`;
@@ -309,16 +309,16 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
     const handleExportToExcel = () => {
         try {
             const headerRow1 = [
-                "部門", "部門代碼", "廠", "剩餘換休未休時數", "", "借用臨時卡及忘刷卡查詢", "",
+                "部門", "廠處", "廠", "剩餘換休未休時數", "", "借用臨時卡及忘刷卡查詢", "",
                 "多次催辦案件查詢", "", "訓練計畫完成率", "", "加班未於事前填單異常次數", ""
             ];
 
             const headerRow2 = [
                 "", "", "", `${getPreviousMonthTitle()}`, `${getDynamicColumnTitle()}`,
-                "異常卡率", "全公司平均值",
-                "跟進異常率", "全公司平均值",
-                "訓練完成率", "全公司平均值",
-                "加班未於事前填單查詢", "全公司合計"
+                "廠處", "全公司平均值",
+                "廠處", "全公司平均值",
+                "廠處", "全公司平均值",
+                "廠處", "全公司合計"
             ];
 
             const excelData = [headerRow1, headerRow2];
@@ -465,7 +465,7 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
                             disabled={!company} // Vô hiệu hóa nếu chưa chọn công ty
                         />
                     </div> */}
-                    
+
                     {/* Dropdown để chọn bộ phận */}
                     {/* <Select
                         onValueChange={handleDepartmentChange}
@@ -626,18 +626,18 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
                                     <TableRow className="font-bold bg-gray-100 ">
                                         {/* <TableCell colSpan={3}>Total/Average for group/{groupKey}</TableCell> */}
 
-                                        <TableCell></TableCell>
-                                        <TableCell colSpan={2}> {groupKey} / 群組總計 / 平均 </TableCell>
-                                        <TableCell>{group.totals.ofF12REM.toFixed(2)}</TableCell>
-                                        <TableCell>{group.totals.ofF12REM_PREVIOUSYM.toFixed(2)}</TableCell>
+                                        <TableCell className="bg-gray-100"></TableCell>
+                                        <TableCell className="bg-gray-100" colSpan={2}> {groupKey} / 群組總計 / 平均 </TableCell>
+                                        <TableCell className="bg-gray-100">{group.totals.ofF12REM.toFixed(2)}</TableCell>
+                                        <TableCell className="bg-gray-100">{group.totals.ofF12REM_PREVIOUSYM.toFixed(2)}</TableCell>
                                         <TableCell className="font-bold bg-gray-100">{group.average.abnmormaL_CARD_RATE.toFixed(3)}%</TableCell> {/* Trung bình followuP_ABNMORMAL_RATE */}
-                                        <TableCell></TableCell>
+                                        <TableCell className="bg-gray-100"></TableCell>
                                         <TableCell className="font-bold bg-gray-100">{group.average.followuP_ABNMORMAL_RATE.toFixed(3)}%</TableCell> {/* Trung bình followuP_ABNMORMAL_RATE */}
-                                        <TableCell></TableCell>
+                                        <TableCell className="bg-gray-100"></TableCell>
                                         <TableCell className="font-bold bg-gray-100">{group.average.traininG_FINISHD_RATE.toFixed(3)}%</TableCell> {/* Trung bình traininG_FINISHD_RATE */}
-                                        <TableCell></TableCell>
-                                        <TableCell>{group.totals.overtimedutY_COUNT}</TableCell>
-                                        <TableCell></TableCell>
+                                        <TableCell className="bg-gray-100"></TableCell>
+                                        <TableCell className="bg-gray-100">{group.totals.overtimedutY_COUNT}</TableCell>
+                                        <TableCell className="bg-gray-100"></TableCell>
                                     </TableRow>
                                 </>
                             ))}

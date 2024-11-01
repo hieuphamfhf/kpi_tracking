@@ -17,7 +17,8 @@ export default function MonthlyKPIPage() {
     const firstDayFormatted = formatDateUTC(firstDay);
     // const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     // const lastDayFormatted = formatDateUTC(lastDay);
-    const [startYM, setstartYM] = useState<string>(firstDayFormatted.substring(1));
+    // const [startYM, setstartYM] = useState<string>(firstDayFormatted.substring(1));
+    const [startYM, setstartYM] = useState<string>(""); // Không đặt giá trị mặc định
     // const [endYM, setendYM] = useState<string>(lastDayFormatted.substring(1));
     const fetchData = async () => {
         try {

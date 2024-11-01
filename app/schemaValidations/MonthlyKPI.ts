@@ -15,6 +15,8 @@ export const MonthlyKPISchema = z.object({
     overtimedutY_COUNT: z.string(),     // 加班次數
     ofF12REM: z.string(),           // 剩餘可換休時數
     ofF12REM_PREVIOUSYM: z.string() // 前一月剩餘可換休時數
+    ,           // 剩餘可換休時數
+    dP1NM: z.string() // 前一月剩餘可換休時數
 })
 export const MonthlyKPIListRes = z.array(MonthlyKPISchema);
 export type MonthlyKPIListResType = z.TypeOf<typeof MonthlyKPIListRes>

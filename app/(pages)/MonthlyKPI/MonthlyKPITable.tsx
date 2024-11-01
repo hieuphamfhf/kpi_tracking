@@ -17,6 +17,7 @@ import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react"; // Import icon Search từ lucide-react
+import { useMemo } from "react";
 export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, onCompany, company }: {
     MonthlyKPI: MonthlyKPIListResType;
     onStartYM: (value: string) => void;
@@ -29,7 +30,7 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
     const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>([]);
     const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);
     const [department, setDepartment] = useState<string>(''); // Lưu giá trị mã bộ phận từ dropdown hoặc input
-    const [searchQuery, setSearchQuery] = useState<string>(''); // Lưu từ khóa tìm kiếm
+    const [searchQuery, setSearchQuery] = useState<string>('2'); // Lưu từ khóa tìm kiếm
     const isDatePickerDisabled = !(searchQuery || department); // Bộ lọc thời gian chỉ mở khi có giá trị trong ô tìm kiếm hoặc dropdown
     // const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
     // const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1).padStart(2, '0'));
@@ -45,10 +46,26 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
 
     const isTimeFilterSelected = startYear && startMonth; // Kiểm tra đã chọn đủ thời gian chưa
     const isExportDisabled = !(company && department && isTimeFilterSelected);
+    // Hàm tạo tiêu đề cột với tháng và năm đã chọn
+    const getDynamicColumnTitle = () => {
+        return ` ${startMonth} 月份`;
+    };
+
+    const getPreviousMonthTitle = () => {
+        if (!startMonth) {
+            return "月份";
+        }    
+        let previousMonth = parseInt(startMonth, 10) - 1;
+        let displayMonth = previousMonth > 0 ? String(previousMonth).padStart(2, '0') : '12';
+        return ` ${displayMonth} 月份`;
+    };
+
+
 
 
     // Fetch danh sách bộ phận từ API
     useEffect(() => {
+        handleSearch('2'); // Gọi hàm tìm kiếm với giá trị mặc định là "2"
         if (company) {
             fetchDepartmentsByCompany(); // Gọi hàm mà không truyền tham số vào
         }
@@ -69,6 +86,93 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
             console.error('Lỗi khi lấy danh sách bộ phận: ', error);
         }
     };
+
+    const groupedData = useMemo(() => {
+        // if (!MonthlyKPI) {
+        //     return {}; // Trả về một object rỗng nếu MonthlyKPI không tồn tại
+        // }
+        // tra ve mot cau truc mac dinh ngay cả khi MonthlyKPI không tồn tại, để tránh undefined.
+        if (!MonthlyKPI) {
+            return { groups: {}, overallAverage: { abnmormaL_CARD_RATE: 0, followuP_ABNMORMAL_RATE: 0, traininG_FINISHD_RATE: 0, sumOvertimeDutyCount: 0 } };
+        }
+
+        const groups = MonthlyKPI.reduce((acc, item) => {
+            const groupKey = item.dp[0]; // Nhóm theo ký tự đầu tiên của `dp`
+
+            if (!acc[groupKey]) {
+                acc[groupKey] = {
+                    items: [],
+                    totals: {
+                        ofF12REM: 0,
+                        ofF12REM_PREVIOUSYM: 0,
+                        abnmormaL_CARD_RATE: 0,
+                        followuP_ABNMORMAL_RATE: 0,
+                        traininG_FINISHD_RATE: 0,
+                        overtimedutY_COUNT: 0,
+                    },
+                    count: 0, // Đếm số lượng để tính trung bình
+                    average: {
+                        abnmormaL_CARD_RATE: 0,
+                        followuP_ABNMORMAL_RATE: 0,
+                        traininG_FINISHD_RATE: 0,
+                    },
+                };
+            }
+
+            // Thêm item vào nhóm
+            acc[groupKey].items.push(item);
+
+            // Cộng dồn các giá trị vào totals
+            acc[groupKey].totals.ofF12REM += parseFloat(item.ofF12REM) || 0;
+            acc[groupKey].totals.ofF12REM_PREVIOUSYM += parseFloat(item.ofF12REM_PREVIOUSYM) || 0;
+            acc[groupKey].totals.abnmormaL_CARD_RATE += parseFloat(item.abnmormaL_CARD_RATE) || 0;
+            acc[groupKey].totals.followuP_ABNMORMAL_RATE += parseFloat(item.followuP_ABNMORMAL_RATE) || 0;
+            acc[groupKey].totals.traininG_FINISHD_RATE += parseFloat(item.traininG_FINISHD_RATE) || 0;
+            acc[groupKey].totals.overtimedutY_COUNT += parseFloat(item.overtimedutY_COUNT) || 0;
+
+            // Tăng số lượng phần tử trong nhóm để tính trung bình sau
+            acc[groupKey].count += 1;
+
+            return acc;
+        }, {} as Record<string, { items: MonthlyKPIListResType; totals: Record<string, number>; count: number; average: Record<string, number> }>);
+        // Sắp xếp các mục trong từng nhóm theo `dp`
+        Object.keys(groups).forEach(groupKey => {
+            groups[groupKey].items.sort((a, b) => a.dp.localeCompare(b.dp));
+        });
+        // Tính trung bình tổng và tổng `overtimedutY_COUNT` cho tất cả các nhóm
+        Object.keys(groups).forEach(groupKey => {
+            const group = groups[groupKey];
+            group.average.abnmormaL_CARD_RATE = group.count > 0 ? group.totals.abnmormaL_CARD_RATE / group.count : 0;
+            group.average.followuP_ABNMORMAL_RATE = group.count > 0 ? group.totals.followuP_ABNMORMAL_RATE / group.count : 0;
+            group.average.traininG_FINISHD_RATE = group.count > 0 ? group.totals.traininG_FINISHD_RATE / group.count : 0;
+        });
+        // Tính trung bình tổng cho tất cả các nhóm
+        const overallAverage = {
+            abnmormaL_CARD_RATE: 0,
+            followuP_ABNMORMAL_RATE: 0,
+            traininG_FINISHD_RATE: 0,
+            sumOvertimeDutyCount: 0,
+        };
+        let groupCount = Object.keys(groups).length;
+        // Tính tổng trung bình của mỗi nhóm rồi chia cho số nhóm
+        overallAverage.abnmormaL_CARD_RATE = groupCount > 0
+            ? Object.values(groups).reduce((sum, group) => sum + group.average.abnmormaL_CARD_RATE, 0) / groupCount
+            : 0;
+        overallAverage.followuP_ABNMORMAL_RATE = groupCount > 0
+            ? Object.values(groups).reduce((sum, group) => sum + group.average.followuP_ABNMORMAL_RATE, 0) / groupCount
+            : 0;
+        overallAverage.traininG_FINISHD_RATE = groupCount > 0
+            ? Object.values(groups).reduce((sum, group) => sum + group.average.traininG_FINISHD_RATE, 0) / groupCount
+            : 0;
+        // Tính tổng `overtimedutY_COUNT` cho tất cả các nhóm
+        overallAverage.sumOvertimeDutyCount = Object.values(groups).reduce((sum, group) => sum + group.totals.overtimedutY_COUNT, 0);
+
+
+        return { groups, overallAverage };
+    }, [MonthlyKPI]);
+
+
+
     // Hàm xử lý nút hiển thị thời gian đã chọn
     const getSelectedDateRange = () => {
         if (startYear && startMonth) {
@@ -131,13 +235,15 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
             onCompany(''); // Reset công ty
             onDepartment(''); // Reset bộ phận
             setDepartment(''); // Xóa lựa chọn bộ phận
-            setSearchQuery(''); // Xóa từ khóa tìm kiếm
+            // setSearchQuery(''); // Xóa từ khóa tìm kiếm
+            setSearchQuery('2'); // Đặt lại `searchQuery` về "2" khi chọn công ty mới
             setFilteredDepartments([]); // Xóa danh sách bộ phận
         } else {
             onCompany(selectedCompany); // Cập nhật công ty đã chọn
             onDepartment(''); // Xóa bộ phận khi chọn công ty mới
             setDepartment(''); // Reset state bộ phận
-            setSearchQuery(''); // Reset state từ khóa tìm kiếm
+            setSearchQuery('2'); // Đặt lại `searchQuery` về "2" khi chọn công ty mới
+            // setSearchQuery(''); // Reset state từ khóa tìm kiếm
             fetchDepartmentsByCompany(); // Lấy bộ phận theo công ty đã chọn
         }
     };
@@ -203,64 +309,113 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
     const handleExportToExcel = () => {
         try {
             const headerRow1 = [
-                "公司", "部門", "部門名稱", "剩餘換休未休時數", "", "識別證異常率(借用臨時卡及忘刷卡查詢)", "", 
-                "文書催辦率(多次催辦案件查詢)", "", "訓練計畫完成率", "", "加班未於事前填單異常次數", ""
+                "部門", "部門代碼", "廠", "剩餘換休未休時數", "", "借用臨時卡及忘刷卡查詢", "",
+                "多次催辦案件查詢", "", "訓練計畫完成率", "", "加班未於事前填單異常次數", ""
             ];
-            
+
             const headerRow2 = [
-                "", "", "", "剩餘可換休時數_ofF12REM", "前一月剩餘可換休時數_ofF12REM_PREVIOUSYM",
-                "異常卡率_abnmormaL_CARD_RATE", "公司平均值", 
-                "跟進異常率_followuP_ABNMORMAL_RATE_", "公司平均值", 
-                "訓練完成率_traininG_FINISHD_RATE", "公司平均值", 
-                "加班未於事前填單查詢_overtimedutY_COUNT", "公司合計T"
+                "", "", "", `${getPreviousMonthTitle()}`, `${getDynamicColumnTitle()}`,
+                "異常卡率", "全公司平均值",
+                "跟進異常率", "全公司平均值",
+                "訓練完成率", "全公司平均值",
+                "加班未於事前填單查詢", "全公司合計"
             ];
-    
-            const data = MonthlyKPI?.map((item, index) => [
-                index + 1,
-                item.dp || '',
-                item.dpnm || '',
-                item.ofF12REM || '',
-                item.ofF12REM_PREVIOUSYM || '',
-                item.abnmormaL_CARD_RATE || '',
-                '',  
-                item.followuP_ABNMORMAL_RATE || '',
-                '',  
-                item.traininG_FINISHD_RATE || '',
-                '',  
-                item.overtimedutY_COUNT || '',
-                ''   
+
+            const excelData = [headerRow1, headerRow2];
+            // const mergeRanges = [];  // Lưu trữ các phạm vi ô cần hợp nhất
+            // Định nghĩa kiểu cho mergeRanges
+            const mergeRanges: XLSX.Range[] = []; // Lưu trữ các phạm vi ô cần hợp nhất
+
+            if (!groupedData.groups) {
+                return; // Thoát sớm nếu groupedData.groups là undefined
+            }
+
+            let currentRow = 2; // Bắt đầu từ hàng thứ ba sau hai hàng tiêu đề
+
+            Object.entries(groupedData.groups).forEach(([groupKey, group]) => {
+                // Hợp nhất các ô trong cột "部門" cho nhóm này
+                mergeRanges.push({
+                    s: { r: currentRow, c: 0 }, // Điểm bắt đầu hợp nhất
+                    e: { r: currentRow + group.items.length - 1, c: 0 } // Điểm kết thúc hợp nhất
+                });
+
+                group.items.forEach((item, index) => {
+                    excelData.push([
+                        index === 0 ? item.dP1NM : "",  // Chỉ điền tên nhóm ở hàng đầu tiên
+                        item.dp || '',
+                        item.dpnm || '',
+                        parseFloat(item.ofF12REM_PREVIOUSYM).toFixed(3) || '',
+                        parseFloat(item.ofF12REM).toFixed(3) || '',
+                        parseFloat(item.abnmormaL_CARD_RATE).toFixed(3) + '%' || '',
+                        groupedData.overallAverage.abnmormaL_CARD_RATE.toFixed(3) + '%',
+                        parseFloat(item.followuP_ABNMORMAL_RATE).toFixed(3) + '%' || '',
+                        groupedData.overallAverage.followuP_ABNMORMAL_RATE.toFixed(3) + '%',
+                        parseFloat(item.traininG_FINISHD_RATE).toFixed(3) + '%' || '',
+                        groupedData.overallAverage.traininG_FINISHD_RATE.toFixed(3) + '%',
+                        parseFloat(item.overtimedutY_COUNT).toFixed(0) || '',
+                        groupedData.overallAverage.sumOvertimeDutyCount.toFixed(0)
+                    ]);
+                    currentRow++;
+                });
+
+                // Thêm hàng "Total" cho từng nhóm
+                excelData.push([
+                    `${group.items[0].dP1NM} - ${groupKey} / 群組總計 / 平均`, "", "",
+                    group.totals.ofF12REM_PREVIOUSYM.toFixed(3),
+                    group.totals.ofF12REM.toFixed(3),
+                    group.average.abnmormaL_CARD_RATE.toFixed(3) + '%',
+                    "",
+                    group.average.followuP_ABNMORMAL_RATE.toFixed(3) + '%',
+                    "",
+                    group.average.traininG_FINISHD_RATE.toFixed(3) + '%',
+                    "",
+                    group.totals.overtimedutY_COUNT.toFixed(0),
+                    ""
+                ]);
+                currentRow++;
+            });
+
+            // Thêm hàng "Overall Average" vào cuối bảng
+            excelData.push([
+                "Overall Average", "", "",
+                "", "",
+                groupedData.overallAverage.abnmormaL_CARD_RATE.toFixed(3) + '%',
+                "",
+                groupedData.overallAverage.followuP_ABNMORMAL_RATE.toFixed(3) + '%',
+                "",
+                groupedData.overallAverage.traininG_FINISHD_RATE.toFixed(3) + '%',
+                "", "", ""
             ]);
-    
-            const wsData = [headerRow1, headerRow2, ...data];
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-    
+
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+            // Thêm các phạm vi hợp nhất vào sheet
             ws['!merges'] = [
-                { s: { r: 0, c: 3 }, e: { r: 0, c: 4 } }, 
+                ...mergeRanges,  // Hợp nhất các ô của `dP1NM` cho từng nhóm
+                { s: { r: 0, c: 3 }, e: { r: 0, c: 4 } },
                 { s: { r: 0, c: 5 }, e: { r: 0, c: 6 } },
                 { s: { r: 0, c: 7 }, e: { r: 0, c: 8 } },
                 { s: { r: 0, c: 9 }, e: { r: 0, c: 10 } },
                 { s: { r: 0, c: 11 }, e: { r: 0, c: 12 } }
             ];
-    
-            const refValue = ws['!ref'] || "A1";
-            const range = XLSX.utils.decode_range(refValue);
-    
+
             const headerCellStyle = {
                 font: { bold: true },
                 alignment: { horizontal: 'center', vertical: 'center' },
                 fill: { fgColor: { rgb: "FFFFAA00" } }
             };
-    
-            for (let row = 0; row <= 1; row++) {  
+
+            const range = XLSX.utils.decode_range(ws['!ref'] || "A1");
+            for (let row = 0; row <= 1; row++) {
                 for (let col = range.s.c; col <= range.e.c; col++) {
                     const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-                    if (!ws[cellAddress]) ws[cellAddress] = {};  
+                    if (!ws[cellAddress]) ws[cellAddress] = {};
                     ws[cellAddress].s = headerCellStyle;
                 }
             }
-    
+
             ws['!freeze'] = { xSplit: 0, ySplit: 2 };
-    
+
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "6_剩餘換休未休時數報表");
             XLSX.writeFile(wb, "6_剩餘換休未休時數報表.xlsx");
@@ -269,9 +424,9 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
             toast.error('匯出 Excel 時發生錯誤');
         }
     };
-    
-        
-    
+
+
+
 
 
     return (
@@ -294,12 +449,13 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
                         </SelectContent>
                     </Select>
                     {/* Ô nhập liệu tìm kiếm */}
-                    <div className="relative w-[200px]">
-                        {/* Icon tìm kiếm */}
+
+                    {/* <div className="relative w-[200px]">
+                        // Icon tìm kiếm
                         <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <Input
                             placeholder="輸入部門代號..."
-                            value={searchQuery}
+                            value={searchQuery} // Hiển thị giá trị hiện tại của `searchQuery`
                             onChange={(e) => {
                                 const upperCaseValue = e.target.value.toUpperCase(); // Chuyển thành chữ hoa ngay khi người dùng nhập
                                 setSearchQuery(upperCaseValue); // Cập nhật giá trị vào state
@@ -308,9 +464,10 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
                             className={`pr-8 pl-3 ${company && !department ? 'border-2 border-red-500' : ''}`} // Thêm padding-left cho icon
                             disabled={!company} // Vô hiệu hóa nếu chưa chọn công ty
                         />
-                    </div>
+                    </div> */}
+                    
                     {/* Dropdown để chọn bộ phận */}
-                    <Select
+                    {/* <Select
                         onValueChange={handleDepartmentChange}
                         value={department || ''} // Đồng bộ với state department
                         disabled={!company} // Vô hiệu hóa nếu chưa chọn công ty
@@ -327,8 +484,10 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
                                 ))}
                             </div>
                         </SelectContent>
-                    </Select>
+                    </Select> */}
+
                     {/* Dropdown để chọn khoảng thời gian */}
+
                     <Popover open={isPopoverOpen && !!company} // Chỉ mở Popover nếu có công ty
                         onOpenChange={(open) => setIsPopoverOpen(open)}>
                         <PopoverTrigger asChild>
@@ -398,58 +557,92 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
                         <TableHeader className="custom-table-header">
 
                             <TableRow>
-                                <TableHead className="w-16" rowSpan={2}>#</TableHead> {/* Cố định chiều rộng cho các cột */}
-                                <TableHead className="w-48" rowSpan={2}>部門_dp</TableHead>
-                                <TableHead className="w-48" rowSpan={2}>部門名稱_dpnm</TableHead>
+                                {/* <TableHead className="w-16" rowSpan={2}>#</TableHead> Cố định chiều rộng cho các cột */}
+                                <TableHead className="w-48" rowSpan={2}>部門</TableHead>
+
+                                <TableHead className="w-48" rowSpan={2}>廠處</TableHead>
+                                <TableHead className="w-48" rowSpan={2}>廠</TableHead>
                                 <TableHead colSpan={2} className="w-96 text-center">剩餘換休未休時數</TableHead> {/* Cột cha gộp hai cột con */}
-                                <TableHead colSpan={2} className="w-96 text-center">識別證異常率(借用臨時卡及忘刷卡查詢)</TableHead> {/* Cột cha gộp hai cột con */}
-                                <TableHead colSpan={2} className="w-96 text-center">文書催辦率(多次催辦案件查詢)</TableHead> {/* Cột cha gộp hai cột con */}
+                                <TableHead colSpan={2} className="w-96 text-center">識別證異常率</TableHead> {/* Cột cha gộp hai cột con */}
+                                <TableHead colSpan={2} className="w-96 text-center">文書案件催辦率</TableHead> {/* Cột cha gộp hai cột con */}
                                 <TableHead colSpan={2} className="w-96 text-center">訓練計畫完成率</TableHead> {/* Cột cha gộp hai cột con */}
                                 <TableHead colSpan={2} className="w-96 text-center">加班未於事前填單異常次數</TableHead> {/* Cột cha gộp hai cột con */}
 
                             </TableRow>
                             <TableRow>
-                                <TableHead className="w-48">剩餘可換休時數_ofF12REM</TableHead>
-                                <TableHead className="w-48">前一月剩餘可換休時數_ofF12REM_PREVIOUSYM</TableHead>
+                                {/* <TableHead className="w-48">剩餘可換休時數_ofF12REM</TableHead> */}
+                                <TableHead className="w-48">{getPreviousMonthTitle()}</TableHead>
+                                <TableHead className="w-48">{getDynamicColumnTitle()}</TableHead>
+
+                                {/* <TableHead className="w-48">前一月剩餘可換休時數_ofF12REM_PREVIOUSYM</TableHead> */}
                                 {/* CARD_RATE */}
-                                <TableHead className="w-48">異常卡率_abnmormaL_CARD_RATE</TableHead>
-                                <TableHead className="w-48">公司平均值</TableHead>
+                                <TableHead className="w-48">廠處</TableHead>
+                                <TableHead className="w-48">全公司平均值</TableHead>
                                 {/* followuP */}
-                                <TableHead className="w-48">跟進異常率_followuP_ABNMORMAL_RATE_</TableHead>
-                                <TableHead className="w-48">公司平均值</TableHead>
+                                <TableHead className="w-48">廠處</TableHead>
+                                <TableHead className="w-48">全公司平均值</TableHead>
                                 {/* traininG */}
-                                <TableHead className="w-48">訓練完成率_traininG_FINISHD_RATE</TableHead>
-                                <TableHead className="w-48">公司平均值</TableHead>
+                                <TableHead className="w-48">廠處</TableHead>
+                                <TableHead className="w-48">全公司平均值</TableHead>
                                 {/* overtimedutY */}
-                                <TableHead className="w-48">加班未於事前填單查詢_overtimedutY_COUNT</TableHead>
-                                <TableHead className="w-48">公司合計T</TableHead>
+                                <TableHead className="w-48">廠處</TableHead>
+                                <TableHead className="w-48">全公司合计</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody className="custom-table-body">
-                            {MonthlyKPI?.map((item, index) => (
-                                <TableRow key={`${item.co}-${item.dp}`}>
-                                    <TableCell>{index + 1}</TableCell> {/* Display row index */}
-                                    {/* <TableCell>{item.co}</TableCell> */}
-                                    <TableCell>{item.dp}</TableCell>
-                                    <TableCell>{item.dpnm}</TableCell>
-                                    <TableCell>{item.ofF12REM}</TableCell>
-                                    <TableCell>{item.ofF12REM_PREVIOUSYM}</TableCell>
-                                    <TableCell>{item.abnmormaL_CARD_RATE}</TableCell>
-                                    <TableCell>{ }</TableCell>
-                                    <TableCell>{item.followuP_ABNMORMAL_RATE}</TableCell>
-                                    <TableCell>{ }</TableCell>
+                            {groupedData.groups && Object.entries(groupedData.groups).map(([groupKey, group]) => (
+                                <>
+                                    {group.items.map((item, index) => (
+                                        <TableRow key={`${item.co}-${item.dp}`} >
+                                            {/* <TableCell>{index + 1}</TableCell> */}
+                                            {/* <TableCell>{item.dP1NM}</TableCell> Hiển thị dP1NM */}
+                                            {/* Gộp ô dP1NM cho nhóm, chỉ hiển thị ở dòng đầu tiên */}
+                                            {index === 0 && (
+                                                <TableCell rowSpan={group.items.length}>{item.dP1NM}</TableCell>
+                                            )}
+                                            <TableCell>{item.dp}</TableCell>
+                                            <TableCell>{item.dpnm}</TableCell>
+                                            <TableCell>{parseFloat(item.ofF12REM_PREVIOUSYM).toFixed(3)}</TableCell>
+                                            <TableCell>{parseFloat(item.ofF12REM).toFixed(3)}</TableCell>
 
-                                    <TableCell>{item.traininG_FINISHD_RATE}</TableCell>
-                                    <TableCell>{ }</TableCell>
-                                    {/* overtimedutY */}
-                                    <TableCell>{item.overtimedutY_COUNT}</TableCell>
-                                    <TableCell>{ }</TableCell>
-                                    {/* Thêm ký tự `%` cho trường `abnmormaL_CARD_RATE` */}
-                                    {/* <TableCell>{`${parseFloat(item.abnmormaL_CARD_RATE).toFixed(2)}%`}</TableCell> */}
-                                    {/* <TableCell>{item.abnmormaL_CARD_RATE}</TableCell> */}
-                                </TableRow>
+
+                                            {/* <TableCell>{item.abnmormaL_CARD_RATE}</TableCell> */}
+                                            {/* Hiển thị abnmormaL_CARD_RATE trực tiếp kèm ký hiệu % */}
+                                            <TableCell>{parseFloat(item.abnmormaL_CARD_RATE).toFixed(3)}%</TableCell>
+                                            <TableCell className="font-bold bg-gray-100">{groupedData.overallAverage.abnmormaL_CARD_RATE.toFixed(3)}%</TableCell>  {/* Trung bình abnmormaL_CARD_RATE */}
+                                            {/* <TableCell></TableCell> */}
+                                            <TableCell>{parseFloat(item.followuP_ABNMORMAL_RATE).toFixed(3)}%</TableCell>
+                                            <TableCell className="font-bold bg-gray-100"><TableCell>{groupedData.overallAverage.followuP_ABNMORMAL_RATE.toFixed(3)}%</TableCell></TableCell> {/* Trung bình followuP_ABNMORMAL_RATE */}
+                                            {/* <TableCell></TableCell> */}
+                                            <TableCell>{parseFloat(item.traininG_FINISHD_RATE).toFixed(3)}%</TableCell>
+                                            <TableCell className="font-bold bg-gray-100">{groupedData.overallAverage.traininG_FINISHD_RATE.toFixed(3)}%</TableCell> {/* Trung bình traininG_FINISHD_RATE */}
+                                            {/* <TableCell></TableCell> */}
+                                            <TableCell>{item.overtimedutY_COUNT}</TableCell>
+                                            <TableCell className="font-bold bg-gray-100">{groupedData.overallAverage.sumOvertimeDutyCount}</TableCell> {/* Tổng overtimedutY_COUNT */}
+                                            {/* <TableCell></TableCell> */}
+                                        </TableRow>
+                                    ))}
+                                    {/* Hàng Total cho nhóm */}
+                                    <TableRow className="font-bold bg-gray-100 ">
+                                        {/* <TableCell colSpan={3}>Total/Average for group/{groupKey}</TableCell> */}
+
+                                        <TableCell></TableCell>
+                                        <TableCell colSpan={2}> {groupKey} / 群組總計 / 平均 </TableCell>
+                                        <TableCell>{group.totals.ofF12REM.toFixed(2)}</TableCell>
+                                        <TableCell>{group.totals.ofF12REM_PREVIOUSYM.toFixed(2)}</TableCell>
+                                        <TableCell className="font-bold bg-gray-100">{group.average.abnmormaL_CARD_RATE.toFixed(3)}%</TableCell> {/* Trung bình followuP_ABNMORMAL_RATE */}
+                                        <TableCell></TableCell>
+                                        <TableCell className="font-bold bg-gray-100">{group.average.followuP_ABNMORMAL_RATE.toFixed(3)}%</TableCell> {/* Trung bình followuP_ABNMORMAL_RATE */}
+                                        <TableCell></TableCell>
+                                        <TableCell className="font-bold bg-gray-100">{group.average.traininG_FINISHD_RATE.toFixed(3)}%</TableCell> {/* Trung bình traininG_FINISHD_RATE */}
+                                        <TableCell></TableCell>
+                                        <TableCell>{group.totals.overtimedutY_COUNT}</TableCell>
+                                        <TableCell></TableCell>
+                                    </TableRow>
+                                </>
                             ))}
                         </TableBody>
+
 
                     </Table>
                 </div>

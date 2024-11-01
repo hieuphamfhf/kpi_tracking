@@ -79,9 +79,17 @@ tr:nth-child(odd) {
 .custom-table-header th:last-child,
 .custom-table-body td:last-child {
   border-right: none;
+  border-bottom: none;
 }
 
 /* Đường kẻ phân cách cho hàng cuối cùng */
 .custom-table-body tr:last-child td {
   border-bottom: none; /* Xóa đường viền cuối cùng để trông gọn gàng hơn */
 }
+
+
+.custom-table-body .group-total-row {
+  background-color: #e0e0e0; /* Màu nền khác biệt cho hàng tổng kết nhóm */
+  font-weight: bold;
+}
+

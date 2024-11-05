@@ -1,122 +1,108 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useEffect } from 'react';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Search } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DateRange } from "react-day-picker";
-import { format } from 'date-fns';
+import { endOfMonth, startOfMonth, format } from 'date-fns';
 
-type Department = {
-    dp: string;
-    dpnm: string;
+// Định nghĩa kiểu cho các props
+type FilterSectionProps = {
+    onCompany: (value: string) => void;
+    onDepartment: (value: string) => void;
+    onStartDate: (value: string) => void;
+    onEndDate: (value: string) => void;
+    companyList: { value: string; label: string }[];
+    departmentList: { dp: string; dpnm: string }[];
 };
 
-interface FilterSectionProps {
-    company: string;
-    department: string;
-    date: DateRange | undefined;
-    searchQuery: string;
-    isCompanySelected: boolean;
-    filteredDepartments: Department[];
+export default function FilterSection({
+    onCompany,
+    onDepartment,
+    onStartDate,
+    onEndDate,
+    companyList,
+    departmentList
+}: FilterSectionProps) {
+    const [date, setDate] = useState<DateRange | undefined>({
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
+    });
+    const [company, setCompany] = useState<string>('');
+    const [department, setDepartment] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState<string>('');
 
-    onCompanyChange: (value: string) => void;
-    onDepartmentChange: (value: string) => void;
-    onDateSelect: (value: DateRange | undefined) => void;
-    onSearchChange: (value: string) => void;
-}
+    const handleCompanyChange = (selectedCompany: string) => {
+        setCompany(selectedCompany);
+        onCompany(selectedCompany);
+        setDepartment(''); // Reset department when company changes
+    };
 
-const FilterSection: React.FC<FilterSectionProps> = ({
-    company,
-    department,
-    date,
-    searchQuery,
-    isCompanySelected,
-    filteredDepartments,
-    onCompanyChange,
-    onDepartmentChange,
-    onDateSelect,
-    onSearchChange,
-}) => {
+    const handleDepartmentChange = (value: string) => {
+        setDepartment(value);
+        onDepartment(value);
+    };
+
+    const handleDateSelect = (newDate: DateRange | undefined) => {
+        setDate(newDate);
+        if (newDate?.from) onStartDate(format(newDate.from, "yyyyMMdd"));
+        if (newDate?.to) onEndDate(format(newDate.to, "yyyyMMdd"));
+    };
+
     return (
         <div className="flex gap-5">
-            {/* Dropdown để chọn công ty */}
-            <Select onValueChange={onCompanyChange}>
-                <SelectTrigger className="w-[150px] ">
+            {/* Company Select */}
+            <Select onValueChange={handleCompanyChange}>
+                <SelectTrigger className="w-[150px]">
                     <SelectValue placeholder="--選擇公司--" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem key="lg" value="LG">LG</SelectItem>
-                    <SelectItem key="OD" value="OD">OD</SelectItem>
-                    <SelectItem key="LT" value="LT">LT</SelectItem>
+                    {companyList.map((comp) => (
+                        <SelectItem key={comp.value} value={comp.value}>{comp.label}</SelectItem>
+                    ))}
                 </SelectContent>
             </Select>
 
-            {/* Dropdown để chọn khoảng thời gian */}
+            {/* Date Range Picker */}
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button
-                        id="date"
-                        variant={"outline"}
-                        className={`w-[200px] justify-start text-left font-normal ${!date ? 'text-muted-foreground' : ''}`}
-                        disabled={!isCompanySelected} // Vô hiệu hóa khi chưa chọn công ty
-                    >
+                    <Button className="w-[200px]">
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date?.from ? (
-                            date.to ? (
-                                <>
-                                    {format(date.from, "yyyy-MM-dd")} - {format(date.to, "yyyy-MM-dd")}
-                                </>
-                            ) : (
-                                format(date.from, "yyyy-MM-dd")
-                            )
-                        ) : (
-                            <span>Pick a date</span>
-                        )}
+                        {date?.from && date?.to ? `${format(date.from, "yyyy-MM-dd")} - ${format(date.to, "yyyy-MM-dd")}` : 'Pick a date'}
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={date?.from}
-                        selected={date}
-                        onSelect={onDateSelect}
-                        numberOfMonths={2}
-                    />
+                <PopoverContent>
+                    <Calendar mode="range" selected={date} onSelect={handleDateSelect} />
                 </PopoverContent>
             </Popover>
 
-            {/* Ô nhập liệu tìm kiếm */}
-            <div className="relative w-[200px]">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                    placeholder="輸入部門代號..."
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value.toUpperCase())}
-                    className="pr-8 pl-3"
-                    disabled={!isCompanySelected}
-                />
-            </div>
-
-            {/* Dropdown để chọn bộ phận */}
-            <Select onValueChange={onDepartmentChange} value={department || ''} disabled={!isCompanySelected}>
+            {/* Department Search */}
+            <Input
+                placeholder="輸入部門代號..."
+                value={searchQuery}
+                onChange={(e) => {
+                    const upperCaseValue = e.target.value.toUpperCase();
+                    setSearchQuery(upperCaseValue);
+                    onDepartment(upperCaseValue);
+                }}
+                className="w-[200px]"
+            />
+            
+            {/* Department Dropdown */}
+            <Select onValueChange={handleDepartmentChange} value={department}>
                 <SelectTrigger className="w-[300px]">
-                    <SelectValue placeholder={company ? "--選擇部門--" : "請先選擇公司"} />
+                    <SelectValue placeholder="--選擇部門--" />
                 </SelectTrigger>
-                <SelectContent className="max-h-64">
-                    <div className="max-h-48 overflow-y-auto">
-                        {filteredDepartments.map((item, index) => (
-                            <SelectItem key={index} value={item.dp}>
-                                {item.dpnm} - {item.dp}
-                            </SelectItem>
-                        ))}
-                    </div>
+                <SelectContent>
+                    {departmentList.map((dept) => (
+                        <SelectItem key={dept.dp} value={dept.dp}>
+                            {dept.dpnm} - {dept.dp}
+                        </SelectItem>
+                    ))}
                 </SelectContent>
             </Select>
         </div>
     );
-};
-
-export default FilterSection;
+}

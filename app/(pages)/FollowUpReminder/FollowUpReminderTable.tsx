@@ -16,6 +16,7 @@ import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react"; // Import icon Search từ lucide-react
+import { exportToExcel } from  "@/components/excelExportService";
 export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, onEndDate, onDepartment, onCompany, company }: {
     FollowUpReminder: FollowUpReminderListResType;
     onStartDate: (value: string) => void;
@@ -134,53 +135,75 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
         }
     };
 
+    // const handleExportToExcel = () => {
+    //     try {
+    //         const headers = {
+    //             co: '公司',
+    //             dp: '部門代號',
+    //             dpnm: '部門名稱',
+    //             empid: 'VNW帳號',
+    //             nm: '姓名',
+    //             cptopnm: '案件名稱',
+    //             newdutid: '新職務代號',
+    //             newdutnm: '新職務名稱',
+    //             vhno: '案件編號',
+    //             kd: '類別',
+    //             sumr: '摘要',
+    //             cnt: '催辦次數',
+    //             foldat: '催辦日',
+    //             cancdat: '銷案日',
+    //         };
+
+    //         const dataWithChineseHeaders = FollowUpReminder.map(item => ({
+    //             [headers.co]: item.co,
+    //             [headers.dp]: item.dp,
+    //             [headers.dpnm]: item.dpnm,
+    //             [headers.empid]: item.empid,
+    //             [headers.nm]: item.nm,
+    //             [headers.cptopnm]: item.cptopnm,
+    //             [headers.newdutid]: item.newdutid,
+    //             [headers.newdutnm]: item.newdutnm,
+    //             [headers.vhno]: item.vhno,
+    //             [headers.kd]: item.kd,
+    //             [headers.sumr]: item.sumr,
+    //             [headers.cnt]: item.cnt,
+    //             [headers.foldat]: item.foldat,
+    //             [headers.cancdat]: item.cancdat,
+    //         }));
+
+    //         const ws = XLSX.utils.json_to_sheet(dataWithChineseHeaders);
+    //         const wb = XLSX.utils.book_new();
+    //         XLSX.utils.book_append_sheet(wb, ws, "多次催辦案件查詢");
+    //         XLSX.writeFile(wb, "3.1催辦表.xlsx");
+
+    //         toast.success('匯出 Excel 成功!');
+    //     } catch (error) {
+    //         toast.error('匯出 Excel 時發生錯誤');
+    //     }
+    // };
+
+
     const handleExportToExcel = () => {
-        try {
-            const headers = {
-                co: '公司',
-                dp: '部門代號',
-                dpnm: '部門名稱',
-                empid: 'VNW帳號',
-                nm: '姓名',
-                cptopnm: '案件名稱',
-                newdutid: '新職務代號',
-                newdutnm: '新職務名稱',
-                vhno: '案件編號',
-                kd: '類別',
-                sumr: '摘要',
-                cnt: '催辦次數',
-                foldat: '催辦日',
-                cancdat: '銷案日',
-            };
-
-            const dataWithChineseHeaders = FollowUpReminder.map(item => ({
-                [headers.co]: item.co,
-                [headers.dp]: item.dp,
-                [headers.dpnm]: item.dpnm,
-                [headers.empid]: item.empid,
-                [headers.nm]: item.nm,
-                [headers.cptopnm]: item.cptopnm,
-                [headers.newdutid]: item.newdutid,
-                [headers.newdutnm]: item.newdutnm,
-                [headers.vhno]: item.vhno,
-                [headers.kd]: item.kd,
-                [headers.sumr]: item.sumr,
-                [headers.cnt]: item.cnt,
-                [headers.foldat]: item.foldat,
-                [headers.cancdat]: item.cancdat,
-            }));
-
-            const ws = XLSX.utils.json_to_sheet(dataWithChineseHeaders);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "多次催辦案件查詢");
-            XLSX.writeFile(wb, "3.1催辦表.xlsx");
-
-            toast.success('匯出 Excel 成功!');
-        } catch (error) {
-            toast.error('匯出 Excel 時發生錯誤');
-        }
+        const headers = {
+              // Định nghĩa tiêu đề cột cho từng trường hợp cụ thể
+            co: '公司',
+            dp: '部門代號',
+            dpnm: '部門名稱',
+            empid: 'VNW帳號',
+            nm: '姓名',
+            cptopnm: '案件名稱',
+            newdutid: '新職務代號',
+            newdutnm: '新職務名稱',
+            vhno: '案件編號',
+            kd: '類別',
+            sumr: '摘要',
+            cnt: '催辦次數',
+            foldat: '催辦日',
+            cancdat: '銷案日',
+        };
+    
+        exportToExcel(FollowUpReminder, headers, "多次催辦案件查詢");
     };
-
     return (
         <>
             <div className="flex items-center py-2 justify-between">

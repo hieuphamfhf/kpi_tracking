@@ -385,14 +385,11 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
                         </SelectContent>
                     </Select>
                 </div>
-                <Button
-                    onClick={handleExportToExcel}
-                    className={`py-2 px-4 transition-colors duration-200 flex items-center ${!(company && department && isTimeFilterSelected) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-100 text-black hover:bg-gray-300'}`}
-                    disabled={!(company && department && isTimeFilterSelected)}
-                >
-                    <FileOutputIcon className="mr-2 h-4 w-4" />
+                <Button onClick={handleExportToExcel} className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center"
+                    disabled={!isCompanySelected} >
+                    <FileOutputIcon className="mr-2 h-4 w-4" /> {/* Thêm biểu tượng bảng tính */}
                     匯出到 Excel
-                </Button>
+                </Button> {/* Export Button */}
 
                 <Toaster position="bottom-right" reverseOrder={false} />
             </div>

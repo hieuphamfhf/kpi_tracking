@@ -309,7 +309,7 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
     const handleExportToExcel = () => {
         try {
             const headerRow1 = [
-                "部門", "廠處", "廠", "剩餘換休未休時數", "", "借用臨時卡及忘刷卡查詢", "",
+                "部門", "廠處代碼", "廠", "剩餘換休未休時數", "", "借用臨時卡及忘刷卡查詢", "",
                 "多次催辦案件查詢", "", "訓練計畫完成率", "", "加班未於事前填單異常次數", ""
             ];
 
@@ -560,7 +560,7 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
                                 {/* <TableHead className="w-16" rowSpan={2}>#</TableHead> Cố định chiều rộng cho các cột */}
                                 <TableHead className="w-48" rowSpan={2}>部門</TableHead>
 
-                                <TableHead className="w-48" rowSpan={2}>廠處</TableHead>
+                                <TableHead className="w-48" rowSpan={2}>廠處代碼</TableHead>
                                 <TableHead className="w-48" rowSpan={2}>廠</TableHead>
                                 <TableHead colSpan={2} className="w-96 text-center">剩餘換休未休時數</TableHead> {/* Cột cha gộp hai cột con */}
                                 <TableHead colSpan={2} className="w-96 text-center">識別證異常率</TableHead> {/* Cột cha gộp hai cột con */}
@@ -628,8 +628,8 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
 
                                         <TableCell className="bg-gray-100"></TableCell>
                                         <TableCell className="bg-gray-100" colSpan={2}> {groupKey} / 群組總計 / 平均 </TableCell>
-                                        <TableCell className="bg-gray-100">{group.totals.ofF12REM.toFixed(2)}</TableCell>
                                         <TableCell className="bg-gray-100">{group.totals.ofF12REM_PREVIOUSYM.toFixed(2)}</TableCell>
+                                        <TableCell className="bg-gray-100">{group.totals.ofF12REM.toFixed(2)}</TableCell>
                                         <TableCell className="font-bold bg-gray-100">{group.average.abnmormaL_CARD_RATE.toFixed(3)}%</TableCell> {/* Trung bình followuP_ABNMORMAL_RATE */}
                                         <TableCell className="bg-gray-100"></TableCell>
                                         <TableCell className="font-bold bg-gray-100">{group.average.followuP_ABNMORMAL_RATE.toFixed(3)}%</TableCell> {/* Trung bình followuP_ABNMORMAL_RATE */}

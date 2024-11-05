@@ -29,7 +29,7 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
     const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);
     const [department, setDepartment] = useState<string>(''); // Lưu giá trị mã bộ phận từ dropdown hoặc input
     const [searchQuery, setSearchQuery] = useState<string>(''); // Lưu từ khóa tìm kiếm
-    const isDatePickerDisabled = !(searchQuery || department); // Bộ lọc thời gian chỉ mở khi có giá trị trong ô tìm kiếm hoặc dropdown
+
     // const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
     // const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1).padStart(2, '0'));
     const [selectedYear, setSelectedYear] = useState<string>(""); // Không có giá trị mặc định cho năm
@@ -44,7 +44,9 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
 
     const isTimeFilterSelected = startYear && startMonth && endYear && endMonth; // Kiểm tra đã chọn đủ thời gian chưa
     const isExportDisabled = !(company && department && isTimeFilterSelected);
-
+    // const isDatePickerDisabled = !(searchQuery || department); // Bộ lọc thời gian chỉ mở khi có giá trị trong ô tìm kiếm hoặc dropdown
+    const isDatePickerDisabled = false; // Để bộ chọn ngày luôn hoạt động
+    const isCompanySelected = !!company; // Biến kiểm tra nếu công ty đã được chọn
 
     // Fetch danh sách bộ phận từ API
     useEffect(() => {
@@ -254,7 +256,6 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
         <>
             <div className="flex items-center py-2 justify-between">
                 <div className="flex gap-5">
-
                     {/* Dropdown để chọn công ty */}
                     <Select
                         onValueChange={handleCompanyChange}
@@ -269,49 +270,15 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
                             <SelectItem key="LT" value="LT">LT</SelectItem>
                         </SelectContent>
                     </Select>
-                    {/* Ô nhập liệu tìm kiếm */}
-                    <div className="relative w-[200px]">
-                        {/* Icon tìm kiếm */}
-                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <Input
-                            placeholder="輸入部門代號..."
-                            value={searchQuery}
-                            onChange={(e) => {
-                                const upperCaseValue = e.target.value.toUpperCase(); // Chuyển thành chữ hoa ngay khi người dùng nhập
-                                setSearchQuery(upperCaseValue); // Cập nhật giá trị vào state
-                                handleSearch(upperCaseValue);  // Gọi hàm tìm kiếm với giá trị đã chuyển đổi
-                            }}
-                            className={`pr-8 pl-3 ${company && !department ? 'border-2 border-red-500' : ''}`} // Thêm padding-left cho icon
-                            disabled={!company} // Vô hiệu hóa nếu chưa chọn công ty
-                        />
-                    </div>
-                    {/* Dropdown để chọn bộ phận */}
-                    <Select
-                        onValueChange={handleDepartmentChange}
-                        value={department || ''} // Đồng bộ với state department
-                        disabled={!company} // Vô hiệu hóa nếu chưa chọn công ty
-                    >
-                        <SelectTrigger className={`w-[300px] ${company && !department ? 'border-2 border-red-500' : ''}`}>
-                            <SelectValue placeholder={company ? "--選擇部門--" : "請先選擇公司"} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-64">
-                            <div className="max-h-48 overflow-y-auto">
-                                {filteredDepartments?.map((item, index) => (
-                                    <SelectItem key={index} value={item.dp}>
-                                        {item.dpnm} - {item.dp}
-                                    </SelectItem>
-                                ))}
-                            </div>
-                        </SelectContent>
-                    </Select>
                     {/* Dropdown để chọn khoảng thời gian */}
                     <Popover open={isPopoverOpen && !!company} // Chỉ mở Popover nếu có công ty
                         onOpenChange={(open) => setIsPopoverOpen(open)}>
                         <PopoverTrigger asChild>
                             <Button
                                 disabled={!company} // Vô hiệu hóa nút khi chưa chọn công ty
-                                className={`w-[200px] py-2 px-4 flex items-center transition-colors duration-200 bg-gray-100 text-black hover:bg-gray-300 ${company && !isTimeFilterSelected ? 'border-2 border-red-500' : ''
-                                    } ${!company ? 'cursor-not-allowed' : ''}`}
+                                // className={`w-[200px] py-2 px-4 flex items-center transition-colors duration-200 bg-gray-100 text-black hover:bg-gray-300 ${company && !isTimeFilterSelected ? 'border-2 border-red-500' : ''
+                                //     } ${!company ? 'cursor-not-allowed' : ''}`}
+                                className="w-[200px] py-2 px-4 flex items-center transition-colors duration-200 bg-gray-100 text-black hover:bg-gray-300"
                             >
                                 {getSelectedDateRange()}
                                 <CalendarRangeIcon className="ml-2 h-5 w-5" /> {/* Icon đồng hồ bên trái */}
@@ -321,7 +288,7 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
                         <PopoverContent>
                             {/* Nhóm thời gian bắt đầu */}
                             <div className="mb-4">
-                                <p className="font-semibold">開始時間</p>
+                                <p className="font-semibold">從</p>
                                 <div className="flex gap-2">
                                     <Select onValueChange={handleStartYearChange} value={startYear}>
                                         <SelectTrigger className="w-[100px]">
@@ -352,7 +319,7 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
 
                             {/* Nhóm thời gian kết thúc */}
                             <div className="mb-4">
-                                <p className="font-semibold">結束時間</p>
+                                <p className="font-semibold">到</p>
                                 <div className="flex gap-2">
                                     <Select onValueChange={handleEndYearChange} value={endYear}>
                                         <SelectTrigger className="w-[100px]">
@@ -382,7 +349,41 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
                             </div>
                         </PopoverContent>
                     </Popover>
-
+                    {/* Ô nhập liệu tìm kiếm */}
+                    <div className="relative w-[200px]">
+                        {/* Icon tìm kiếm */}
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Input
+                            placeholder="輸入部門代號..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                                const upperCaseValue = e.target.value.toUpperCase(); // Chuyển thành chữ hoa ngay khi người dùng nhập
+                                setSearchQuery(upperCaseValue); // Cập nhật giá trị vào state
+                                handleSearch(upperCaseValue);  // Gọi hàm tìm kiếm với giá trị đã chuyển đổi
+                            }}
+                            className="pr-8 pl-3"
+                            disabled={!isCompanySelected} // Vô hiệu hóa khi chưa chọn công ty
+                        />
+                    </div>
+                    {/* Dropdown để chọn bộ phận */}
+                    <Select
+                        onValueChange={handleDepartmentChange}
+                        value={department || ''} // Đồng bộ với state department
+                        disabled={!isCompanySelected} // Vô hiệu hóa khi chưa chọn công ty
+                    >
+                        <SelectTrigger className="w-[300px]">
+                            <SelectValue placeholder={company ? "--選擇部門--" : "請先選擇公司"} />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-64">
+                            <div className="max-h-48 overflow-y-auto">
+                                {filteredDepartments?.map((item, index) => (
+                                    <SelectItem key={index} value={item.dp}>
+                                        {item.dpnm} - {item.dp}
+                                    </SelectItem>
+                                ))}
+                            </div>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <Button
                     onClick={handleExportToExcel}
@@ -395,9 +396,9 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
 
                 <Toaster position="bottom-right" reverseOrder={false} />
             </div>
-            <ScrollArea className={`w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border 
-    ${(company && company !== 'ALL' && !department) ? 'opacity-50 pointer-events-none' : ''}`}>
-
+            {/* <ScrollArea className={`w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border 
+    ${(company && company !== 'ALL' && !department) ? 'opacity-50 pointer-events-none' : ''}`}> */}
+            <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
                     <Table className="table-auto whitespace-nowrap">
                         <TableHeader className="custom-table-header">

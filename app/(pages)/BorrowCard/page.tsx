@@ -19,48 +19,28 @@ export default function BorrowCardPage() {
     const lastDayFormatted = formatDateUTC(lastDay);
     const [startDate, setStartDate] = useState<string>(firstDayFormatted.substring(1));
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
+   
     const fetchData = async () => {
+        if (!co) { // Kiểm tra xem công ty đã được chọn chưa
+            console.warn("Vui lòng chọn công ty trước khi lọc dữ liệu.");
+            return;
+        }
+    
         try {
-            // Nếu cả công ty và bộ phận đều để trống, chỉ lọc theo thời gian
-            if (!co && !department) {
-                if (!BorrowCard || BorrowCard.length === 0) { // Chỉ log nếu chưa có dữ liệu trước đó
-                    console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
-                }
-
-                const queryParams = {
-                    co: '',
-                    department: '',
-                    startDate: startDate || '',
-                    endDate: endDate || '',
-                };
-
-                const { payload } = await BorrowCardApiRequest.getList(queryParams);
-                console.log('Dữ liệu nhận được từ API (lọc theo thời gian):', payload);
-                setBorrowCard(payload);
-                return;
-            }
-
-            // Kiểm tra nếu cả công ty và bộ phận đều được chọn
-            if (co && department) {
-                const queryParams = {
-                    co: co,
-                    department: department,
-                    startDate: startDate || '',
-                    endDate: endDate || '',
-                };
-
-                console.log('Gửi yêu cầu đến API với các tham số:', queryParams);
-                const { payload } = await BorrowCardApiRequest.getList(queryParams);
-                console.log('Dữ liệu nhận được từ API:', payload);
-                setBorrowCard(payload);
-            } else {
-                console.warn('Vui lòng chọn cả công ty và bộ phận để lọc chính xác.');
-            }
+            const queryParams = {
+                co: co || '',  // Chỉ cho phép giá trị đã chọn
+                department: department || '', // Cho phép bộ phận rỗng
+                startDate: startDate || '',
+                endDate: endDate || '',
+            };
+    
+            const { payload } = await BorrowCardApiRequest.getList(queryParams);
+            console.log('Dữ liệu nhận được từ API:', payload);
+            setBorrowCard(payload);
         } catch (error) {
             console.error('Lỗi khi lấy dữ liệu:', error);
         }
     };
-
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
             setCo(''); // Đặt giá trị rỗng để chỉ ra rằng không có công ty nào được chọn
@@ -75,11 +55,9 @@ export default function BorrowCardPage() {
     };
 
     useEffect(() => {
-        // Kiểm tra nếu tất cả các bộ lọc bị bỏ trống thì chỉ lọc theo thời gian
-        if (!co && !department) {
-            console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
+        if (co) { // Chỉ gọi API nếu công ty đã được chọn
+            fetchData();
         }
-        fetchData();
     }, [co, department, startDate, endDate]);
 
     return (

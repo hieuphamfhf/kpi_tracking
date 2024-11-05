@@ -20,46 +20,68 @@ export default function ReamingLeaveTimePage() {
     const [startYM, setstartYM] = useState<string>(firstDayFormatted.substring(1));
     const [endYM, setendYM] = useState<string>(lastDayFormatted.substring(1));
     const fetchData = async () => {
+        if (!co) { // Kiểm tra xem công ty đã được chọn chưa
+            console.warn("Vui lòng chọn công ty trước khi lọc dữ liệu.");
+            return;
+        }
+    
         try {
-            // Nếu cả công ty và bộ phận đều để trống, chỉ lọc theo thời gian
-            if (!co && !department) {
-                if (!ReamingLeaveTime || ReamingLeaveTime.length === 0) { // Chỉ log nếu chưa có dữ liệu trước đó
-                    console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
-                }
-
-                const queryParams = {
-                    co: '',
-                    department: '',
-                    startYM: startYM || '',
+            const queryParams = {
+                co: co || '',  // Chỉ cho phép giá trị đã chọn
+                department: department || '', // Cho phép bộ phận rỗng
+                startYM: startYM || '',
                     endYM: endYM || '',
-                };
-
-                const { payload } = await ReamingLeaveTimeApiRequest.getList(queryParams);
-                console.log('Dữ liệu nhận được từ API (lọc theo thời gian):', payload);
-                setReamingLeaveTime(payload);
-                return;
-            }
-
-            // Kiểm tra nếu cả công ty và bộ phận đều được chọn
-            if (co && department) {
-                const queryParams = {
-                    co: co,
-                    department: department,
-                    startYM: startYM || '',
-                    endYM: endYM || '',
-                };
-
-                console.log('Gửi yêu cầu đến API với các tham số:', queryParams);
-                const { payload } = await ReamingLeaveTimeApiRequest.getList(queryParams);
-                console.log('Dữ liệu nhận được từ API:', payload);
-                setReamingLeaveTime(payload);
-            } else {
-                console.warn('Vui lòng chọn cả công ty và bộ phận để lọc chính xác.');
-            }
+            };
+    
+            const { payload } = await ReamingLeaveTimeApiRequest.getList(queryParams);
+            console.log('Dữ liệu nhận được từ API:', payload);
+            setReamingLeaveTime(payload);
         } catch (error) {
             console.error('Lỗi khi lấy dữ liệu:', error);
         }
     };
+    
+    // const fetchData = async () => {
+    //     try {
+    //         // Nếu cả công ty và bộ phận đều để trống, chỉ lọc theo thời gian
+    //         if (!co && !department) {
+    //             if (!ReamingLeaveTime || ReamingLeaveTime.length === 0) { // Chỉ log nếu chưa có dữ liệu trước đó
+    //                 console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
+    //             }
+
+    //             const queryParams = {
+    //                 co: '',
+    //                 department: '',
+    //                 startYM: startYM || '',
+    //                 endYM: endYM || '',
+    //             };
+
+    //             const { payload } = await ReamingLeaveTimeApiRequest.getList(queryParams);
+    //             console.log('Dữ liệu nhận được từ API (lọc theo thời gian):', payload);
+    //             setReamingLeaveTime(payload);
+    //             return;
+    //         }
+
+    //         // Kiểm tra nếu cả công ty và bộ phận đều được chọn
+    //         if (co && department) {
+    //             const queryParams = {
+    //                 co: co,
+    //                 department: department,
+    //                 startYM: startYM || '',
+    //                 endYM: endYM || '',
+    //             };
+
+    //             console.log('Gửi yêu cầu đến API với các tham số:', queryParams);
+    //             const { payload } = await ReamingLeaveTimeApiRequest.getList(queryParams);
+    //             console.log('Dữ liệu nhận được từ API:', payload);
+    //             setReamingLeaveTime(payload);
+    //         } else {
+    //             console.warn('Vui lòng chọn cả công ty và bộ phận để lọc chính xác.');
+    //         }
+    //     } catch (error) {
+    //         console.error('Lỗi khi lấy dữ liệu:', error);
+    //     }
+    // };
 
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
@@ -82,16 +104,22 @@ export default function ReamingLeaveTimePage() {
     //     fetchData();
     // }, [co, department, startYM, endYM]);
 
-    useEffect(() => {
-        console.log('startYM:', startYM); // Kiểm tra định dạng trước khi gửi
-        console.log('endYM:', endYM); // Kiểm tra định dạng trước khi gửi
+    // useEffect(() => {
+    //     console.log('startYM:', startYM); // Kiểm tra định dạng trước khi gửi
+    //     console.log('endYM:', endYM); // Kiểm tra định dạng trước khi gửi
     
-        // Kiểm tra xem các trường cần thiết đã có giá trị trước khi gọi API
-        if (co && department && startYM && endYM) {
+    //     // Kiểm tra xem các trường cần thiết đã có giá trị trước khi gọi API
+    //     if (co && department && startYM && endYM) {
+    //         fetchData();
+    //     }
+    // }, [co, department, startYM, endYM]);
+
+
+    useEffect(() => {
+        if (co) { // Chỉ gọi API nếu công ty đã được chọn
             fetchData();
         }
-    }, [co, department, startYM, endYM]);
-    
+    }, [co, department, , startYM, endYM]);
     
     return (
         <div>

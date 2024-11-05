@@ -22,50 +22,27 @@ export default function FollowUpReminderPage() {
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
 
     const fetchData = async () => {
+        if (!co) { // Kiểm tra xem công ty đã được chọn chưa
+            console.warn("Vui lòng chọn công ty trước khi lọc dữ liệu.");
+            return;
+        }
+    
         try {
-            // Nếu cả công ty và bộ phận đều để trống, chỉ lọc theo thời gian
-            if (!co && !department) {
-                if (!FollowUpReminder || FollowUpReminder.length === 0) { // Chỉ log nếu chưa có dữ liệu trước đó
-                    console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
-                }
-
-                const queryParams = {
-                    co: '',
-                    department: '',
-                    startDate: startDate || '',
-                    endDate: endDate || '',
-                };
-
-                const { payload } = await FollowUpReminderApiRequest.getList(queryParams);
-                console.log('Dữ liệu nhận được từ API (lọc theo thời gian):', payload);
-                setFollowUpReminder(payload);
-                return;
-            }
-
-            // Kiểm tra nếu cả công ty và bộ phận đều được chọn
-            if (co && department) {
-                const queryParams = {
-                    co: co,
-                    department: department,
-                    startDate: startDate || '',
-                    endDate: endDate || '',
-                };
-
-                console.log('Gửi yêu cầu đến API với các tham số:', queryParams);
-                const { payload } = await FollowUpReminderApiRequest.getList(queryParams);
-                console.log('Dữ liệu nhận được từ API:', payload);
-                setFollowUpReminder(payload);
-            } else {
-                console.warn('Vui lòng chọn cả công ty và bộ phận để lọc chính xác.');
-            }
+            const queryParams = {
+                co: co || '',  // Chỉ cho phép giá trị đã chọn
+                department: department || '', // Cho phép bộ phận rỗng
+                startDate: startDate || '',
+                endDate: endDate || '',
+            };
+    
+            const { payload } = await FollowUpReminderApiRequest.getList(queryParams);
+            console.log('Dữ liệu nhận được từ API:', payload);
+            setFollowUpReminder(payload);
         } catch (error) {
             console.error('Lỗi khi lấy dữ liệu:', error);
         }
     };
-
-
-
-
+    
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
             setCo(''); // Đặt giá trị rỗng để chỉ ra rằng không có công ty nào được chọn
@@ -79,12 +56,15 @@ export default function FollowUpReminderPage() {
         setDepartment(selectedDepartment); // Cập nhật state với bộ phận đã chọn
     };
 
-
-
+    // useEffect(() => {
+    //     // Chỉ gọi API nếu đã chọn cả công ty và bộ phận
+    //     if (co && department) {
+    //         fetchData();
+    //     }
+    // }, [co, department, startDate, endDate]);
 
     useEffect(() => {
-        // Chỉ gọi API nếu đã chọn cả công ty và bộ phận
-        if (co && department) {
+        if (co) { // Chỉ gọi API nếu công ty đã được chọn
             fetchData();
         }
     }, [co, department, startDate, endDate]);
@@ -117,11 +97,11 @@ export default function FollowUpReminderPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
-            {((co && !department) || (!co && department)) && (
+            {/* {((co && !department) || (!co && department)) && (
                 <div className="text-red-500 mt-2">
                     Vui lòng chọn cả công ty và bộ phận hoặc để trống cả hai để xem toàn bộ dữ liệu.
                 </div>
-            )}
+            )} */}
         </div>
     );
 }

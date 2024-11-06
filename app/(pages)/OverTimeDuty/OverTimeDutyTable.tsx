@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import * as XLSX from "xlsx"; // Import XLSX for Excel export
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, FileOutputIcon } from "lucide-react";
+import { CalendarRangeIcon, FileOutputIcon } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -227,12 +227,12 @@ export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate
                                 id="date"
                                 variant={"outline"}
                                 className={cn(
-                                    "w-[200px] justify-start text-left font-normal",
+                                    "w-[200px] py-2 px-3 flex items-center justify-between font-normal text-left",
                                     !date && "text-muted-foreground"
                                 )}
                                 disabled={!isCompanySelected} // Vô hiệu hóa khi chưa chọn công ty
                             >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                 
                                 {date?.from ? (
                                     date.to ? (
                                         <>
@@ -244,7 +244,9 @@ export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate
                                     )
                                 ) : (
                                     <span>Pick a date</span>
+                                    
                                 )}
+                                <CalendarRangeIcon className=" h-4 w-4" /> {/* Icon đồng hồ bên trái */}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -281,7 +283,7 @@ export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate
                         value={department || ''} // Đồng bộ với state department
                         disabled={!isCompanySelected} // Vô hiệu hóa khi chưa chọn công ty
                     >
-                        <SelectTrigger className="w-[300px]">
+                        <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder={company ? "--選擇部門--" : "請先選擇公司"} />
                         </SelectTrigger>
                         <SelectContent className="max-h-64">

@@ -19,6 +19,8 @@ export const exportToExcel = (data: any[], headers: Record<string, string>, file
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
 
+        // Xuất file Excel
+        XLSX.writeFile(wb, `${fileName}.xlsx`);
        // Show success notification
        toast.success('匯出 Excel 成功!');
 

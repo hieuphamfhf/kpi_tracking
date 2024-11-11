@@ -242,10 +242,10 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
             ws['!freeze'] = { xSplit: 0, ySplit: 1 }; // Đóng băng hàng đầu tiên
 
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "6_剩餘換休未休時數報表");
+            XLSX.utils.book_append_sheet(wb, ws, "1_剩餘換休未休時數報表");
 
             // Ghi file Excel
-            XLSX.writeFile(wb, "6_剩餘換休未休時數報表.xlsx");
+            XLSX.writeFile(wb, "1_剩餘換休未休時數報表.xlsx");
             toast.success('匯出 Excel 成功!');
         } catch (error) {
             toast.error('匯出 Excel 時發生錯誤');

@@ -216,7 +216,7 @@ export default function OverTimeDutyTable({ OverTimeDuty, onStartDate, onEndDate
                         <SelectContent>
                             {/* <SelectItem key="all" value="ALL">--所有公司--</SelectItem> */}
                             <SelectItem key="lg" value="LG">LG</SelectItem>
-                            <SelectItem key="OD" value="OD">OD</SelectItem>
+                            <SelectItem key="0D" value="0D">0D</SelectItem>
                             <SelectItem key="LT" value="LT">LT</SelectItem>
                         </SelectContent>
                     </Select>

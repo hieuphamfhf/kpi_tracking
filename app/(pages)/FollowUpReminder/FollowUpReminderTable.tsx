@@ -17,6 +17,7 @@ import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react"; // Import icon Search từ lucide-react
 import { exportToExcel } from  "@/components/excelExportService";
+import GenericTable from "@/components/GenericTable";
 export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, onEndDate, onDepartment, onCompany, company }: {
     FollowUpReminder: FollowUpReminderListResType;
     onStartDate: (value: string) => void;
@@ -42,6 +43,23 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
         }
     }, [company]);
 
+    const headers = {
+        co: "公司",
+        dp: "部門代號",
+        dpnm: "部門名稱",
+        empid: "VNW帳號",
+        nm: "姓名",
+        cptopnm: "案件名稱",
+        newdutid: "新職務代號",
+        newdutnm: "新職務名稱",
+        vhno: "案件編號",
+        kd: "類別",
+        sumr: "摘要",
+        cnt: "催辦次數",
+        foldat: "催辦日",
+        cancdat: "銷案日",
+    };
+    
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
             onCompany(''); // Reset công ty
@@ -135,75 +153,12 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
         }
     };
 
-    // const handleExportToExcel = () => {
-    //     try {
-    //         const headers = {
-    //             co: '公司',
-    //             dp: '部門代號',
-    //             dpnm: '部門名稱',
-    //             empid: 'VNW帳號',
-    //             nm: '姓名',
-    //             cptopnm: '案件名稱',
-    //             newdutid: '新職務代號',
-    //             newdutnm: '新職務名稱',
-    //             vhno: '案件編號',
-    //             kd: '類別',
-    //             sumr: '摘要',
-    //             cnt: '催辦次數',
-    //             foldat: '催辦日',
-    //             cancdat: '銷案日',
-    //         };
-
-    //         const dataWithChineseHeaders = FollowUpReminder.map(item => ({
-    //             [headers.co]: item.co,
-    //             [headers.dp]: item.dp,
-    //             [headers.dpnm]: item.dpnm,
-    //             [headers.empid]: item.empid,
-    //             [headers.nm]: item.nm,
-    //             [headers.cptopnm]: item.cptopnm,
-    //             [headers.newdutid]: item.newdutid,
-    //             [headers.newdutnm]: item.newdutnm,
-    //             [headers.vhno]: item.vhno,
-    //             [headers.kd]: item.kd,
-    //             [headers.sumr]: item.sumr,
-    //             [headers.cnt]: item.cnt,
-    //             [headers.foldat]: item.foldat,
-    //             [headers.cancdat]: item.cancdat,
-    //         }));
-
-    //         const ws = XLSX.utils.json_to_sheet(dataWithChineseHeaders);
-    //         const wb = XLSX.utils.book_new();
-    //         XLSX.utils.book_append_sheet(wb, ws, "多次催辦案件查詢");
-    //         XLSX.writeFile(wb, "3.1催辦表.xlsx");
-
-    //         toast.success('匯出 Excel 成功!');
-    //     } catch (error) {
-    //         toast.error('匯出 Excel 時發生錯誤');
-    //     }
-    // };
 
 
     const handleExportToExcel = () => {
-        const headers = {
-              // Định nghĩa tiêu đề cột cho từng trường hợp cụ thể
-            co: '公司',
-            dp: '部門代號',
-            dpnm: '部門名稱',
-            empid: 'VNW帳號',
-            nm: '姓名',
-            cptopnm: '案件名稱',
-            newdutid: '新職務代號',
-            newdutnm: '新職務名稱',
-            vhno: '案件編號',
-            kd: '類別',
-            sumr: '摘要',
-            cnt: '催辦次數',
-            foldat: '催辦日',
-            cancdat: '銷案日',
-        };
-    
-        exportToExcel(FollowUpReminder, headers, "多次催辦案件查詢");
-    };
+    exportToExcel(FollowUpReminder, headers, "多次催辦案件查詢");
+  };
+
     return (
         <>
             <div className="flex items-center py-2 justify-between">
@@ -309,60 +264,16 @@ export default function FollowUpReminderTable({ FollowUpReminder, onStartDate, o
             </div>
             {/* <ScrollArea className={`w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border 
     ${(company && company !== 'ALL' && !department) ? 'opacity-50 pointer-events-none' : ''}`}> */}
+            
             <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
-                    <Table className="table-auto whitespace-nowrap">
-                        <TableHeader className="custom-table-header">
-                            <TableRow>
-                                <TableHead className="w-16">#</TableHead> {/* Fixed width for columns */}
-                                <TableHead className="w-48">公司</TableHead>
-                                <TableHead className="w-40">部門代號</TableHead>
-                                <TableHead className="w-56">部門名稱</TableHead>
-                                <TableHead className="w-24">VNW帳號</TableHead>
-                                <TableHead className="w-24">姓名</TableHead>
-                                <TableHead className="w-36">案件名稱</TableHead>
-                                <TableHead className="w-48">新職務代號</TableHead>
-                                <TableHead className="w-40">新職務名稱</TableHead>
-                                <TableHead className="w-56">案件編號</TableHead>
-                                <TableHead className="w-24">類別</TableHead>
-                                <TableHead className="w-24">摘要</TableHead>
-                                <TableHead className="w-36">催辦次數</TableHead>
-                                <TableHead className="w-56">催辦日</TableHead>
-                                <TableHead className="w-56">銷案日</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody className="custom-table-body">
-                            {FollowUpReminder?.map((item, index) => {
-                                try {
-                                    return (
-                                        <TableRow key={`${item.empid}-${index}`}>
-                                            <TableCell>{index + 1}</TableCell>
-                                            <TableCell className="font-medium">{item.co}</TableCell>
-                                            <TableCell>{item.dp}</TableCell>
-                                            <TableCell>{item.dpnm}</TableCell>
-                                            <TableCell>{item.empid}</TableCell>
-                                            <TableCell>{item.nm}</TableCell>
-                                            <TableCell>{item.cptopnm}</TableCell>
-                                            <TableCell>{item.newdutid}</TableCell>
-                                            <TableCell>{item.newdutnm}</TableCell>
-                                            <TableCell>{item.vhno}</TableCell>
-                                            <TableCell>{item.kd}</TableCell>
-                                            <TableCell>{item.sumr}</TableCell>
-                                            <TableCell>{item.cnt}</TableCell>
-                                            <TableCell>{item.foldat}</TableCell>
-                                            <TableCell>{item.cancdat}</TableCell>
-                                        </TableRow>
-                                    );
-                                } catch (error) {
-                                    console.error('Render error for item:', item, error);
-                                    return null;
-                                }
-                            })}
-                        </TableBody>
-                    </Table>
+                    <GenericTable headers={headers} data={FollowUpReminder || []} />
                 </div>
                 <ScrollBar orientation="horizontal" />
             </ScrollArea>
+
+            
         </>
     );
+    
 }

@@ -3,8 +3,8 @@ import { Loader2 } from "lucide-react";
 
 interface LoadingIndicatorProps {
   message?: string;
-  className?: string; // Cho phép tùy chỉnh style ngoài nếu cần
-  iconSize?: number;  // Tùy chỉnh kích thước icon (mặc định 20)
+  className?: string; 
+  iconSize?: number; 
 }
 
 export default function LoadingIndicator({

@@ -1,5 +1,4 @@
 "use client"
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
@@ -38,7 +37,7 @@ export default function FollowUpReminderPage() {
             const { payload } = await FollowUpReminderApiRequest.getList(queryParams);
             console.log('Dữ liệu nhận được từ API:', payload);
             //delay 1 giây để test loading
-            await new Promise((resolve) => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 4000));
             setFollowUpReminder(payload);
             // Hiển thị toast nếu không có dữ liệu
             if (!payload || payload.length === 0) {
@@ -59,10 +58,10 @@ export default function FollowUpReminderPage() {
 
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
-            setCo(''); // Đặt giá trị rỗng để chỉ ra rằng không có công ty nào được chọn
-            setDepartment(''); // Đặt lại bộ phận khi công ty không được chọn
+            setCo(''); 
+            setDepartment(''); 
         } else {
-            setCo(selectedCompany); // Cập nhật state với công ty đã chọn
+            setCo(selectedCompany); 
         }
     };
 

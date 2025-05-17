@@ -90,7 +90,8 @@ export default function FollowUpReminderPage() {
                                     onDepartment={handleDepartmentChange}
                                     onCompany={handleCompanyChange}
                                     company={co} // Truyền giá trị của công ty xuống component con
-                                />
+                                    department={department} // THÊM DÒNG NÀY
+                               />
 
                             </div>
                         </CardContent>

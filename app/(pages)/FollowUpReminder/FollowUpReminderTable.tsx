@@ -91,11 +91,10 @@ export default function FollowUpReminderTable({
                         <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
                             <LogoLoading />
                         </div>
-                    ) : FollowUpReminder?.length ? (
-                         <GenericTable headers={headers} data={FollowUpReminder || []} />
                     ) : (
-                        <div className="text-center text-gray-400 py-4">Không có dữ liệu</div>
+                        <GenericTable headers={headers} data={FollowUpReminder || []} />
                     )}
+
 
 
                     {/* <GenericTable headers={headers} data={FollowUpReminder || []} /> */}

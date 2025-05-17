@@ -7,6 +7,7 @@ import FollowUpReminderTable from "./FollowUpReminderTable";
 import { FollowUpReminderListResType } from "@/app/schemaValidations/FollowUpReminder";
 import { formatDateUTC } from "@/lib/extensions";
 import { FollowUpReminderApiRequest } from "@/app/apiRequest/FollowUpReminder";
+import { toast } from "react-hot-toast";
 
 export default function FollowUpReminderPage() {
     const [FollowUpReminder, setFollowUpReminder] = useState<FollowUpReminderListResType | any>();
@@ -25,7 +26,7 @@ export default function FollowUpReminderPage() {
         if (!co) { // Kiểm tra xem công ty đã được chọn 
             return;
         }
-         setLoading(true); // bật loading
+        setLoading(true); // bật loading
         try {
             const queryParams = {
                 co: co || '',  // Chỉ cho phép giá trị đã chọn
@@ -36,14 +37,23 @@ export default function FollowUpReminderPage() {
 
             const { payload } = await FollowUpReminderApiRequest.getList(queryParams);
             console.log('Dữ liệu nhận được từ API:', payload);
-             //delay 1 giây để test loading
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            //delay 1 giây để test loading
+            await new Promise((resolve) => setTimeout(resolve, 100));
             setFollowUpReminder(payload);
+            // Hiển thị toast nếu không có dữ liệu
+            if (!payload || payload.length === 0) {
+                toast.error('資料為空！'
+                    , {
+                        duration: 2000,
+                         position: 'top-center',
+                    });
+            }
+
         } catch (error) {
             console.error('Lỗi khi lấy dữ liệu:', error);
         }
         finally {
-            setLoading(false); 
+            setLoading(false);
         }
     };
 
@@ -57,7 +67,7 @@ export default function FollowUpReminderPage() {
     };
 
     const handleDepartmentChange = (selectedDepartment: string) => {
-        setDepartment(selectedDepartment); 
+        setDepartment(selectedDepartment);
     };
 
     useEffect(() => {
@@ -86,8 +96,8 @@ export default function FollowUpReminderPage() {
                                     onDepartment={handleDepartmentChange}
                                     onCompany={handleCompanyChange}
                                     company={co} // Truyền giá trị của công ty xuống component con
-                                    department={department} 
-                                    loading={loading} 
+                                    department={department}
+                                    loading={loading}
                                 />
 
                             </div>
@@ -95,7 +105,7 @@ export default function FollowUpReminderPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
-            
+
         </div>
     );
 }

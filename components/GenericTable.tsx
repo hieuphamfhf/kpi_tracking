@@ -1,4 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "react-hot-toast"; 
 
 type TableProps = {
     headers: Record<string, string>;

@@ -4,10 +4,9 @@ import { DepartmentListResType } from "@/app/schemaValidations/department";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import * as XLSX from "xlsx"; // Import XLSX for Excel export
+// import * as XLSX from "xlsx"; // Import XLSX for Excel export
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, CalendarRangeIcon, FileOutputIcon } from "lucide-react";
+import { CalendarRangeIcon, FileOutputIcon } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useEffect, useState } from "react";
 import { DateRange } from "react-day-picker";
@@ -18,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react"; // Import icon Search từ lucide-react
 import LogoLoading from "@/components/LogoLoading";
 import GenericTable from "@/components/GenericTable";
+import { exportToExcel } from "@/components/excelExportService";
 export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onEndYM, onDepartment, onCompany, company, loading }: {
     ReamingLeaveTime: ReamingLeaveTimeListResType;
     onStartYM: (value: string) => void;
@@ -192,68 +192,7 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
         }
     };
     const handleExportToExcel = () => {
-        try {
-            // Định nghĩa headers với kiểu 'keyof ReamingLeaveTimeListResType[0]' để chỉ rõ các khóa hợp lệ
-            const headers: Record<keyof ReamingLeaveTimeListResType[0], string> = {
-                ym: '考勤週期',
-                co: '公司',
-                dp: '部門',
-                pz: '廠區',
-                nm: '姓名',
-                empid: '人員代號',
-                jp: '職位別',
-                naty: '國籍',
-                ofF12REM6: '前5個月換休時數',
-                ofF12REM5: '前4個月換休時數',
-                ofF12REM4: '前3個月換休時數',
-                ofF12REM3: '上上月換休時數',
-                ofF12REM2: '上月換休時數',
-                ofF12REM1: '本月換休時數',
-                ofF12REM_ALL: '總可換休時數',
-                ofF12HRS: '本月已換休時數',
-                ofF12REM: '剩餘可換休時數',
-            };
-
-            const dataWithChineseHeaders = ReamingLeaveTime?.map(item => {
-                const mappedItem: Record<string, string> = {};
-                // Sử dụng Object.keys và ép kiểu với keyof typeof headers để tránh lỗi
-                (Object.keys(headers) as (keyof typeof headers)[]).forEach((key) => {
-                    mappedItem[headers[key]] = item[key] || ''; // Đảm bảo rằng chỉ số là hợp lệ
-                });
-                return mappedItem;
-            });
-
-            const ws = XLSX.utils.json_to_sheet(dataWithChineseHeaders);
-
-
-
-            // Kiểm tra và xử lý giá trị ws['!ref']
-            const refValue = ws['!ref'] || "A1"; // Cung cấp giá trị mặc định nếu !ref là undefined
-            const range = XLSX.utils.decode_range(refValue);
-
-            // Làm đậm hàng tiêu đề và căn giữa
-            const headerCellStyle = {
-                font: { bold: true },
-                alignment: { horizontal: 'center' },
-                fill: { fgColor: { rgb: "FFFFAA00" } } // Màu nền vàng cho tiêu đề
-            };
-            for (let col = range.s.c; col <= range.e.c; col++) {
-                const cellRef = XLSX.utils.encode_cell({ r: 0, c: col });
-                ws[cellRef].s = headerCellStyle;
-            }
-
-            // Đóng băng hàng tiêu đề
-            ws['!freeze'] = { xSplit: 0, ySplit: 1 }; // Đóng băng hàng đầu tiên
-
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "1_剩餘換休未休時數報表");
-
-            // Ghi file Excel
-            XLSX.writeFile(wb, "1_剩餘換休未休時數報表.xlsx");
-            toast.success('匯出 Excel 成功!');
-        } catch (error) {
-            toast.error('匯出 Excel 時發生錯誤');
-        }
+        exportToExcel(ReamingLeaveTime, headers, "1_剩餘換休未休時數報表");
     };
 
     // Header cho xuất Excel và hiển thị bảng

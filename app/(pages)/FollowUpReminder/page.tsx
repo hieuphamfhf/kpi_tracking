@@ -37,7 +37,7 @@ export default function FollowUpReminderPage() {
             const { payload } = await FollowUpReminderApiRequest.getList(queryParams);
             console.log('Dữ liệu nhận được từ API:', payload);
             //delay 1 giây để test loading
-            await new Promise((resolve) => setTimeout(resolve, 4000));
+            await new Promise((resolve) => setTimeout(resolve, 100));
             setFollowUpReminder(payload);
             // Hiển thị toast nếu không có dữ liệu
             if (!payload || payload.length === 0) {

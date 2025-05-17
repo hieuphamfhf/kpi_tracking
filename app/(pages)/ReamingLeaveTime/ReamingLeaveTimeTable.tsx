@@ -16,13 +16,17 @@ import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react"; // Import icon Search từ lucide-react
-export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onEndYM, onDepartment, onCompany, company }: {
+import LogoLoading from "@/components/LogoLoading";
+import GenericTable from "@/components/GenericTable";
+export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onEndYM, onDepartment, onCompany, company, loading }: {
     ReamingLeaveTime: ReamingLeaveTimeListResType;
     onStartYM: (value: string) => void;
     onEndYM: (value: string) => void;
     onDepartment: (value: string) => void;
     onCompany: (value: string) => void;
     company: string; // Thêm prop công ty vào component con
+    loading: boolean; //  thêm kiểu cho prop
+
 }) {
 
     const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>([]);
@@ -252,6 +256,27 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
         }
     };
 
+    // Header cho xuất Excel và hiển thị bảng
+    const headers = {
+        ym: '考勤週期',
+        co: '公司',
+        dp: '部門',
+        pz: '廠區',
+        nm: '姓名',
+        empid: '人員代號',
+        jp: '職位別',
+        naty: '國籍',
+        ofF12REM6: '前5個月換休時數',
+        ofF12REM5: '前4個月換休時數',
+        ofF12REM4: '前3個月換休時數',
+        ofF12REM3: '上上月換休時數',
+        ofF12REM2: '上月換休時數',
+        ofF12REM1: '本月換休時數',
+        ofF12REM_ALL: '總可換休時數',
+        ofF12HRS: '本月已換休時數',
+        ofF12REM: '剩餘可換休時數',
+    };
+
     return (
         <>
             <div className="flex items-center py-2 justify-between">
@@ -393,59 +418,17 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
 
                 <Toaster position="bottom-right" reverseOrder={false} />
             </div>
-            {/* <ScrollArea className={`w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border 
-    ${(company && company !== 'ALL' && !department) ? 'opacity-50 pointer-events-none' : ''}`}> */}
+            {/* Bảng dữ liệu hiển thị với scroll ngang */}
             <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
-                <div className="min-w-[1000px]"> {/* This ensures the table doesn't shrink below 1000px */}
-                    <Table className="table-auto whitespace-nowrap">
-                        <TableHeader className="custom-table-header">
-                            <TableRow>
-                                <TableHead className="w-16">#</TableHead> {/* Fixed width for columns */}
-                                <TableHead className="w-48">考勤週期</TableHead>
-                                <TableHead className="w-48">公司</TableHead>
-                                <TableHead className="w-48">部門</TableHead>
-                                <TableHead className="w-48">廠區</TableHead>
-                                <TableHead className="w-48">姓名</TableHead>
-                                <TableHead className="w-48">人員代號</TableHead>
-                                <TableHead className="w-48">職位別</TableHead>
-                                <TableHead className="w-48">國籍</TableHead>
-                                <TableHead className="w-48">前5個月換休時數</TableHead>
-                                <TableHead className="w-48">前4個月換休時數</TableHead>
-                                <TableHead className="w-48">前3個月換休時數</TableHead>
-                                <TableHead className="w-48">上上月換休時數</TableHead>
-                                <TableHead className="w-48">上月換休時數</TableHead>
-                                <TableHead className="w-48">本月換休時數</TableHead>
-                                <TableHead className="w-48">總可換休時數</TableHead>
-                                <TableHead className="w-48">本月已換休時數</TableHead>
-                                <TableHead className="w-48">剩餘可換休時數</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody className="custom-table-body">
-                            {ReamingLeaveTime?.map((item, index) => (
-                                <TableRow key={`${item.empid}-${index}`}>
-                                    <TableCell>{index + 1}</TableCell> {/* Display row index */}
-                                    <TableCell>{item.ym}</TableCell>
-                                    <TableCell>{item.co}</TableCell>
-                                    <TableCell>{item.dp}</TableCell>
-                                    <TableCell>{item.pz}</TableCell>
-                                    <TableCell>{item.nm}</TableCell>
-                                    <TableCell>{item.empid}</TableCell>
-                                    <TableCell>{item.jp}</TableCell>
-                                    <TableCell>{item.naty}</TableCell>
-                                    <TableCell>{item.ofF12REM6}</TableCell>
-                                    <TableCell>{item.ofF12REM5}</TableCell>
-                                    <TableCell>{item.ofF12REM4}</TableCell>
-                                    <TableCell>{item.ofF12REM3}</TableCell>
-                                    <TableCell>{item.ofF12REM2}</TableCell>
-                                    <TableCell>{item.ofF12REM1}</TableCell>
-                                    <TableCell>{item.ofF12REM_ALL}</TableCell>
-                                    <TableCell>{item.ofF12HRS}</TableCell>
-                                    <TableCell>{item.ofF12REM}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-
+                <div className="min-w-[1000px]">
+                    {loading ? (
+                        <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
+                            <LogoLoading />
+                        </div>
+                    ) : (
+                        <GenericTable headers={headers} data={ReamingLeaveTime || []} />
+                    )}
+                    {/* <GenericTable headers={headers} data={FollowUpReminder || []} /> */}
                 </div>
                 <ScrollBar orientation="horizontal" />
             </ScrollArea>

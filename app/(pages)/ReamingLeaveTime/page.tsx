@@ -7,7 +7,7 @@ import ReamingLeaveTimeTable from "./ReamingLeaveTimeTable";
 import { ReamingLeaveTimeListResType } from "@/app/schemaValidations/ReamingLeaveTime";
 import { formatDateUTC } from "@/lib/extensions";
 import { ReamingLeaveTimeApiRequest } from "@/app/apiRequest/ReamingLeaveTime";
-
+import { toast } from "react-hot-toast";
 export default function ReamingLeaveTimePage() {
     const [ReamingLeaveTime, setReamingLeaveTime] = useState<ReamingLeaveTimeListResType | any>();
     const [co, setCo] = useState<string>(''); // State cho công ty
@@ -19,12 +19,13 @@ export default function ReamingLeaveTimePage() {
     const lastDayFormatted = formatDateUTC(lastDay);
     const [startYM, setstartYM] = useState<string>(firstDayFormatted.substring(1));
     const [endYM, setendYM] = useState<string>(lastDayFormatted.substring(1));
+    const [loading, setLoading] = useState(false);
     const fetchData = async () => {
         if (!co) { // Kiểm tra xem công ty đã được chọn chưa
             console.warn("Vui lòng chọn công ty trước khi lọc dữ liệu.");
             return;
         }
-    
+     setLoading(true); // bật loading
         try {
             const queryParams = {
                 co: co || '',  // Chỉ cho phép giá trị đã chọn
@@ -35,53 +36,25 @@ export default function ReamingLeaveTimePage() {
     
             const { payload } = await ReamingLeaveTimeApiRequest.getList(queryParams);
             console.log('Dữ liệu nhận được từ API:', payload);
+            //delay 1 giây để test loading
+            // await new Promise((resolve) => setTimeout(resolve, 100));
             setReamingLeaveTime(payload);
+            // Hiển thị toast nếu không có dữ liệu
+            if (!payload || payload.length === 0) {
+                toast.error('資料為空！'
+                    , {
+                        duration: 2000,
+                         position: 'top-center',
+                    });
+            }
         } catch (error) {
             console.error('Lỗi khi lấy dữ liệu:', error);
         }
+        finally {
+            setLoading(false);
+        }
     };
     
-    // const fetchData = async () => {
-    //     try {
-    //         // Nếu cả công ty và bộ phận đều để trống, chỉ lọc theo thời gian
-    //         if (!co && !department) {
-    //             if (!ReamingLeaveTime || ReamingLeaveTime.length === 0) { // Chỉ log nếu chưa có dữ liệu trước đó
-    //                 console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
-    //             }
-
-    //             const queryParams = {
-    //                 co: '',
-    //                 department: '',
-    //                 startYM: startYM || '',
-    //                 endYM: endYM || '',
-    //             };
-
-    //             const { payload } = await ReamingLeaveTimeApiRequest.getList(queryParams);
-    //             console.log('Dữ liệu nhận được từ API (lọc theo thời gian):', payload);
-    //             setReamingLeaveTime(payload);
-    //             return;
-    //         }
-
-    //         // Kiểm tra nếu cả công ty và bộ phận đều được chọn
-    //         if (co && department) {
-    //             const queryParams = {
-    //                 co: co,
-    //                 department: department,
-    //                 startYM: startYM || '',
-    //                 endYM: endYM || '',
-    //             };
-
-    //             console.log('Gửi yêu cầu đến API với các tham số:', queryParams);
-    //             const { payload } = await ReamingLeaveTimeApiRequest.getList(queryParams);
-    //             console.log('Dữ liệu nhận được từ API:', payload);
-    //             setReamingLeaveTime(payload);
-    //         } else {
-    //             console.warn('Vui lòng chọn cả công ty và bộ phận để lọc chính xác.');
-    //         }
-    //     } catch (error) {
-    //         console.error('Lỗi khi lấy dữ liệu:', error);
-    //     }
-    // };
 
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
@@ -95,25 +68,6 @@ export default function ReamingLeaveTimePage() {
     const handleDepartmentChange = (selectedDepartment: string) => {
         setDepartment(selectedDepartment); // Cập nhật state với bộ phận đã chọn
     };
-
-    // useEffect(() => {
-    //     // Kiểm tra nếu tất cả các bộ lọc bị bỏ trống thì chỉ lọc theo thời gian
-    //     if (!co && !department) {
-    //         console.log('Lọc theo thời gian mà không có bộ lọc công ty hoặc bộ phận.');
-    //     }
-    //     fetchData();
-    // }, [co, department, startYM, endYM]);
-
-    // useEffect(() => {
-    //     console.log('startYM:', startYM); // Kiểm tra định dạng trước khi gửi
-    //     console.log('endYM:', endYM); // Kiểm tra định dạng trước khi gửi
-    
-    //     // Kiểm tra xem các trường cần thiết đã có giá trị trước khi gọi API
-    //     if (co && department && startYM && endYM) {
-    //         fetchData();
-    //     }
-    // }, [co, department, startYM, endYM]);
-
 
     useEffect(() => {
         if (co) { // Chỉ gọi API nếu công ty đã được chọn
@@ -141,6 +95,7 @@ export default function ReamingLeaveTimePage() {
                                     onDepartment={handleDepartmentChange}
                                     onCompany={handleCompanyChange}
                                     company={co} // Truyền giá trị của công ty xuống component con
+                                    loading={loading}
                                 />
                             </div>
                         </CardContent>

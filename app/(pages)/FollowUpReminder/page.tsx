@@ -20,13 +20,12 @@ export default function FollowUpReminderPage() {
 
     const [startDate, setStartDate] = useState<string>(firstDayFormatted.substring(1));
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
-
+    const [loading, setLoading] = useState(false);
     const fetchData = async () => {
-        if (!co) { // Kiểm tra xem công ty đã được chọn chưa
-            console.warn("Vui lòng chọn công ty trước khi lọc dữ liệu.");
+        if (!co) { // Kiểm tra xem công ty đã được chọn 
             return;
         }
-    
+         setLoading(true); // bật loading
         try {
             const queryParams = {
                 co: co || '',  // Chỉ cho phép giá trị đã chọn
@@ -34,15 +33,20 @@ export default function FollowUpReminderPage() {
                 startDate: startDate || '',
                 endDate: endDate || '',
             };
-    
+
             const { payload } = await FollowUpReminderApiRequest.getList(queryParams);
             console.log('Dữ liệu nhận được từ API:', payload);
+             //delay 1 giây để test loading
+            await new Promise((resolve) => setTimeout(resolve, 500));
             setFollowUpReminder(payload);
         } catch (error) {
             console.error('Lỗi khi lấy dữ liệu:', error);
         }
+        finally {
+            setLoading(false); 
+        }
     };
-    
+
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
             setCo(''); // Đặt giá trị rỗng để chỉ ra rằng không có công ty nào được chọn
@@ -53,22 +57,14 @@ export default function FollowUpReminderPage() {
     };
 
     const handleDepartmentChange = (selectedDepartment: string) => {
-        setDepartment(selectedDepartment); // Cập nhật state với bộ phận đã chọn
+        setDepartment(selectedDepartment); 
     };
-
-    // useEffect(() => {
-    //     // Chỉ gọi API nếu đã chọn cả công ty và bộ phận
-    //     if (co && department) {
-    //         fetchData();
-    //     }
-    // }, [co, department, startDate, endDate]);
 
     useEffect(() => {
         if (co) { // Chỉ gọi API nếu công ty đã được chọn
             fetchData();
         }
     }, [co, department, startDate, endDate]);
-    
 
     return (
         <div>
@@ -90,19 +86,16 @@ export default function FollowUpReminderPage() {
                                     onDepartment={handleDepartmentChange}
                                     onCompany={handleCompanyChange}
                                     company={co} // Truyền giá trị của công ty xuống component con
-                                    department={department} // THÊM DÒNG NÀY
-                               />
+                                    department={department} 
+                                    loading={loading} 
+                                />
 
                             </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
             </Tabs>
-            {/* {((co && !department) || (!co && department)) && (
-                <div className="text-red-500 mt-2">
-                    Vui lòng chọn cả công ty và bộ phận hoặc để trống cả hai để xem toàn bộ dữ liệu.
-                </div>
-            )} */}
+            
         </div>
     );
 }

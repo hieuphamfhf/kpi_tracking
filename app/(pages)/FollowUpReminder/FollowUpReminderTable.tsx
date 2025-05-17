@@ -6,8 +6,8 @@ import { exportToExcel } from "@/components/excelExportService";
 import GenericTable from "@/components/GenericTable";
 import FilterBar from "@/components/FilterBar";
 import { Toaster } from "react-hot-toast";
-
-
+import LoadingIndicator from "@/components/LoadingIndicator";
+import LogoLoading from "@/components/LogoLoading";
 // Component hiển thị bảng nhắc nhở follow-up và bộ lọc tìm kiếm
 export default function FollowUpReminderTable({
     FollowUpReminder,
@@ -17,6 +17,7 @@ export default function FollowUpReminderTable({
     onCompany,
     company,
     department,
+    loading,
 }: {
     FollowUpReminder: FollowUpReminderListResType;
     onStartDate: (value: string) => void;
@@ -25,6 +26,7 @@ export default function FollowUpReminderTable({
     onCompany: (value: string) => void;
     company: string;
     department: string;
+    loading: boolean; //  thêm kiểu cho prop
 }) {
     // Header cho xuất Excel và hiển thị bảng
     const headers = {
@@ -85,7 +87,18 @@ export default function FollowUpReminderTable({
             {/* Bảng dữ liệu hiển thị với scroll ngang */}
             <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]">
-                    <GenericTable headers={headers} data={FollowUpReminder || []} />
+                    {loading ? (
+                        <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
+                            <LogoLoading />
+                        </div>
+                    ) : FollowUpReminder?.length ? (
+                         <GenericTable headers={headers} data={FollowUpReminder || []} />
+                    ) : (
+                        <div className="text-center text-gray-400 py-4">Không có dữ liệu</div>
+                    )}
+
+
+                    {/* <GenericTable headers={headers} data={FollowUpReminder || []} /> */}
                 </div>
                 <ScrollBar orientation="horizontal" />
             </ScrollArea>

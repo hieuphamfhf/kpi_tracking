@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import TrainingTable from "./TrainingTable";
 import { TrainingListResType } from "@/app/schemaValidations/Training";
 import { formatDateUTC } from "@/lib/extensions";
-import { TrainingApiRequest } from "@/app/apiRequest/Training";
+import { TrainingApiRequest } from "@/app/apiRequest/training";
 
 export default function TrainingPage() {
     const [Training, setTraining] = useState<TrainingListResType | any>();

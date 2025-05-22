@@ -14,7 +14,7 @@ import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react"; // Import icon Search từ lucide-react
+import { Search } from "lucide-react"; 
 import LogoLoading from "@/components/LogoLoading";
 import GenericTable from "@/components/GenericTable";
 import { exportToExcel } from "@/components/excelExportService";
@@ -24,26 +24,26 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
     onEndYM: (value: string) => void;
     onDepartment: (value: string) => void;
     onCompany: (value: string) => void;
-    company: string; // Thêm prop công ty vào component con
-    loading: boolean; //  thêm kiểu cho prop
+    company: string;
+    loading: boolean; 
 
 }) {
 
     const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>([]);
     const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);
-    const [department, setDepartment] = useState<string>(''); // Lưu giá trị mã bộ phận từ dropdown hoặc input
-    const [searchQuery, setSearchQuery] = useState<string>(''); // Lưu từ khóa tìm kiếm
+    const [department, setDepartment] = useState<string>(''); 
+    const [searchQuery, setSearchQuery] = useState<string>(''); 
 
     // const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
     // const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1).padStart(2, '0'));
-    const [selectedYear, setSelectedYear] = useState<string>(""); // Không có giá trị mặc định cho năm
-    const [selectedMonth, setSelectedMonth] = useState<string>(""); // Không có giá trị mặc định cho tháng
-    const [startYear, setStartYear] = useState<string>(""); // Năm bắt đầu
-    const [startMonth, setStartMonth] = useState<string>(""); // Tháng bắt đầu
-    const [endYear, setEndYear] = useState<string>(""); // Năm kết thúc
-    const [endMonth, setEndMonth] = useState<string>(""); // Tháng kết thúc
-    const [startYM, setStartYM] = useState<string>(""); // Không đặt giá trị mặc định
-    const [endYM, setEndYM] = useState<string>(""); // Không đặt giá trị mặc định
+    const [selectedYear, setSelectedYear] = useState<string>(""); 
+    const [selectedMonth, setSelectedMonth] = useState<string>(""); 
+    const [startYear, setStartYear] = useState<string>(""); 
+    const [startMonth, setStartMonth] = useState<string>(""); 
+    const [endYear, setEndYear] = useState<string>(""); 
+    const [endMonth, setEndMonth] = useState<string>(""); 
+    const [startYM, setStartYM] = useState<string>(""); 
+    const [endYM, setEndYM] = useState<string>(""); 
     const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
 
     const isTimeFilterSelected = startYear && startMonth && endYear && endMonth; // Kiểm tra đã chọn đủ thời gian chưa
@@ -117,38 +117,38 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
     };
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
-            onCompany(''); // Reset công ty
-            onDepartment(''); // Reset bộ phận
-            setDepartment(''); // Xóa lựa chọn bộ phận
-            setSearchQuery(''); // Xóa từ khóa tìm kiếm
-            setFilteredDepartments([]); // Xóa danh sách bộ phận
+            onCompany('');
+            onDepartment(''); 
+            setDepartment(''); 
+            setSearchQuery(''); 
+            setFilteredDepartments([]); 
         } else {
-            onCompany(selectedCompany); // Cập nhật công ty đã chọn
-            onDepartment(''); // Xóa bộ phận khi chọn công ty mới
-            setDepartment(''); // Reset state bộ phận
-            setSearchQuery(''); // Reset state từ khóa tìm kiếm
-            fetchDepartmentsByCompany(); // Lấy bộ phận theo công ty đã chọn
+            onCompany(selectedCompany); 
+            onDepartment(''); 
+            setDepartment(''); 
+            setSearchQuery(''); 
+            fetchDepartmentsByCompany(); 
         }
     };
 
     // Hàm này xử lý cả khi chọn từ dropdown lẫn nhập vào ô tìm kiếm
     const handleDepartmentChange = (value: string) => {
-        setDepartment(value); // Cập nhật mã bộ phận khi chọn từ dropdown
-        setSearchQuery(value); // Đồng bộ với ô tìm kiếm
-        onDepartment(value); // Gọi callback để cập nhật mã bộ phận
+        setDepartment(value); 
+        setSearchQuery(value);
+        onDepartment(value); 
     };
     // Xử lý tìm kiếm khi người dùng nhập mã bộ phận
     const handleSearch = (upperCaseQuery: string) => {
-        setDepartment(upperCaseQuery);  // Cập nhật mã bộ phận với giá trị đã chuyển thành chữ hoa
-        onDepartment(upperCaseQuery);   // Gọi callback để cập nhật mã bộ phận
+        setDepartment(upperCaseQuery);  
+        onDepartment(upperCaseQuery);   
 
         // Nếu nhập từ khóa, lọc danh sách bộ phận hiện có theo công ty đã chọn
         if (departmentList && upperCaseQuery) {
             const filtered = departmentList.filter(dept =>
-                dept.co === company && // Chỉ lấy bộ phận thuộc công ty đã chọn
+                dept.co === company && 
                 (dept.dpnm.toLowerCase().startsWith(upperCaseQuery.toLowerCase()) || dept.dp.startsWith(upperCaseQuery))
             );
-            setFilteredDepartments(filtered); // Cập nhật danh sách bộ phận đã lọc
+            setFilteredDepartments(filtered); 
         } else {
             setFilteredDepartments(departmentList?.filter(dept => dept.co === company) || []); // Lọc theo công ty đã chọn
         }
@@ -174,7 +174,7 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
 
     const handleChangeDepartment = (department: string) => {
 
-        console.log("Selected department:", department); // Log the selected department 
+        console.log("Selected department:", department); 
         onDepartment(department);
     };
 

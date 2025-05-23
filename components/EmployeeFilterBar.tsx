@@ -28,9 +28,8 @@ export default function EmployeeFilterBar({
     onNewdutnmChange
 }: EmployeeFilterBarProps) {
     return (
-        <div className="flex gap-2 mb-4">
-            {/* Chức vụ mới */}
-            {/* Dropdown chức vụ mới đẹp */}
+        <div className="flex items-center gap-4 overflow-x-auto w-full">
+            {/* Dropdown chức vụ mới*/}
             <Select
                 value={newdutnm === "" ? "all" : newdutnm}
                 onValueChange={v => onNewdutnmChange(v === "all" ? "" : v)}
@@ -48,7 +47,7 @@ export default function EmployeeFilterBar({
 
 
             {/* Mã phòng ban có icon tìm kiếm */}
-            <div className="relative w-[200px]">
+            <div className="relative w-[160px]">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                     value={dp}
@@ -58,7 +57,7 @@ export default function EmployeeFilterBar({
                 />
             </div>
             {/* Tên nhân viên */}
-            <div className="relative w-[160px]">
+            <div className="relative w-[200px]">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
                 <input
                     value={nm}

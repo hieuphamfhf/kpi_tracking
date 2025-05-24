@@ -4,76 +4,50 @@ import { ReturnTaiwanPeriodListResType } from "@/app/schemaValidations/ReturnTai
 import { exportToExcel } from "@/components/excelExportService";
 import { Button } from "@/components/ui/button"; // Nếu bạn dùng Button từ shadcn/ui
 import { toast } from "react-hot-toast"; // Thêm dòng này nếu chưa có
-
+import { exportModalTableExcel } from "@/components/excelExportService";
 import * as XLSX from "xlsx"; // nhớ import ở đầu file nếu chưa có
+import { FileOutputIcon } from "lucide-react";
 type Props = {
     open: boolean;
     onClose: () => void;
     data: ReturnTaiwanPeriodListResType;
-    selectedRow?: any; // Thêm dòng này!
+    selectedRow?: any; 
 };
 
 const TaiwanPeriodModal: React.FC<Props> = ({ open, onClose, data, selectedRow }) => {
     if (!open) return null;
-
+  
     const handleExportModalExcel = () => {
         if (!data || data.length === 0) {
             toast.error('資料為空！', { duration: 2000 });
             return;
         }
-        const tableHeaderRow = {
+
+        const tableHeader = {
             項次: "項次",
             backfrdat: "起日",
             backtodat: "迄日",
             sts: "狀態"
         };
 
-        const headerRow = { 項次: "近1年返台休假資料", backfrdat: "", backtodat: "", sts: "" };
-        const infoRow = {
-            項次:
+        exportModalTableExcel({
+            title: "近1年返台休假資料",
+            info:
                 `員工編號：${selectedRow?.empid ?? ""}   ` +
                 `姓名：${selectedRow?.nm ?? ""}   ` +
                 `部門名稱：${selectedRow?.dpnm ?? ""}   ` +
                 `職稱：${selectedRow?.newdutnm ?? ""}`,
-            backfrdat: "",
-            backtodat: "",
-            sts: ""
-        };
-
-        const dataForExport = data.map((item, idx) => ({
-            項次: idx + 1,
-            backfrdat: item.backfrdat,
-            backtodat: item.backtodat,
-            sts: item.sts
-        }));
-
-        // GỘP ĐÚNG THỨ TỰ: tiêu đề lớn, thông tin, header bảng, dữ liệu
-        const excelRows = [headerRow, infoRow, tableHeaderRow, ...dataForExport];
-
-        try {
-            // Tạo worksheet và workbook
-            const ws = XLSX.utils.json_to_sheet(excelRows, { skipHeader: true });
-            // Gộp 4 ô tiêu đề thành 1 (A1:D1)
-            ws["!merges"] = [
-                { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, // merge dòng tiêu đề lớn
-                { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }  // merge dòng thông tin cá nhân
-            ];
-
-
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-
-            XLSX.writeFile(
-                wb,
-                `近1年返台休假資料_${selectedRow?.empid || ""}_${selectedRow?.nm || ""}.xlsx`
-            );
-            toast.success("匯出 Excel 成功!");
-        } catch (err) {
-            toast.error("匯出 Excel 時發生錯誤");
-        }
+            tableHeader,
+            data: data.map((item, idx) => ({
+                項次: idx + 1,
+                backfrdat: item.backfrdat,
+                backtodat: item.backtodat,
+                sts: item.sts
+            })),
+            fileName: `近1年返台休假資料_${selectedRow?.empid || ""}_${selectedRow?.nm || ""}`,
+            mergeCount: 4, // số cột merge
+        });
     };
-
-
 
     return (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
@@ -115,26 +89,22 @@ const TaiwanPeriodModal: React.FC<Props> = ({ open, onClose, data, selectedRow }
                                 <td className="border px-2 text-center">{item.backfrdat}</td>
                                 <td className="border px-2 text-center">{item.backtodat}</td>
                                 {/* <td className="border px-2 text-center">{item.sts}</td> */}
-                                <td className={`border px-2 text-center 
-  ${item.sts === "核准" ? "text-green-600" : item.sts === "撤單" ? "text-red-500" : ""}
-`}>
+                                <td className={`border px-2 text-center ${item.sts === "核准" ? "text-green-600" : item.sts === "撤單" ? "text-red-500" : ""}`}>
                                     {item.sts}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-                <div className="mb-2 flex justify-end">
+                <div className="mt-4 flex justify-end">
                     <Button
-                        size="sm"
-                        className="bg-gray-100 text-black px-3 py-1 hover:bg-gray-300"
                         onClick={handleExportModalExcel}
+                        className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center"
                     >
-                        匯出Excel
+                        <FileOutputIcon className="mr-2 h-4 w-4" />
+                        匯出到 Excel
                     </Button>
-
                 </div>
-
             </div>
         </div>
     );

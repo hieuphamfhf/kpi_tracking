@@ -58,7 +58,7 @@ export default function EmployeeFilterBar({
             </div>
 
             {/* Tên nhân viên */}
-            <div className="relative w-[200px]">
+            <div className="relative w-[160px]">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
                 <input
                     value={nm}
@@ -73,7 +73,7 @@ export default function EmployeeFilterBar({
                 <input
                     value={empid}
                     onChange={e => onEmpidChange(e.target.value.toUpperCase())}
-                    placeholder="部門代號"
+                    placeholder="員工編號"
                     className="border rounded h-9 pl-3 pr-8 w-full"
                 />
             </div>

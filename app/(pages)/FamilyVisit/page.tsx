@@ -71,26 +71,26 @@ export default function FamilyVisitPage() {
     // };
 
     // Fake data mẫu cho modal
-    const fakeModalData = [
-        {
-            empid: "TEST001",
-            sts: "核准",
-            backfrdat: "20240101",
-            backtodat: "20240110",
-            prefrdat: "20231220",
-            pretodat: "20231231",
-            createdtime: "2024/1/2 08:00:00",
-        },
-        {
-            empid: "TEST001",
-            sts: "核准",
-            backfrdat: "20240201",
-            backtodat: "20240210",
-            prefrdat: "20240120",
-            pretodat: "20240131",
-            createdtime: "2024/2/2 08:00:00",
-        },
-    ];
+    // const fakeModalData = [
+    //     {
+    //         empid: "TEST001",
+    //         sts: "核准",
+    //         backfrdat: "20240101",
+    //         backtodat: "20240110",
+    //         prefrdat: "20231220",
+    //         pretodat: "20231231",
+    //         createdtime: "2024/1/2 08:00:00",
+    //     },
+    //     {
+    //         empid: "TEST001",
+    //         sts: "核准",
+    //         backfrdat: "20240201",
+    //         backtodat: "20240210",
+    //         prefrdat: "20240120",
+    //         pretodat: "20240131",
+    //         createdtime: "2024/2/2 08:00:00",
+    //     },
+    // ];
     useEffect(() => {
         fetchData();
         

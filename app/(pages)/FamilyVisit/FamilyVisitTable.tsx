@@ -21,6 +21,7 @@ export default function FamilyVisitTable({
     dpnm,
     newdutnm,
     loading,
+    onRowClick, // Thêm prop này
 }: {
     FamilyVisit: any[],
     onEmpidChange: (v: string) => void,
@@ -33,7 +34,8 @@ export default function FamilyVisitTable({
     dp: string,
     dpnm: string,
     newdutnm: string,
-    loading: boolean
+    loading: boolean,
+     onRowClick?: (item: any) => void; // Khai báo type prop mới
 }) {
     // Header cho xuất Excel và hiển thị bảng
     const headers = {
@@ -85,7 +87,8 @@ export default function FamilyVisitTable({
                             <LogoLoading />
                         </div>
                     ) : (
-                        <GenericTable headers={headers} data={FamilyVisit || []} />
+                        // <GenericTable headers={headers} data={FamilyVisit || []} />
+                        <GenericTable headers={headers} data={FamilyVisit || []} onRowClick={onRowClick} />
                     )}
                 </div>
                 <ScrollBar orientation="horizontal" />

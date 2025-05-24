@@ -2,16 +2,17 @@ import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Danh sách các key cho phép sort
-const SORTABLE_KEYS = ["dp", "nm", "newdutnm","empid","dpnm"];
+const SORTABLE_KEYS = ["dp", "nm", "newdutnm", "empid", "dpnm"];
 
 type TableProps = {
     headers: Record<string, string>;
     data: any[];
+    onRowClick?: (item: any) => void; // Thêm prop này
 };
 
 type SortDirection = "asc" | "desc";
 
-const GenericTable = ({ headers, data }: TableProps) => {
+const GenericTable = ({ headers, data, onRowClick }: TableProps) => { 
     const [sortColumn, setSortColumn] = useState<string | null>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
@@ -74,7 +75,8 @@ const GenericTable = ({ headers, data }: TableProps) => {
             </TableHeader>
             <TableBody>
                 {sortedData.map((item, index) => (
-                    <TableRow key={index}>
+                    <TableRow key={index} onClick={() => onRowClick && onRowClick(item)} className={onRowClick ? "cursor-pointer hover:bg-blue-50" : ""}
+                    >
                         <TableCell>{index + 1}</TableCell>
                         {Object.keys(headers).map((key) => (
                             <TableCell key={key} className="text-sm text-gray-700 border-x">
@@ -84,6 +86,7 @@ const GenericTable = ({ headers, data }: TableProps) => {
                     </TableRow>
                 ))}
             </TableBody>
+
         </Table>
     );
 };

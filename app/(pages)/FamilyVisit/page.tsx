@@ -93,6 +93,7 @@ export default function FamilyVisitPage() {
     ];
     useEffect(() => {
         fetchData();
+        
     }, [empid, nm, dp, dpnm, newdutnm]); // tự động fetch lại khi filter đổi
 
     return (

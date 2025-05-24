@@ -8,6 +8,7 @@ type TableProps = {
     headers: Record<string, string>;
     data: any[];
     onRowClick?: (item: any) => void; // Thêm prop này
+    selectedRowKey?: string | null; // <--- Thêm dòng này!
 };
 
 type SortDirection = "asc" | "desc";

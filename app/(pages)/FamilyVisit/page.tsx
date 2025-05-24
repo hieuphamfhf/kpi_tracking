@@ -10,6 +10,7 @@ import { ReturnTaiwanPeriodListRes } from "@/app/schemaValidations/ReturnTaiwanP
 
 import { Button } from "@/components/ui/button";
 
+
 export default function FamilyVisitPage() {
     const [modalOpen, setModalOpen] = useState(false);
     const [modalData, setModalData] = useState<any[]>([]);
@@ -22,7 +23,7 @@ export default function FamilyVisitPage() {
     const [newdutnm, setNewdutnm] = useState<string>('');
     const [FamilyVisit, setFamilyVisit] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-
+    const [selectedRow, setSelectedRow] = useState<any | null>(null);
     const fetchData = async () => {
         setLoading(true);
         try {
@@ -37,6 +38,7 @@ export default function FamilyVisitPage() {
         }
     };
     const handleRowClick = async (item: any) => {
+        setSelectedRow(item); // Lưu thông tin dòng đang chọn
         setModalOpen(true);
         setModalLoading(true);
         try {
@@ -132,11 +134,13 @@ export default function FamilyVisitPage() {
                                 loading={loading}
                                 onRowClick={handleRowClick}
 
+
                             />
                             <TaiwanPeriodModal
                                 open={modalOpen}
                                 onClose={() => setModalOpen(false)}
                                 data={modalLoading ? [] : modalData}
+                                selectedRow={selectedRow}
                             />
                             {modalLoading && modalOpen && (
                                 <div className="fixed inset-0 flex items-center justify-center z-50">

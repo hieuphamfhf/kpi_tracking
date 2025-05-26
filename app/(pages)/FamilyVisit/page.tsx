@@ -91,10 +91,18 @@ export default function FamilyVisitPage() {
     //         createdtime: "2024/2/2 08:00:00",
     //     },
     // ];
+
+    // useEffect(() => {
+    //     fetchData();
+
+    // }, [empid, nm, dp, dpnm, newdutnm]); // tự động fetch lại khi filter đổi
+
     useEffect(() => {
+        // Nếu chưa chọn gì thì không fetch
+        if (!empid && !nm && !dp && !dpnm && !newdutnm) return;
         fetchData();
-        
-    }, [empid, nm, dp, dpnm, newdutnm]); // tự động fetch lại khi filter đổi
+    }, [empid, nm, dp, dpnm, newdutnm]);
+
 
     return (
 
@@ -145,7 +153,7 @@ export default function FamilyVisitPage() {
                             />
                             {modalLoading && modalOpen && (
                                 <div className="fixed inset-0 flex items-center justify-center z-50">
-                                    <div className="bg-white px-8 py-4 rounded shadow">Đang tải dữ liệu...</div>
+                                    <div className="bg-white px-8 py-4 rounded shadow">Loading...</div>
                                 </div>
                             )}
 

@@ -30,20 +30,20 @@ export default function EmployeeFilterBar({
     return (
         <div className="flex items-center gap-4 overflow-x-auto w-full">
             {/* Dropdown chức vụ mới*/}
-            
+
 
             <Select
-    value={newdutnm}
-    onValueChange={v => onNewdutnmChange(v)}
->
-    <SelectTrigger className="w-[160px] h-9">
-        <SelectValue placeholder="請選擇" />
-    </SelectTrigger>
-    <SelectContent>
-        <SelectItem value="經營主管級">經營主管級</SelectItem>
-        <SelectItem value="一級主管">一級主管</SelectItem>
-    </SelectContent>
-</Select>
+                value={newdutnm}
+                onValueChange={v => onNewdutnmChange(v)}
+            >
+                <SelectTrigger className="w-[160px] h-9">
+                    <SelectValue placeholder="請選擇" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="經營主管級">經營主管級</SelectItem>
+                    <SelectItem value="一級主管">一級主管</SelectItem>
+                </SelectContent>
+            </Select>
 
 
 

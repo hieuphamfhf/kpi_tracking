@@ -21,7 +21,9 @@ export default function FamilyVisitTable({
     dpnm,
     newdutnm,
     loading,
-    onRowClick, // Thêm prop này
+    onRowClick,
+    page = 1,                  
+    pageSize = 50
 }: {
     FamilyVisit: any[],
     onEmpidChange: (v: string) => void,
@@ -35,7 +37,9 @@ export default function FamilyVisitTable({
     dpnm: string,
     newdutnm: string,
     loading: boolean,
-     onRowClick?: (item: any) => void; // Khai báo type prop mới
+    onRowClick?: (item: any) => void;
+    page?: number,
+    pageSize?: number
 }) {
     // Header cho xuất Excel và hiển thị bảng
     const headers = {
@@ -68,7 +72,16 @@ export default function FamilyVisitTable({
                     onDpnmChange={onDpnmChange}
                     onNewdutnmChange={onNewdutnmChange}
                 />
-               
+                {/* Nút xuất dữ liệu ra Excel */}
+                {/* <Button
+                    onClick={handleExportToExcel}
+                    className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center"
+
+                >
+                    <FileOutputIcon className="mr-2 h-4 w-4" />
+                    匯出到 Excel
+                </Button>
+                <Toaster position="bottom-right" reverseOrder={false} /> */}
             </div>
             {/* Bảng dữ liệu */}
             <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
@@ -79,7 +92,13 @@ export default function FamilyVisitTable({
                         </div>
                     ) : (
                         // <GenericTable headers={headers} data={FamilyVisit || []} />
-                        <GenericTable headers={headers} data={FamilyVisit || []} onRowClick={onRowClick} />
+                        <GenericTable
+                            headers={headers}
+                            data={FamilyVisit.slice((page - 1) * pageSize, page * pageSize) || []}
+                            onRowClick={onRowClick}
+                            page={page}
+                            pageSize={pageSize}
+                        />
                     )}
                 </div>
                 <ScrollBar orientation="horizontal" />

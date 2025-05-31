@@ -1,26 +1,29 @@
 import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
 // Danh sách các key cho phép sort
 const SORTABLE_KEYS = ["dp", "nm", "newdutnm", "empid", "dpnm"];
-
 type TableProps = {
     headers: Record<string, string>;
     data: any[];
     onRowClick?: (item: any) => void; // Thêm prop này
     selectedRowKey?: string | null; // <--- Thêm dòng này!
+    page?: number;          // thêm vào
+    pageSize?: number;      // thêm vào
 };
 
 type SortDirection = "asc" | "desc";
 
-const GenericTable = ({ headers, data, onRowClick }: TableProps) => { 
+const GenericTable = ({
+    headers,
+    data,
+    onRowClick,
+    page = 1,
+    pageSize = 50,
+}: TableProps) => {
     const [sortColumn, setSortColumn] = useState<string | null>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-
-    // Hàm sort lại data dựa vào column & direction
     const sortedData = React.useMemo(() => {
         if (!sortColumn) return data;
-        // Cẩn thận nếu data null hoặc undefined
         return [...data].sort((a, b) => {
             const aVal = a[sortColumn] ?? "";
             const bVal = b[sortColumn] ?? "";
@@ -30,7 +33,6 @@ const GenericTable = ({ headers, data, onRowClick }: TableProps) => {
         });
     }, [data, sortColumn, sortDirection]);
 
-    // Khi click header
     const handleSort = (key: string) => {
         if (sortColumn === key) {
             setSortDirection(prev => (prev === "asc" ? "desc" : "asc"));
@@ -70,15 +72,21 @@ const GenericTable = ({ headers, data, onRowClick }: TableProps) => {
                                 )}
                             </span>
                         </TableHead>
-
                     ))}
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {sortedData.map((item, index) => (
-                    <TableRow key={index} onClick={() => onRowClick && onRowClick(item)} className={onRowClick ? "cursor-pointer hover:bg-blue-50" : ""}
+                    <TableRow
+                        key={index}
+                        onClick={() => onRowClick && onRowClick(item)}
+                        className={onRowClick ? "cursor-pointer hover:bg-blue-50" : ""}
                     >
-                        <TableCell>{index + 1}</TableCell>
+                        {/* <TableCell>{index + 1}</TableCell> */}
+                        <TableCell>
+                            {/* Index cho phân trang */}
+                            {(page && pageSize) ? ((page - 1) * pageSize + index + 1) : (index + 1)}
+                        </TableCell>
                         {Object.keys(headers).map((key) => (
                             <TableCell key={key} className="text-sm text-gray-700 border-x">
                                 {item[key]}
@@ -87,9 +95,7 @@ const GenericTable = ({ headers, data, onRowClick }: TableProps) => {
                     </TableRow>
                 ))}
             </TableBody>
-
         </Table>
     );
 };
-
 export default GenericTable;

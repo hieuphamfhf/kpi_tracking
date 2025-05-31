@@ -7,15 +7,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import TaiwanPeriodModal from "@/components/TaiwanPeriodModal";
 import { ReturnTaiwanPeriodListRes } from "@/app/schemaValidations/ReturnTaiwanPeriod";
+import Pagination from "@/components/Pagination"; // import đường dẫn đúng với cấu trúc dự án
 
 import { Button } from "@/components/ui/button";
 
 
 export default function FamilyVisitPage() {
+    const PAGE_SIZE = 50;
+    const [page, setPage] = useState(1);
     const [modalOpen, setModalOpen] = useState(false);
     const [modalData, setModalData] = useState<any[]>([]);
     const [modalLoading, setModalLoading] = useState(false);
-
     const [empid, setEmpid] = useState<string>('');
     const [nm, setNm] = useState<string>('');
     const [dp, setDp] = useState<string>('');
@@ -63,41 +65,10 @@ export default function FamilyVisitPage() {
         }
         setModalLoading(false);
     };
-
-    // const handleRowClick = async (item: any) => {
-    //     setModalOpen(true);
-    //     setModalLoading(false);
-    //     setModalData(fakeModalData); // Dùng fake data
-    // };
-
-    // Fake data mẫu cho modal
-    // const fakeModalData = [
-    //     {
-    //         empid: "TEST001",
-    //         sts: "核准",
-    //         backfrdat: "20240101",
-    //         backtodat: "20240110",
-    //         prefrdat: "20231220",
-    //         pretodat: "20231231",
-    //         createdtime: "2024/1/2 08:00:00",
-    //     },
-    //     {
-    //         empid: "TEST001",
-    //         sts: "核准",
-    //         backfrdat: "20240201",
-    //         backtodat: "20240210",
-    //         prefrdat: "20240120",
-    //         pretodat: "20240131",
-    //         createdtime: "2024/2/2 08:00:00",
-    //     },
-    // ];
-
-    // useEffect(() => {
-    //     fetchData();
-
-    // }, [empid, nm, dp, dpnm, newdutnm]); // tự động fetch lại khi filter đổi
-
+    const totalPage = Math.ceil(FamilyVisit.length / PAGE_SIZE);
+    const pageData = FamilyVisit.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
     useEffect(() => {
+
         // Nếu chưa chọn gì thì không fetch
         if (!empid && !nm && !dp && !dpnm && !newdutnm) return;
         fetchData();
@@ -108,28 +79,20 @@ export default function FamilyVisitPage() {
 
         <div>
             <Tabs defaultValue="account" className="bg-gray-50 min-h-screen">
-                <TabsContent value="account" className="bg-gray-50">
-                    <Card>
-                        <CardHeader>
+                <TabsContent value="account" className="bg-gray-50 ">
+                    <Card >
+                        <CardHeader className="p-4 pb-2">
                             <CardTitle>探親單查詢畫面</CardTitle>
                             <CardDescription>
                                 請使用條件篩選數據，可匯出報告到 Excel。
                             </CardDescription>
-                            {/* <Button
-                                className="mb-2"
-                                onClick={() => {
-                                    setModalData(fakeModalData);
-                                    setModalOpen(true);
-                                    setModalLoading(false);
-                                }}
-                            >
-                                Test mở modal (dữ liệu mẫu)
-                            </Button> */}
+
                         </CardHeader>
-                        <CardContent className="space-y-2">
+                        <CardContent className="pt-2 ">
                             {/* Đặt Table có bộ lọc style lại ở đây */}
                             <FamilyVisitTable
                                 FamilyVisit={FamilyVisit}
+                                // FamilyVisit={pageData} // 
                                 onEmpidChange={setEmpid}
                                 onNmChange={setNm}
                                 onDpChange={setDp}
@@ -142,8 +105,9 @@ export default function FamilyVisitPage() {
                                 newdutnm={newdutnm}
                                 loading={loading}
                                 onRowClick={handleRowClick}
-
-
+                                page={page}          
+                                pageSize={PAGE_SIZE} 
+                                
                             />
                             <TaiwanPeriodModal
                                 open={modalOpen}
@@ -156,8 +120,14 @@ export default function FamilyVisitPage() {
                                     <div className="bg-white px-8 py-4 rounded shadow">Loading...</div>
                                 </div>
                             )}
-
-
+                            <div className="max-w-5xl mx-auto">
+                                <Pagination
+                                    page={page}
+                                    totalPage={totalPage}
+                                    totalCount={FamilyVisit.length}
+                                    onPageChange={setPage}
+                                />
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

@@ -14,36 +14,44 @@ import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { departmentApiRequest } from "@/app/apiRequest/department";
 import { Toaster, toast } from 'react-hot-toast';
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react"; 
+import { Search } from "lucide-react";
 import LogoLoading from "@/components/LogoLoading";
 import GenericTable from "@/components/GenericTable";
 import { exportToExcel } from "@/components/excelExportService";
-export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onEndYM, onDepartment, onCompany, company, loading }: {
+export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onEndYM, onDepartment, onCompany, company,
+    loading,
+    page = 1,
+    pageSize = 50,
+}: {
     ReamingLeaveTime: ReamingLeaveTimeListResType;
     onStartYM: (value: string) => void;
     onEndYM: (value: string) => void;
     onDepartment: (value: string) => void;
     onCompany: (value: string) => void;
     company: string;
-    loading: boolean; 
+    loading: boolean;
+    page?: number,
+    pageSize?: number,
+
+
 
 }) {
 
     const [departmentList, setDepartmentList] = useState<DepartmentListResType | null>([]);
     const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);
-    const [department, setDepartment] = useState<string>(''); 
-    const [searchQuery, setSearchQuery] = useState<string>(''); 
+    const [department, setDepartment] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState<string>('');
 
     // const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
     // const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1).padStart(2, '0'));
-    const [selectedYear, setSelectedYear] = useState<string>(""); 
-    const [selectedMonth, setSelectedMonth] = useState<string>(""); 
-    const [startYear, setStartYear] = useState<string>(""); 
-    const [startMonth, setStartMonth] = useState<string>(""); 
-    const [endYear, setEndYear] = useState<string>(""); 
-    const [endMonth, setEndMonth] = useState<string>(""); 
-    const [startYM, setStartYM] = useState<string>(""); 
-    const [endYM, setEndYM] = useState<string>(""); 
+    const [selectedYear, setSelectedYear] = useState<string>("");
+    const [selectedMonth, setSelectedMonth] = useState<string>("");
+    const [startYear, setStartYear] = useState<string>("");
+    const [startMonth, setStartMonth] = useState<string>("");
+    const [endYear, setEndYear] = useState<string>("");
+    const [endMonth, setEndMonth] = useState<string>("");
+    const [startYM, setStartYM] = useState<string>("");
+    const [endYM, setEndYM] = useState<string>("");
     const [isPopoverOpen, setIsPopoverOpen] = useState<boolean>(false);
 
     const isTimeFilterSelected = startYear && startMonth && endYear && endMonth; // Kiểm tra đã chọn đủ thời gian chưa
@@ -118,37 +126,37 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
             onCompany('');
-            onDepartment(''); 
-            setDepartment(''); 
-            setSearchQuery(''); 
-            setFilteredDepartments([]); 
+            onDepartment('');
+            setDepartment('');
+            setSearchQuery('');
+            setFilteredDepartments([]);
         } else {
-            onCompany(selectedCompany); 
-            onDepartment(''); 
-            setDepartment(''); 
-            setSearchQuery(''); 
-            fetchDepartmentsByCompany(); 
+            onCompany(selectedCompany);
+            onDepartment('');
+            setDepartment('');
+            setSearchQuery('');
+            fetchDepartmentsByCompany();
         }
     };
 
     // Hàm này xử lý cả khi chọn từ dropdown lẫn nhập vào ô tìm kiếm
     const handleDepartmentChange = (value: string) => {
-        setDepartment(value); 
+        setDepartment(value);
         setSearchQuery(value);
-        onDepartment(value); 
+        onDepartment(value);
     };
     // Xử lý tìm kiếm khi người dùng nhập mã bộ phận
     const handleSearch = (upperCaseQuery: string) => {
-        setDepartment(upperCaseQuery);  
-        onDepartment(upperCaseQuery);   
+        setDepartment(upperCaseQuery);
+        onDepartment(upperCaseQuery);
 
         // Nếu nhập từ khóa, lọc danh sách bộ phận hiện có theo công ty đã chọn
         if (departmentList && upperCaseQuery) {
             const filtered = departmentList.filter(dept =>
-                dept.co === company && 
+                dept.co === company &&
                 (dept.dpnm.toLowerCase().startsWith(upperCaseQuery.toLowerCase()) || dept.dp.startsWith(upperCaseQuery))
             );
-            setFilteredDepartments(filtered); 
+            setFilteredDepartments(filtered);
         } else {
             setFilteredDepartments(departmentList?.filter(dept => dept.co === company) || []); // Lọc theo công ty đã chọn
         }
@@ -174,7 +182,7 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
 
     const handleChangeDepartment = (department: string) => {
 
-        console.log("Selected department:", department); 
+        console.log("Selected department:", department);
         onDepartment(department);
     };
 
@@ -365,7 +373,14 @@ export default function ReamingLeaveTimeTable({ ReamingLeaveTime, onStartYM, onE
                             <LogoLoading />
                         </div>
                     ) : (
-                        <GenericTable headers={headers} data={ReamingLeaveTime || []} />
+                        // <GenericTable headers={headers} data={ReamingLeaveTime || []} />
+                        <GenericTable
+                            headers={headers}
+                            data={(ReamingLeaveTime ?? []).slice((page - 1) * pageSize, page * pageSize)}
+                            page={page}
+                            pageSize={pageSize}
+                        />
+
                     )}
                     {/* <GenericTable headers={headers} data={FollowUpReminder || []} /> */}
                 </div>

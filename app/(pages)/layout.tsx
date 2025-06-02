@@ -64,7 +64,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Nội dung chính */}
-        <div className="flex-grow p-6 md:p-1 bg-gray-50 h-screen" style={{ marginTop: '4rem' }}> {/* margin-top để tách biệt với header */}
+        <div className="flex-grow p-6 md:p-1 bg-gray-50 h-screen overflow-auto" style={{ marginTop: '4rem' }}> {/* margin-top để tách biệt với header */}
           {children}
         </div>
       </div>

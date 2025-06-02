@@ -8,7 +8,9 @@ import { ReamingLeaveTimeListResType } from "@/app/schemaValidations/ReamingLeav
 import { formatDateUTC } from "@/lib/extensions";
 import { ReamingLeaveTimeApiRequest } from "@/app/apiRequest/ReamingLeaveTime";
 import { toast } from "react-hot-toast";
+import Pagination from "@/components/Pagination"; // import đường dẫn đúng với cấu trúc dự án
 export default function ReamingLeaveTimePage() {
+
     const [ReamingLeaveTime, setReamingLeaveTime] = useState<ReamingLeaveTimeListResType | any>();
     const [co, setCo] = useState<string>(''); // State cho công ty
     const [department, setDepartment] = useState<string>(''); // State cho bộ phận
@@ -25,15 +27,15 @@ export default function ReamingLeaveTimePage() {
             console.warn("Vui lòng chọn công ty trước khi lọc dữ liệu.");
             return;
         }
-     setLoading(true); // bật loading
+        setLoading(true); // bật loading
         try {
             const queryParams = {
                 co: co || '',  // Chỉ cho phép giá trị đã chọn
                 department: department || '', // Cho phép bộ phận rỗng
                 startYM: startYM || '',
-                    endYM: endYM || '',
+                endYM: endYM || '',
             };
-    
+
             const { payload } = await ReamingLeaveTimeApiRequest.getList(queryParams);
             console.log('Dữ liệu nhận được từ API:', payload);
             //delay 1 giây để test loading
@@ -44,7 +46,7 @@ export default function ReamingLeaveTimePage() {
                 toast.error('資料為空！'
                     , {
                         duration: 2000,
-                         position: 'top-center',
+                        position: 'top-center',
                     });
             }
         } catch (error) {
@@ -54,7 +56,7 @@ export default function ReamingLeaveTimePage() {
             setLoading(false);
         }
     };
-    
+
 
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
@@ -69,12 +71,18 @@ export default function ReamingLeaveTimePage() {
         setDepartment(selectedDepartment); // Cập nhật state với bộ phận đã chọn
     };
 
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(50);
+    const totalPage = Math.ceil((ReamingLeaveTime?.length || 0) / pageSize);
+    const pageData = (ReamingLeaveTime || []).slice((page - 1) * pageSize, page * pageSize);
+    // Reset page về 1 khi filter đổi
+    useEffect(() => { setPage(1); }, [co, department, startYM, endYM]);
     useEffect(() => {
         if (co) { // Chỉ gọi API nếu công ty đã được chọn
             fetchData();
         }
     }, [co, department, , startYM, endYM]);
-    
+
     return (
         <div>
             <Tabs defaultValue="account" className="bg-gray-50">
@@ -89,7 +97,11 @@ export default function ReamingLeaveTimePage() {
                         <CardContent className="space-y-2">
                             <div className="space-y-1">
                                 <ReamingLeaveTimeTable
-                                    ReamingLeaveTime={ReamingLeaveTime}
+                                    // ReamingLeaveTime={pageData}
+                                    ReamingLeaveTime={ReamingLeaveTime} //  FULL DATA
+
+                                    page={page}
+                                    pageSize={pageSize}
                                     onStartYM={setstartYM}
                                     onEndYM={setendYM}
                                     onDepartment={handleDepartmentChange}
@@ -97,6 +109,16 @@ export default function ReamingLeaveTimePage() {
                                     company={co} // Truyền giá trị của công ty xuống component con
                                     loading={loading}
                                 />
+                            </div>
+                            <div className="max-w-5xl mx-auto">
+                                <div className="max-w-5xl mx-auto">
+                                    <Pagination
+                                        page={page}
+                                        totalPage={totalPage}
+                                        totalCount={ReamingLeaveTime?.length || 0}
+                                        onPageChange={setPage}
+                                    />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

@@ -563,10 +563,10 @@ export default function MonthlyKPITable({ MonthlyKPI, onStartYM, onDepartment, o
                                 <TableHead className="w-48" rowSpan={2}>廠處代碼</TableHead>
                                 <TableHead className="w-48" rowSpan={2}>廠</TableHead>
                                 <TableHead colSpan={2} className="w-96 text-center">剩餘換休未休時數</TableHead> {/* Cột cha gộp hai cột con */}
-                                <TableHead colSpan={2} className="w-96 text-center">識別證異常率</TableHead> {/* Cột cha gộp hai cột con */}
-                                <TableHead colSpan={2} className="w-96 text-center">文書案件催辦率</TableHead> {/* Cột cha gộp hai cột con */}
-                                <TableHead colSpan={2} className="w-96 text-center">訓練計畫完成率</TableHead> {/* Cột cha gộp hai cột con */}
-                                <TableHead colSpan={2} className="w-96 text-center">加班未於事前填單異常次數</TableHead> {/* Cột cha gộp hai cột con */}
+                                <TableHead colSpan={2} className="w-96 text-center">識別證異常率</TableHead> 
+                                <TableHead colSpan={2} className="w-96 text-center">文書案件催辦率</TableHead> 
+                                <TableHead colSpan={2} className="w-96 text-center">訓練計畫完成率</TableHead> 
+                                <TableHead colSpan={2} className="w-96 text-center">加班未於事前填單異常次數</TableHead> 
 
                             </TableRow>
                             <TableRow>

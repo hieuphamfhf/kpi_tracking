@@ -10,8 +10,7 @@ import { ReturnTaiwanPeriodListRes } from "@/app/schemaValidations/ReturnTaiwanP
 import Pagination from "@/components/Pagination"; // import đường dẫn đúng với cấu trúc dự án
 
 import { Button } from "@/components/ui/button";
-
-
+import { dedupeTaiwanPeriod } from "@/utils/dedupeTaiwanPeriod";
 export default function FamilyVisitPage() {
     const PAGE_SIZE = 50;
     const [page, setPage] = useState(1);
@@ -55,8 +54,14 @@ export default function FamilyVisitPage() {
             const data = await res.json();
             // Validate schema
             const parsed = ReturnTaiwanPeriodListRes.safeParse(data);
+            // if (parsed.success) {
+            //     setModalData(parsed.data);
+            // } else {
+            //     setModalData([]);
+            // }
             if (parsed.success) {
-                setModalData(parsed.data);
+                const deduped = dedupeTaiwanPeriod(parsed.data); // lọc trùng
+                setModalData(deduped);
             } else {
                 setModalData([]);
             }
@@ -105,9 +110,9 @@ export default function FamilyVisitPage() {
                                 newdutnm={newdutnm}
                                 loading={loading}
                                 onRowClick={handleRowClick}
-                                page={page}          
-                                pageSize={PAGE_SIZE} 
-                                
+                                page={page}
+                                pageSize={PAGE_SIZE}
+
                             />
                             <TaiwanPeriodModal
                                 open={modalOpen}

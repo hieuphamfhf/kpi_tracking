@@ -35,6 +35,21 @@ export default function NavLinks() {
       return links.filter(link => !link.onlyManager);
     }
   }, [isManager]);
+
+  // Lấy lại query hiện tại từ URL để append vào các link
+  function addAdminKeyToHref(href: string) {
+    if (isManager) {
+      // Nếu đã có query, thêm vào sau dấu &
+      if (href.includes("?")) {
+        return `${href}&admin_key=secret123`;
+      } else {
+        return `${href}?admin_key=secret123`;
+      }
+    }
+    return href;
+  }
+
+
   return (
     <>
       {filteredLinks.map((link) => {
@@ -44,7 +59,8 @@ export default function NavLinks() {
         return (
           <Link
             key={link.name}
-            href={link.href}
+            // href={link.href}
+            href={addAdminKeyToHref(link.href)} // sử dụng hàm này
             onClick={() => setActiveLink(link.href)}
             className={clsx(
               "flex h-[48px] grow items-center justify-center gap-2 rounded-md bg-gray-50 p-3 text-sm font-medium text-gray-800 hover:bg-gray-300 hover:text-gray-900 md:flex-none md:justify-start md:p-2 md:px-3",

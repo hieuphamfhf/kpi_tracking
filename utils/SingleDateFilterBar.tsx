@@ -11,51 +11,33 @@ import { departmentApiRequest } from "@/app/apiRequest/department";
 import { DepartmentListResType } from "@/app/schemaValidations/department";
 
 // Props cho FilterBar: truyền vào công ty, bộ phận, callback để thay đổi, và option để ẩn ô tìm kiếm
-interface FilterBarProps {
+interface SingleDateFilterBarProps {
     company: string;
     department: string;
-    status?: string; //
-    dateMode?: 'range' | 'single';
-    showSearch?: boolean;
-    showStatusFilter?: boolean; // kiểm soát hiện/ẩn dropdown
-    showNewdutnmFilter?: boolean;
-    showCompanyFilter?: boolean;
-    newdutnm: string;
-    onStatusChange?: (status: string) => void; // 
     onCompanyChange: (company: string) => void;
     onDepartmentChange: (department: string) => void;
-    onDateChange: (from: string, to: string) => void;
-    onNewdutnmChange: (value: string) => void;
-
+    onDateChange: (selectedDate: string) => void; // Chỉ trả về 1 ngày
+    showSearch?: boolean;
 }
 
-export default function FilterBar({
+
+export default function SingleDateFilterBar({
     company,
     department,
     onCompanyChange,
     onDepartmentChange,
     onDateChange,
     showSearch = true,
-    dateMode = 'range',
-    onStatusChange,
-    newdutnm = "",
-    onNewdutnmChange,
-    showNewdutnmFilter = false,
-    showStatusFilter = false,
-    showCompanyFilter = true,
-}: FilterBarProps) {
+}: SingleDateFilterBarProps) {
     // State dữ liệu bộ phận và lọc bộ phận theo công ty
     const [departmentList, setDepartmentList] = useState<DepartmentListResType>([]);
     const [filteredDepartments, setFilteredDepartments] = useState<DepartmentListResType>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
-    const [date, setDate] = useState<DateRange | undefined>(() => {
-        if (dateMode === 'single') {
-            return { from: new Date(), to: undefined }; // default là hôm nay
-        }
-        return { from: startOfMonth(new Date()), to: endOfMonth(new Date()) };
+    // State chọn ngày mặc định từ đầu tháng đến cuối tháng
+    const [date, setDate] = useState<DateRange | undefined>({
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
     });
-
-
     // Cờ kiểm tra đã chọn công ty hay chưa
     const isCompanySelected = !!company;
     // Lấy danh sách tất cả bộ phận từ API một lần duy nhất
@@ -99,13 +81,12 @@ export default function FilterBar({
         );
         setFilteredDepartments(filtered);
     };
-
+    // Xử lý khi chọn ngày
     const handleDateChange = (range: DateRange | undefined) => {
         setDate(range);
-        if (range?.from && (dateMode === 'single' || range?.to)) {
-            const from = format(range.from, "yyyyMMdd").substring(1);
-            const to = dateMode === 'single' ? from : format(range.to!, "yyyyMMdd").substring(1);
-            onDateChange(from, to);
+        if (range?.from) {
+            const selectedDate = format(range.from, "yyyyMMdd").substring(1);
+            onDateChange(selectedDate); // Chỉ truyền một ngày duy nhất
         }
     };
 
@@ -113,57 +94,16 @@ export default function FilterBar({
     return (
         <div className="flex items-center gap-4 overflow-x-auto w-full">
             {/* Dropdown chọn công ty */}
-            {showCompanyFilter !== false && (
-                <Select onValueChange={onCompanyChange} value={company}>
-                    <SelectTrigger className="w-[150px]">
-                        <SelectValue placeholder="--選擇公司--" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="LG">LG</SelectItem>
-                        <SelectItem value="0D">0D</SelectItem>
-                        <SelectItem value="LT">LT</SelectItem>
-                    </SelectContent>
-                </Select>
-            )}
-
-            {/* Dropdown chức vụ mới*/}
-            {showNewdutnmFilter !== false && onNewdutnmChange && (
-                <Select
-                    value={newdutnm}
-                    onValueChange={v => onNewdutnmChange(v)}
-                >
-                    <SelectTrigger className="w-[160px] h-9">
-                        <SelectValue placeholder="請選擇" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="經營主管級">經營主管級</SelectItem>
-                        <SelectItem value="一級主管">一級主管</SelectItem>
-                    </SelectContent>
-                </Select>
-            )}
-
-            {/* Dropdown chọn showStatusFilter */}
-            {showStatusFilter !== false && onStatusChange && (
-                <Select onValueChange={onStatusChange} >
-                    <SelectTrigger className="w-[150px]">
-                        <SelectValue placeholder="--選擇狀態--" />
-                    </SelectTrigger>
-                    {/* <SelectContent>
-                <SelectItem value="">全部狀態</SelectItem>
-                <SelectItem value="TW">搭乘包機返台</SelectItem>
-                <SelectItem value="VN">搭乘包機返越</SelectItem>
-                <SelectItem value="ING">目前返台中</SelectItem>
-                </SelectContent> */}
-                    <SelectContent>
-                        <SelectItem value="ALL">全部狀態</SelectItem>
-                        <SelectItem value="TW">搭乘包機返台</SelectItem>
-                        <SelectItem value="VN">搭乘包機返越</SelectItem>
-                        <SelectItem value="ING">目前返台中</SelectItem>
-                    </SelectContent>
-
-                </Select>
-            )}
-
+            <Select onValueChange={onCompanyChange} value={company}>
+                <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="--選擇公司--" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="LG">LG</SelectItem>
+                    <SelectItem value="0D">0D</SelectItem>
+                    <SelectItem value="LT">LT</SelectItem>
+                </SelectContent>
+            </Select>
 
             {/* Chọn khoảng thời gian - có disabled khi chưa chọn công ty */}
             <Popover>
@@ -171,8 +111,7 @@ export default function FilterBar({
                     <button
                         disabled={!isCompanySelected}
                         className={cn(
-                            dateMode === 'single' ? "w-[150px]" : "w-[210px]",
-                            "h-9 px-3 py-1 text-sm flex items-center justify-between rounded-md border bg-white shadow-sm",
+                            "w-[210px] h-9 px-3 py-1 text-sm flex items-center justify-between rounded-md border bg-white shadow-sm",
                             !isCompanySelected && "opacity-50 cursor-not-allowed"
                         )}
 
@@ -191,31 +130,21 @@ export default function FilterBar({
                     </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                    {dateMode === 'single' ? (
-                        <Calendar
-                            initialFocus
-                            mode="single"
-                            defaultMonth={date?.from}
-                            selected={date?.from}
-                            onSelect={selected => handleDateChange({ from: selected as Date })}
-                            numberOfMonths={1}
-                        />
-                    ) : (
-                        <Calendar
-                            initialFocus
-                            mode="range"
-                            defaultMonth={date?.from}
-                            selected={date}
-                            onSelect={selected => handleDateChange(selected as DateRange)}
-                            numberOfMonths={2}
-                        />
-                    )}
+                    <Calendar
+                        initialFocus
+                        mode="single" // Chọn ngày duy nhất
+                        defaultMonth={date?.from}
+                        selected={date?.from}
+                        onSelect={(selectedDate) => handleDateChange({ from: selectedDate })}
+                        numberOfMonths={1}
+                    />
+
                 </PopoverContent>
             </Popover>
 
             {/* Ô tìm kiếm mã bộ phận - có thể ẩn thông qua props */}
             {showSearch !== false && (
-                <div className="relative w-[150px]">
+                <div className="relative w-[200px]">
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
                         placeholder="輸入部門代號..."

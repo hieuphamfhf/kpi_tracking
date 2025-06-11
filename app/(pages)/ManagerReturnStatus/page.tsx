@@ -32,6 +32,7 @@ export default function ManagerReturnStatusPage() {
                 department: department || '', // Cho phép bộ phận rỗng
                 startDate: startDate || '',
                 endDate: endDate || '',
+                 status: status || '', 
             };
 
             const { payload } = await ManagerReturnStatusApiRequest.getList(queryParams);

@@ -1,4 +1,4 @@
-import { FollowUpReminderListResType } from "@/app/schemaValidations/FollowUpReminder";
+import { ManagerReturnStatusListResType } from "@/app/schemaValidations/ManagerReturnStatus";
 import { FileOutputIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -8,9 +8,10 @@ import FilterBar from "@/components/FilterBar";
 import { Toaster } from "react-hot-toast";
 import LoadingIndicator from "@/components/LoadingIndicator";
 import LogoLoading from "@/components/LogoLoading";
+import { useState } from "react"; // Đảm bảo đã import
 // Component hiển thị bảng nhắc nhở follow-up và bộ lọc tìm kiếm
-export default function FollowUpReminderTable({
-    FollowUpReminder,
+export default function ManagerReturnStatusTable({
+    ManagerReturnStatus,
     onStartDate,
     onEndDate,
     onDepartment,
@@ -19,7 +20,7 @@ export default function FollowUpReminderTable({
     department,
     loading,
 }: {
-    FollowUpReminder: FollowUpReminderListResType;
+    ManagerReturnStatus: ManagerReturnStatusListResType;
     onStartDate: (value: string) => void;
     onEndDate: (value: string) => void;
     onDepartment: (value: string) => void;
@@ -30,30 +31,30 @@ export default function FollowUpReminderTable({
 }) {
     // Header cho xuất Excel và hiển thị bảng
     const headers = {
-        co: "公司",
-        dp: "部門代號",
-        dpnm: "部門名稱",
-        empid: "VNW帳號",
-        nm: "姓名",
-        cptopnm: "案件名稱",
-        newdutid: "新職務代號",
-        newdutnm: "新職務名稱",
-        vhno: "案件編號",
-        kd: "類別",
-        sumr: "摘要",
-        cnt: "催辦次數",
-        foldat: "催辦日",
-        cancdat: "銷案日",
+        empid: "員工編號 (Mã nhân viên)",
+        nm: "姓名 (Họ tên)",
+        foldat: "職稱 (Chức vụ)",
+        dp: "部門代號 (Mã bộ phận)",
+        dpnm: "部門名稱 (Tên bộ phận)",
+        cancdat: "返台探親起訖日_startDay_endDay",
+        // newdutid: "新職務代號",
+        // newdutnm: "新職務名稱",
+        // vhno: "案件編號",
+        // kd: "類別",
+        // sumr: "摘要",
+        // cnt: "催辦次數",
+        // foldat: "催辦日",
+        // cancdat: "銷案日",
     };
     // Hàm xử lý xuất Excel từ bảng hiện tại
     const handleExportToExcel = () => {
-        exportToExcel(FollowUpReminder, headers, "高階主管行蹤查詢");
+        exportToExcel(ManagerReturnStatus, headers, "高階主管行蹤查詢");
     };
-
+    const [status, setStatus] = useState<string>("");
+    const [newdutnm, setNewdutnm] = useState("");
     return (
         <>
             <div className="flex items-center py-2 justify-between">
-
                 <FilterBar
                     company={company}
                     department={department}
@@ -63,16 +64,26 @@ export default function FollowUpReminderTable({
                             onDepartment("");
                         } else {
                             onCompany(selected);
-                            onDepartment("");// Reset bộ phận khi đổi công ty
+                            onDepartment("");
                         }
                     }}
+                    showCompanyFilter={false}
                     onDepartmentChange={onDepartment}
                     onDateChange={(from, to) => {
                         onStartDate(from);
                         onEndDate(to);
                     }}
-                //  showSearch={false} //  Không hiển thị ô tìm kiếm
+                    dateMode="single"
+                    // showSearch={false} //  Không hiển thị ô tìm kiếm
+                    
+                    showStatusFilter={true}
+                    status={status}
+                    onStatusChange={setStatus}
+                    newdutnm={newdutnm}
+                    onNewdutnmChange={setNewdutnm}
+                    showNewdutnmFilter={true}
                 />
+
                 {/* Nút xuất dữ liệu ra Excel */}
                 <Button
                     onClick={handleExportToExcel}
@@ -92,12 +103,12 @@ export default function FollowUpReminderTable({
                             <LogoLoading />
                         </div>
                     ) : (
-                        <GenericTable headers={headers} data={FollowUpReminder || []} />
+                        <GenericTable headers={headers} data={ManagerReturnStatus || []} />
                     )}
 
 
 
-                    {/* <GenericTable headers={headers} data={FollowUpReminder || []} /> */}
+                    {/* <GenericTable headers={headers} data={ManagerReturnStatus || []} /> */}
                 </div>
                 <ScrollBar orientation="horizontal" />
             </ScrollArea>

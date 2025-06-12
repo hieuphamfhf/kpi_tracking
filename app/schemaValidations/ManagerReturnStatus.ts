@@ -1,20 +1,22 @@
 import { z } from "zod";
 
 export const ManagerReturnStatusSchema = z.object({
-    co: z.string(),
-    dp: z.string(),
-    dpnm: z.string(),
     empid: z.string(),
+    sts: z.string(),
+    backfrdat: z.string(),
+    backtodat: z.string(),
+    prefdrat: z.string(),
+    pretodat: z.string(),
+    createdtime: z.string(),
+    deleted: z.boolean(),
     nm: z.string(),
-    cptopnm: z.string(),
+    dp: z.string(),
     newdutid: z.string(),
     newdutnm: z.string(),
-    vhno: z.string(),
-    kd:z.string(),
-    sumr: z.string(),
-    cnt: z.string(),
-    foldat: z.string(),
-    cancdat: z.string(),
-})
+    dpnm: z.string(),
+    empID_TW: z.string(),
+    jpnm: z.string(),
+});
+
 export const ManagerReturnStatusListRes = z.array(ManagerReturnStatusSchema);
-export type ManagerReturnStatusListResType = z.TypeOf<typeof ManagerReturnStatusListRes>
+export type ManagerReturnStatusListResType = z.infer<typeof ManagerReturnStatusListRes>;

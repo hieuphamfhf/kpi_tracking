@@ -65,33 +65,43 @@ export default function ManagerReturnStatusTable({
         <>
             <div className="flex items-center py-2 justify-between">
                 <FilterBar
-                    // company={company}
-                    department={department}
-                    company=""
-                    onCompanyChange={() => { }}
-                    showCompanyFilter={false}
-                    onDepartmentChange={onDepartment}
+                    // --- Mã nhân viên ---
+                    empid={empid}
+                    onEmpidChange={setEmpid}
+                    showEmpidFilter={true}
+
+                    // --- Tên nhân viên ---
+                    nm={nm}
+                    onNmChange={setNm}
+                    showNmFilter={false}
+
+                    // --- Trạng thái ---
+                    status={status}
+                    onStatusChange={setStatus}
+                    showStatusFilter={true}
+
+                    // --- Chức vụ/cấp bậc ---
+                    newdutnm={newdutnm}
+                    onNewdutnmChange={setNewdutnm}
+                    showNewdutnmFilter={true}
+
+                    // --- Ngày tra cứu ---
+                    dateMode="single"
                     onDateChange={(from, to) => {
                         onStartDate(from);
                         onEndDate(to);
                     }}
-                    dateMode="single"
-                    // showSearch={false} //  Không hiển thị ô tìm kiếm
 
-                    empid={empid}
-                    onEmpidChange={setEmpid}
-                    showEmpidFilter={true}
-                    nm={nm}
-                    onNmChange={setNm}
-                    showNmFilter={true}
-
-                    showStatusFilter={true}
-                    status={status}
-                    onStatusChange={setStatus}
-                    newdutnm={newdutnm}
-                    onNewdutnmChange={setNewdutnm}
-                    showNewdutnmFilter={true}
+                    // --- Công ty, phòng ban (không dùng) ---
+                    company=""
+                    onCompanyChange={() => { }}
+                    showCompanyFilter={false}
+                    department={department}
+                    onDepartmentChange={onDepartment}
+                    showSearch={false} 
+                    showDepartmentFilter={false}
                 />
+
 
                 {/* Nút xuất dữ liệu ra Excel */}
                 <Button

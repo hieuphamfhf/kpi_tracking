@@ -10,54 +10,81 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { departmentApiRequest } from "@/app/apiRequest/department";
 import { DepartmentListResType } from "@/app/schemaValidations/department";
 
-// Props cho FilterBar: truyền vào công ty, bộ phận, callback để thay đổi, và option để ẩn ô tìm kiếm
-interface FilterBarProps {
-    company: string;
-    department: string;
-    status?: string; //
-    newdutnm: string;
-    dateMode?: 'range' | 'single';
-    showSearch?: boolean;
-    showStatusFilter?: boolean; // kiểm soát hiện/ẩn dropdown
-    showNewdutnmFilter?: boolean;
-    showCompanyFilter?: boolean;
-    showEmpidFilter?: boolean;
-    showNmFilter?: boolean;
-   
-    empid?: string;
-    nm?: string;
-    onEmpidChange?: (v: string) => void;
-    onNmChange?: (v: string) => void;
 
-    onStatusChange?: (status: string) => void; // 
+interface FilterBarProps {
+    // --- Công ty ---
+    company: string;
     onCompanyChange: (company: string) => void;
+    showCompanyFilter?: boolean;
+
+    // --- Phòng ban ---
+    department: string;
     onDepartmentChange: (department: string) => void;
-    onDateChange: (from: string, to: string) => void;
+    showSearch?: boolean;
+    showDepartmentFilter?: boolean;
+
+    // --- Mã nhân viên ---
+    empid?: string;
+    onEmpidChange?: (v: string) => void;
+    showEmpidFilter?: boolean;
+
+    // --- Tên nhân viên ---
+    nm?: string;
+    onNmChange?: (v: string) => void;
+    showNmFilter?: boolean;
+
+    // --- Trạng thái ---
+    status?: string;
+    onStatusChange?: (status: string) => void;
+    showStatusFilter?: boolean;
+
+    // --- Chức vụ/cấp bậc ---
+    newdutnm: string;
     onNewdutnmChange: (value: string) => void;
+    showNewdutnmFilter?: boolean;
+
+    // --- Ngày/Thời gian ---
+    dateMode?: 'range' | 'single';
+    onDateChange: (from: string, to: string) => void;
 }
 
+
+
 export default function FilterBar({
+    // --- Công ty ---
     company,
-    department,
     onCompanyChange,
+    showCompanyFilter = true,
+
+    // --- Phòng ban ---
+    department,
     onDepartmentChange,
-    onDateChange,
     showSearch = true,
-    dateMode = 'range',
+    showDepartmentFilter = true,
+
+    // --- Mã nhân viên ---
+    empid = "",
+    onEmpidChange,
+    showEmpidFilter = false,
+
+    // --- Tên nhân viên ---
+    nm = "",
+    onNmChange,
+    showNmFilter = false,
+
+    // --- Trạng thái ---
+    status,
     onStatusChange,
+    showStatusFilter = false,
+
+    // --- Chức vụ/cấp bậc ---
     newdutnm = "",
     onNewdutnmChange,
     showNewdutnmFilter = false,
-    showStatusFilter = false,
-    showCompanyFilter = true,
-    showEmpidFilter = false,
-    showNmFilter = false,
-    empid = "",
-    nm = "",
-    onEmpidChange,
-    onNmChange,
 
-
+    // --- Ngày/Thời gian ---
+    dateMode = 'range',
+    onDateChange,
 }: FilterBarProps) {
     // State dữ liệu bộ phận và lọc bộ phận theo công ty
     const [departmentList, setDepartmentList] = useState<DepartmentListResType>([]);
@@ -96,14 +123,14 @@ export default function FilterBar({
         }
     }, [company, departmentList]);
 
-//     useEffect(() => {
-//     // Nếu không có filter company, lấy toàn bộ phòng ban
-//     if (!company) {
-//         setFilteredDepartments(departmentList);
-//     } else {
-//         setFilteredDepartments(departmentList.filter((d) => d.co === company));
-//     }
-// }, [company, departmentList]);
+    //     useEffect(() => {
+    //     // Nếu không có filter company, lấy toàn bộ phòng ban
+    //     if (!company) {
+    //         setFilteredDepartments(departmentList);
+    //     } else {
+    //         setFilteredDepartments(departmentList.filter((d) => d.co === company));
+    //     }
+    // }, [company, departmentList]);
 
 
     useEffect(() => {
@@ -250,6 +277,35 @@ export default function FilterBar({
                     />
                 </div>
             )}
+
+            {/*  bộ phận dropdown*/}
+            {showDepartmentFilter !== false && (
+                <Select
+                    // onValueChange={onDepartmentChange}
+                    onValueChange={(value) => {
+                        onDepartmentChange(value);
+                        setSearchQuery(value); // Cập nhật input khi chọn dropdown
+                    }}
+
+                    value={department}
+                // disabled={!isCompanySelected}
+                >
+                    <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder={company ? "--選擇部門--" : "請先選擇公司"} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-64 overflow-y-auto">
+                        {filteredDepartments.map((item, idx) => (
+                            <SelectItem key={idx} value={item.dp}>
+                                {item.dpnm} - {item.dp}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+            )}
+
+
+            {/*Ten*/}
             {showNmFilter !== false && onNmChange && (
                 <div className="relative w-[160px]">
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
@@ -261,6 +317,7 @@ export default function FilterBar({
                     />
                 </div>
             )}
+            {/*ID*/}
             {showEmpidFilter !== false && onEmpidChange && (
                 <div className="relative w-[160px]">
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
@@ -272,29 +329,6 @@ export default function FilterBar({
                     />
                 </div>
             )}
-
-            {/* Bộ phận */}
-            <Select
-                // onValueChange={onDepartmentChange}
-                onValueChange={(value) => {
-                    onDepartmentChange(value);
-                    setSearchQuery(value); // Cập nhật input khi chọn dropdown
-                }}
-
-                value={department}
-            // disabled={!isCompanySelected}
-            >
-                <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder={company ? "--選擇部門--" : "請先選擇公司"} />
-                </SelectTrigger>
-                <SelectContent className="max-h-64 overflow-y-auto">
-                    {filteredDepartments.map((item, idx) => (
-                        <SelectItem key={idx} value={item.dp}>
-                            {item.dpnm} - {item.dp}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
         </div>
     );
 }

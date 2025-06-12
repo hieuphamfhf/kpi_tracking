@@ -10,7 +10,8 @@ import { toast } from "react-hot-toast";
 
 export default function FollowUpReminderPage() {
     const [FollowUpReminder, setFollowUpReminder] = useState<FollowUpReminderListResType | any>();
-    const [co, setCo] = useState<string>(''); // State cho công ty
+    // const [co, setCo] = useState<string>(''); // State cho công ty
+    const [co, setCo] = useState<string>('LG'); // Mặc định là LG thay vì ''
     const [department, setDepartment] = useState<string>(''); // State cho bộ phận
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);

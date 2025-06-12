@@ -15,18 +15,25 @@ interface FilterBarProps {
     company: string;
     department: string;
     status?: string; //
+    newdutnm: string;
     dateMode?: 'range' | 'single';
     showSearch?: boolean;
     showStatusFilter?: boolean; // kiểm soát hiện/ẩn dropdown
     showNewdutnmFilter?: boolean;
     showCompanyFilter?: boolean;
-    newdutnm: string;
+    showEmpidFilter?: boolean;
+    showNmFilter?: boolean;
+   
+    empid?: string;
+    nm?: string;
+    onEmpidChange?: (v: string) => void;
+    onNmChange?: (v: string) => void;
+
     onStatusChange?: (status: string) => void; // 
     onCompanyChange: (company: string) => void;
     onDepartmentChange: (department: string) => void;
     onDateChange: (from: string, to: string) => void;
     onNewdutnmChange: (value: string) => void;
-
 }
 
 export default function FilterBar({
@@ -43,6 +50,14 @@ export default function FilterBar({
     showNewdutnmFilter = false,
     showStatusFilter = false,
     showCompanyFilter = true,
+    showEmpidFilter = false,
+    showNmFilter = false,
+    empid = "",
+    nm = "",
+    onEmpidChange,
+    onNmChange,
+
+
 }: FilterBarProps) {
     // State dữ liệu bộ phận và lọc bộ phận theo công ty
     const [departmentList, setDepartmentList] = useState<DepartmentListResType>([]);
@@ -80,6 +95,16 @@ export default function FilterBar({
             setFilteredDepartments([]);
         }
     }, [company, departmentList]);
+
+//     useEffect(() => {
+//     // Nếu không có filter company, lấy toàn bộ phòng ban
+//     if (!company) {
+//         setFilteredDepartments(departmentList);
+//     } else {
+//         setFilteredDepartments(departmentList.filter((d) => d.co === company));
+//     }
+// }, [company, departmentList]);
+
 
     useEffect(() => {
         setSearchQuery(department); // Cập nhật input khi chọn từ dropdown
@@ -133,7 +158,7 @@ export default function FilterBar({
                     onValueChange={v => onNewdutnmChange(v)}
                 >
                     <SelectTrigger className="w-[160px] h-9">
-                        <SelectValue placeholder="請選擇" />
+                        <SelectValue placeholder="--請選擇--" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="經營主管級">經營主管級</SelectItem>
@@ -169,11 +194,10 @@ export default function FilterBar({
             <Popover>
                 <PopoverTrigger asChild>
                     <button
-                        disabled={!isCompanySelected}
+                        // disabled={!isCompanySelected}
                         className={cn(
                             dateMode === 'single' ? "w-[150px]" : "w-[210px]",
-                            "h-9 px-3 py-1 text-sm flex items-center justify-between rounded-md border bg-white shadow-sm",
-                            !isCompanySelected && "opacity-50 cursor-not-allowed"
+                            "h-9 px-3 py-1 text-sm flex items-center justify-between rounded-md border bg-white shadow-sm"
                         )}
 
                     // disabled={!isCompanySelected}
@@ -222,7 +246,29 @@ export default function FilterBar({
                         value={searchQuery}
                         onChange={(e) => handleSearch(e.target.value)}
                         className="pr-8 pl-3"
-                        disabled={!isCompanySelected}
+                    // disabled={!isCompanySelected}
+                    />
+                </div>
+            )}
+            {showNmFilter !== false && onNmChange && (
+                <div className="relative w-[160px]">
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                    <Input
+                        value={nm}
+                        onChange={e => onNmChange(e.target.value)}
+                        placeholder="姓名"
+                        className="border rounded h-9 pl-3 pr-8 w-full"
+                    />
+                </div>
+            )}
+            {showEmpidFilter !== false && onEmpidChange && (
+                <div className="relative w-[160px]">
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                    <Input
+                        value={empid}
+                        onChange={e => onEmpidChange(e.target.value.toUpperCase())}
+                        placeholder="員工編號"
+                        className="border rounded h-9 pl-3 pr-8 w-full"
                     />
                 </div>
             )}
@@ -236,7 +282,7 @@ export default function FilterBar({
                 }}
 
                 value={department}
-                disabled={!isCompanySelected}
+            // disabled={!isCompanySelected}
             >
                 <SelectTrigger className="w-[200px]">
                     <SelectValue placeholder={company ? "--選擇部門--" : "請先選擇公司"} />

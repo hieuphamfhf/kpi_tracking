@@ -19,6 +19,10 @@ export default function ManagerReturnStatusTable({
     company,
     department,
     loading,
+    empid,
+    setEmpid,
+    nm,
+    setNm,
 }: {
     ManagerReturnStatus: ManagerReturnStatusListResType;
     onStartDate: (value: string) => void;
@@ -28,6 +32,10 @@ export default function ManagerReturnStatusTable({
     company: string;
     department: string;
     loading: boolean; //  thêm kiểu cho prop
+    empid: string;
+    setEmpid: (v: string) => void;
+    nm: string;
+    setNm: (v: string) => void;
 }) {
     // Header cho xuất Excel và hiển thị bảng
     const headers = {
@@ -52,21 +60,15 @@ export default function ManagerReturnStatusTable({
     };
     const [status, setStatus] = useState<string>("");
     const [newdutnm, setNewdutnm] = useState("");
+
     return (
         <>
             <div className="flex items-center py-2 justify-between">
                 <FilterBar
-                    company={company}
+                    // company={company}
                     department={department}
-                    onCompanyChange={(selected) => {
-                        if (selected === "ALL") {
-                            onCompany("");
-                            onDepartment("");
-                        } else {
-                            onCompany(selected);
-                            onDepartment("");
-                        }
-                    }}
+                    company=""
+                    onCompanyChange={() => { }}
                     showCompanyFilter={false}
                     onDepartmentChange={onDepartment}
                     onDateChange={(from, to) => {
@@ -75,7 +77,14 @@ export default function ManagerReturnStatusTable({
                     }}
                     dateMode="single"
                     // showSearch={false} //  Không hiển thị ô tìm kiếm
-                    
+
+                    empid={empid}
+                    onEmpidChange={setEmpid}
+                    showEmpidFilter={true}
+                    nm={nm}
+                    onNmChange={setNm}
+                    showNmFilter={true}
+
                     showStatusFilter={true}
                     status={status}
                     onStatusChange={setStatus}
@@ -88,7 +97,7 @@ export default function ManagerReturnStatusTable({
                 <Button
                     onClick={handleExportToExcel}
                     className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center"
-                    disabled={!company}
+                // disabled={!company}
                 >
                     <FileOutputIcon className="mr-2 h-4 w-4" />
                     匯出到 Excel

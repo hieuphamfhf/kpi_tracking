@@ -10,7 +10,8 @@ import { toast } from "react-hot-toast";
 
 export default function ManagerReturnStatusPage() {
     const [ManagerReturnStatus, setManagerReturnStatus] = useState<ManagerReturnStatusListResType | any>();
-    const [co, setCo] = useState<string>(''); // State cho công ty
+    // const [co, setCo] = useState<string>(''); // State cho công ty
+    const [co, setCo] = useState<string>('LG'); // Mặc định là LG thay vì ''
     const [department, setDepartment] = useState<string>(''); // State cho bộ phận
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -21,6 +22,8 @@ export default function ManagerReturnStatusPage() {
     const [startDate, setStartDate] = useState<string>(firstDayFormatted.substring(1));
     const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
     const [loading, setLoading] = useState(false);
+    const [empid, setEmpid] = useState("");  // Mã nhân viên
+    const [nm, setNm] = useState("");        // Tên nhân viên
     const fetchData = async () => {
         if (!co) { // Kiểm tra xem công ty đã được chọn 
             return;
@@ -32,7 +35,8 @@ export default function ManagerReturnStatusPage() {
                 department: department || '', // Cho phép bộ phận rỗng
                 startDate: startDate || '',
                 endDate: endDate || '',
-                 status: status || '', 
+                status: status || '',
+
             };
 
             const { payload } = await ManagerReturnStatusApiRequest.getList(queryParams);
@@ -45,7 +49,7 @@ export default function ManagerReturnStatusPage() {
                 toast.error('資料為空！'
                     , {
                         duration: 2000,
-                         position: 'top-center',
+                        position: 'top-center',
                     });
             }
 
@@ -59,10 +63,10 @@ export default function ManagerReturnStatusPage() {
 
     const handleCompanyChange = (selectedCompany: string) => {
         if (selectedCompany === "ALL") {
-            setCo(''); 
-            setDepartment(''); 
+            setCo('');
+            setDepartment('');
         } else {
-            setCo(selectedCompany); 
+            setCo(selectedCompany);
         }
     };
 
@@ -98,6 +102,10 @@ export default function ManagerReturnStatusPage() {
                                     company={co} // Truyền giá trị của công ty xuống component con
                                     department={department}
                                     loading={loading}
+                                    empid={empid}
+                                    setEmpid={setEmpid}
+                                    nm={nm}
+                                    setNm={setNm}
                                 />
 
                             </div>

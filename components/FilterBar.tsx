@@ -188,7 +188,7 @@ export default function FilterBar({
                         <SelectValue placeholder="--請選擇--" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="經營主管級">經營主管級</SelectItem>
+                        <SelectItem value="經營主管">經營主管級</SelectItem>
                         <SelectItem value="一級主管">一級主管</SelectItem>
                     </SelectContent>
                 </Select>
@@ -208,10 +208,11 @@ export default function FilterBar({
                 </SelectContent> */}
                     <SelectContent>
                         <SelectItem value="ALL">全部狀態</SelectItem>
-                        <SelectItem value="TW">搭乘包機返台</SelectItem>
-                        <SelectItem value="VN">搭乘包機返越</SelectItem>
-                        <SelectItem value="ING">目前返台中</SelectItem>
+                        <SelectItem value="搭乘包機返台">搭乘包機返台</SelectItem>
+                        <SelectItem value="搭乘包機返越">搭乘包機返越</SelectItem>
+                        <SelectItem value="目前返台中">目前返台中</SelectItem>
                     </SelectContent>
+
 
                 </Select>
             )}

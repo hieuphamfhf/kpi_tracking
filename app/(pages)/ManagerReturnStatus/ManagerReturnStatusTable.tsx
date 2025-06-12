@@ -1,4 +1,3 @@
-import { ManagerReturnStatusListResType } from "@/app/schemaValidations/ManagerReturnStatus";
 import { FileOutputIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -6,115 +5,93 @@ import { exportToExcel } from "@/components/excelExportService";
 import GenericTable from "@/components/GenericTable";
 import FilterBar from "@/components/FilterBar";
 import { Toaster } from "react-hot-toast";
-import LoadingIndicator from "@/components/LoadingIndicator";
 import LogoLoading from "@/components/LogoLoading";
-import { useState } from "react"; // Đảm bảo đã import
-// Component hiển thị bảng nhắc nhở follow-up và bộ lọc tìm kiếm
+
+// Định nghĩa header cho xuất excel và bảng
+const headers = {
+    empid: "員工編號",
+    nm: "姓名",
+    dp: "部門代號",
+    dpnm: "部門名稱",
+    newdutnm: "職稱",
+    backfrdat: "在台起日",
+    backtodat: "在台迄日",
+    // Thêm các trường khác nếu muốn
+};
+
 export default function ManagerReturnStatusTable({
     ManagerReturnStatus,
-    onStartDate,
-    onEndDate,
-    onDepartment,
-    onCompany,
-    company,
-    department,
     loading,
     empid,
     setEmpid,
-    nm,
-    setNm,
+    qrydat,
+    setQrydat,
+    status,
+    setStatus,
+    JPNM,
+    setJPNM,
 }: {
-    ManagerReturnStatus: ManagerReturnStatusListResType;
-    onStartDate: (value: string) => void;
-    onEndDate: (value: string) => void;
-    onDepartment: (value: string) => void;
-    onCompany: (value: string) => void;
-    company: string;
-    department: string;
-    loading: boolean; //  thêm kiểu cho prop
+    ManagerReturnStatus: any[];
+    loading: boolean;
     empid: string;
     setEmpid: (v: string) => void;
-    nm: string;
-    setNm: (v: string) => void;
+    qrydat: string;
+    setQrydat: (v: string) => void;
+    status: string;
+    setStatus: (v: string) => void;
+    JPNM: string;
+    setJPNM: (v: string) => void;
 }) {
-    // Header cho xuất Excel và hiển thị bảng
-    const headers = {
-        empid: "員工編號 (Mã nhân viên)",
-        nm: "姓名 (Họ tên)",
-        foldat: "職稱 (Chức vụ)",
-        dp: "部門代號 (Mã bộ phận)",
-        dpnm: "部門名稱 (Tên bộ phận)",
-        cancdat: "返台探親起訖日_startDay_endDay",
-        // newdutid: "新職務代號",
-        // newdutnm: "新職務名稱",
-        // vhno: "案件編號",
-        // kd: "類別",
-        // sumr: "摘要",
-        // cnt: "催辦次數",
-        // foldat: "催辦日",
-        // cancdat: "銷案日",
-    };
-    // Hàm xử lý xuất Excel từ bảng hiện tại
+    // Xuất excel
     const handleExportToExcel = () => {
         exportToExcel(ManagerReturnStatus, headers, "高階主管行蹤查詢");
     };
-    const [status, setStatus] = useState<string>("");
-    const [newdutnm, setNewdutnm] = useState("");
 
     return (
         <>
             <div className="flex items-center py-2 justify-between">
                 <FilterBar
-                    // --- Mã nhân viên ---
+                    // ====== Bộ lọc mã nhân viên ======
                     empid={empid}
                     onEmpidChange={setEmpid}
                     showEmpidFilter={true}
 
-                    // --- Tên nhân viên ---
-                    nm={nm}
-                    onNmChange={setNm}
-                    showNmFilter={false}
-
-                    // --- Trạng thái ---
+                    // ====== Bộ lọc trạng thái ======
                     status={status}
                     onStatusChange={setStatus}
                     showStatusFilter={true}
 
-                    // --- Chức vụ/cấp bậc ---
-                    newdutnm={newdutnm}
-                    onNewdutnmChange={setNewdutnm}
+                    // ====== Bộ lọc chức vụ/cấp bậc ======
+                    newdutnm={JPNM}
+                    onNewdutnmChange={setJPNM}
                     showNewdutnmFilter={true}
 
-                    // --- Ngày tra cứu ---
+                    // ====== Bộ lọc ngày tra cứu ======
                     dateMode="single"
-                    onDateChange={(from, to) => {
-                        onStartDate(from);
-                        onEndDate(to);
-                    }}
+                    onDateChange={from => setQrydat(from)}
 
-                    // --- Công ty, phòng ban (không dùng) ---
+                    // ====== Ẩn các bộ lọc không dùng (bắt buộc truyền để không lỗi) ======
+                    showCompanyFilter={false}
+                    showDepartmentFilter={false}
+                    showNmFilter={false}
+                    showSearch={false}
                     company=""
                     onCompanyChange={() => { }}
-                    showCompanyFilter={false}
-                    department={department}
-                    onDepartmentChange={onDepartment}
-                    showSearch={false} 
-                    showDepartmentFilter={false}
+                    department=""
+                    onDepartmentChange={() => { }}
+                    // ====== HẾT PHẦN BẮT BUỘC ======
                 />
 
 
-                {/* Nút xuất dữ liệu ra Excel */}
                 <Button
                     onClick={handleExportToExcel}
                     className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center"
-                // disabled={!company}
                 >
                     <FileOutputIcon className="mr-2 h-4 w-4" />
                     匯出到 Excel
                 </Button>
                 <Toaster position="bottom-right" reverseOrder={false} />
             </div>
-            {/* Bảng dữ liệu hiển thị với scroll ngang */}
             <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
                 <div className="min-w-[1000px]">
                     {loading ? (
@@ -124,10 +101,6 @@ export default function ManagerReturnStatusTable({
                     ) : (
                         <GenericTable headers={headers} data={ManagerReturnStatus || []} />
                     )}
-
-
-
-                    {/* <GenericTable headers={headers} data={ManagerReturnStatus || []} /> */}
                 </div>
                 <ScrollBar orientation="horizontal" />
             </ScrollArea>

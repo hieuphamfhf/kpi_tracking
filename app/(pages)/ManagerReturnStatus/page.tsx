@@ -3,82 +3,49 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
 import ManagerReturnStatusTable from "./ManagerReturnStatusTable";
-import { ManagerReturnStatusListResType } from "@/app/schemaValidations/ManagerReturnStatus";
-import { formatDateUTC } from "@/lib/extensions";
 import { ManagerReturnStatusApiRequest } from "@/app/apiRequest/ManagerReturnStatus";
 import { toast } from "react-hot-toast";
 
+// Hàm lấy ngày hiện tại dạng yyyyMMdd
+const getTodayString = () => {
+    const d = new Date();
+    return d.toISOString().slice(0,10).replace(/-/g,"");
+};
+
 export default function ManagerReturnStatusPage() {
-    const [ManagerReturnStatus, setManagerReturnStatus] = useState<ManagerReturnStatusListResType | any>();
-    // const [co, setCo] = useState<string>(''); // State cho công ty
-    const [co, setCo] = useState<string>('LG'); // Mặc định là LG thay vì ''
-    const [department, setDepartment] = useState<string>(''); // State cho bộ phận
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const firstDayFormatted = formatDateUTC(firstDay);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const lastDayFormatted = formatDateUTC(lastDay);
-
-    const [startDate, setStartDate] = useState<string>(firstDayFormatted.substring(1));
-    const [endDate, setEndDate] = useState<string>(lastDayFormatted.substring(1));
+    const [ManagerReturnStatus, setManagerReturnStatus] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
-    const [empid, setEmpid] = useState("");  // Mã nhân viên
-    const [nm, setNm] = useState("");        // Tên nhân viên
+    // Các state filter mới
+    const [empid, setEmpid] = useState("");
+    const [qrydat, setQrydat] = useState(getTodayString());
+    const [status, setStatus] = useState("ALL");  // "ALL" nghĩa là không lọc
+    const [JPNM, setJPNM] = useState("");         // Chức vụ, truyền "" nếu muốn "tất cả"
+
+    // Hàm fetchData mới dùng API mới
     const fetchData = async () => {
-        if (!co) { // Kiểm tra xem công ty đã được chọn 
-            return;
-        }
-        setLoading(true); // bật loading
+        setLoading(true);
         try {
-            const queryParams = {
-                co: co || '',  // Chỉ cho phép giá trị đã chọn
-                department: department || '', // Cho phép bộ phận rỗng
-                startDate: startDate || '',
-                endDate: endDate || '',
-                status: status || '',
-
-            };
-
-            const { payload } = await ManagerReturnStatusApiRequest.getList(queryParams);
-            console.log('Dữ liệu nhận được từ API:', payload);
-            //delay 1 giây để test loading
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            setManagerReturnStatus(payload);
-            // Hiển thị toast nếu không có dữ liệu
+            const { payload } = await ManagerReturnStatusApiRequest.getList({
+                empid,
+                qrydat,
+                status,
+                JPNM,
+            });
+            setManagerReturnStatus(payload || []);
             if (!payload || payload.length === 0) {
-                toast.error('資料為空！'
-                    , {
-                        duration: 2000,
-                        position: 'top-center',
-                    });
+                toast.error('資料為空！', { duration: 2000, position: 'top-center' });
             }
-
         } catch (error) {
-            console.error('Lỗi khi lấy dữ liệu:', error);
-        }
-        finally {
+            toast.error('Lỗi khi lấy dữ liệu!');
+        } finally {
             setLoading(false);
         }
     };
 
-    const handleCompanyChange = (selectedCompany: string) => {
-        if (selectedCompany === "ALL") {
-            setCo('');
-            setDepartment('');
-        } else {
-            setCo(selectedCompany);
-        }
-    };
-
-    const handleDepartmentChange = (selectedDepartment: string) => {
-        setDepartment(selectedDepartment);
-    };
-
+    // Gọi lại mỗi khi filter đổi
     useEffect(() => {
-        if (co) { // Chỉ gọi API nếu công ty đã được chọn
-            fetchData();
-        }
-    }, [co, department, startDate, endDate]);
+        fetchData();
+    }, [empid, qrydat, status, JPNM]);
 
     return (
         <div>
@@ -86,34 +53,30 @@ export default function ManagerReturnStatusPage() {
                 <TabsContent value="account" className="bg-gray-50">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{`高階主管行蹤查詢`}</CardTitle>
+                            <CardTitle>高階主管行蹤查詢</CardTitle>
                             <CardDescription>
-                                {`選擇公司和部門以篩選數據，或同時留空以顯示所有數據。您可以匯出報告到 Excel。`}
+                                查詢在台灣期間，請選擇過濾條件。
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="space-y-1">
                                 <ManagerReturnStatusTable
                                     ManagerReturnStatus={ManagerReturnStatus}
-                                    onStartDate={setStartDate}
-                                    onEndDate={setEndDate}
-                                    onDepartment={handleDepartmentChange}
-                                    onCompany={handleCompanyChange}
-                                    company={co} // Truyền giá trị của công ty xuống component con
-                                    department={department}
                                     loading={loading}
                                     empid={empid}
                                     setEmpid={setEmpid}
-                                    nm={nm}
-                                    setNm={setNm}
+                                    qrydat={qrydat}
+                                    setQrydat={setQrydat}
+                                    status={status}
+                                    setStatus={setStatus}
+                                    JPNM={JPNM}
+                                    setJPNM={setJPNM}
                                 />
-
                             </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
             </Tabs>
-
         </div>
     );
 }

@@ -5,11 +5,12 @@ import { useEffect, useState } from "react";
 import ManagerReturnStatusTable from "./ManagerReturnStatusTable";
 import { ManagerReturnStatusApiRequest } from "@/app/apiRequest/ManagerReturnStatus";
 import { toast } from "react-hot-toast";
+import Pagination from "@/components/Pagination";
 
 // Hàm lấy ngày hiện tại dạng yyyyMMdd
 const getTodayString = () => {
     const d = new Date();
-    return d.toISOString().slice(0,10).replace(/-/g,"");
+    return d.toISOString().slice(0, 10).replace(/-/g, "");
 };
 
 export default function ManagerReturnStatusPage() {
@@ -20,7 +21,12 @@ export default function ManagerReturnStatusPage() {
     const [qrydat, setQrydat] = useState(getTodayString());
     const [status, setStatus] = useState("ALL");  // "ALL" nghĩa là không lọc
     const [JPNM, setJPNM] = useState("");         // Chức vụ, truyền "" nếu muốn "tất cả"
-
+    // ====== KHAI BÁO PHÂN TRANG ======
+    const PAGE_SIZE = 50;
+    const [page, setPage] = useState(1);
+    const totalPage = Math.ceil(ManagerReturnStatus.length / PAGE_SIZE);
+    const pageData = ManagerReturnStatus.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    
     // Hàm fetchData mới dùng API mới
     const fetchData = async () => {
         setLoading(true);
@@ -47,12 +53,17 @@ export default function ManagerReturnStatusPage() {
         fetchData();
     }, [empid, qrydat, status, JPNM]);
 
+    // ====== RESET VỀ TRANG 1 KHI FILTER ĐỔI ======
+    useEffect(() => {
+        setPage(1); // Reset lại trang đầu khi thay đổi bộ lọc
+    }, [empid, qrydat, status, JPNM]);
+
     return (
         <div>
             <Tabs defaultValue="account" className="bg-gray-50">
                 <TabsContent value="account" className="bg-gray-50">
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="p-4 pb-2">
                             <CardTitle>高階主管行蹤查詢</CardTitle>
                             <CardDescription>
                                 查詢在台灣期間，請選擇過濾條件。
@@ -73,6 +84,15 @@ export default function ManagerReturnStatusPage() {
                                     setJPNM={setJPNM}
                                 />
                             </div>
+                            {/* ====== PHÂN TRANG: HIỂN THỊ Ở DƯỚI BẢNG ====== */}
+                                <div className="mt-4 flex justify-center">
+                                    <Pagination
+                                        page={page}
+                                        totalPage={totalPage}
+                                        totalCount={ManagerReturnStatus.length}
+                                        onPageChange={setPage}
+                                    />
+                                </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

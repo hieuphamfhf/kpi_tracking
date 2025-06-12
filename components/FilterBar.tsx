@@ -207,7 +207,7 @@ export default function FilterBar({
                 <SelectItem value="ING">目前返台中</SelectItem>
                 </SelectContent> */}
                     <SelectContent>
-                        <SelectItem value="ALL">全部狀態</SelectItem>
+                        {/* <SelectItem value="ALL">全部狀態</SelectItem> */}
                         <SelectItem value="搭乘包機返台">搭乘包機返台</SelectItem>
                         <SelectItem value="搭乘包機返越">搭乘包機返越</SelectItem>
                         <SelectItem value="目前返台中">目前返台中</SelectItem>

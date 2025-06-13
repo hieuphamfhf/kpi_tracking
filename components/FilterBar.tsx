@@ -152,14 +152,22 @@ export default function FilterBar({
         setFilteredDepartments(filtered);
     };
 
+    // const handleDateChange = (range: DateRange | undefined) => {
+    //     setDate(range);
+    //     if (range?.from && (dateMode === 'single' || range?.to)) {
+    //         const from = format(range.from, "yyyyMMdd").substring(1);
+    //         const to = dateMode === 'single' ? from : format(range.to!, "yyyyMMdd").substring(1);
+    //         onDateChange(from, to);
+    //     }
+    // };
+
     const handleDateChange = (range: DateRange | undefined) => {
-        setDate(range);
-        if (range?.from && (dateMode === 'single' || range?.to)) {
-            const from = format(range.from, "yyyyMMdd").substring(1);
-            const to = dateMode === 'single' ? from : format(range.to!, "yyyyMMdd").substring(1);
-            onDateChange(from, to);
-        }
-    };
+    setDate(range);
+    if (range?.from) {
+        const from = format(range.from, "yyyyMMdd");
+        onDateChange(from, from); // truyền 2 tham số giống nhau
+    }
+};
 
 
     return (
@@ -196,21 +204,15 @@ export default function FilterBar({
 
             {/* Dropdown chọn showStatusFilter */}
             {showStatusFilter !== false && onStatusChange && (
-                <Select onValueChange={onStatusChange} >
+                <Select value={status} onValueChange={onStatusChange} >
                     <SelectTrigger className="w-[150px]">
                         <SelectValue placeholder="--選擇狀態--" />
                     </SelectTrigger>
-                    {/* <SelectContent>
-                <SelectItem value="">全部狀態</SelectItem>
-                <SelectItem value="TW">搭乘包機返台</SelectItem>
-                <SelectItem value="VN">搭乘包機返越</SelectItem>
-                <SelectItem value="ING">目前返台中</SelectItem>
-                </SelectContent> */}
                     <SelectContent>
                         {/* <SelectItem value="ALL">全部狀態</SelectItem> */}
-                        <SelectItem value="搭乘包機返台">搭乘包機返台</SelectItem>
-                        <SelectItem value="搭乘包機返越">搭乘包機返越</SelectItem>
-                        <SelectItem value="目前返台中">目前返台中</SelectItem>
+                        <SelectItem value="FlyToTaiwan">搭乘包機返台</SelectItem>
+                        <SelectItem value="FlyToVienam">搭乘包機返越</SelectItem>
+                        <SelectItem value="InTaiwan">目前返台中</SelectItem>
                     </SelectContent>
 
 

@@ -19,17 +19,18 @@ export default function ManagerReturnStatusPage() {
     // Các state filter mới
     const [empid, setEmpid] = useState("");
     const [qrydat, setQrydat] = useState(getTodayString());
-    const [status, setStatus] = useState("ALL");  // "ALL" nghĩa là không lọc
-    const [JPNM, setJPNM] = useState("");         // Chức vụ, truyền "" nếu muốn "tất cả"
+    const [status, setStatus] = useState("");
+    const [JPNM, setJPNM] = useState("經營主管");         // Chức vụ, truyền "" nếu muốn "tất cả"
     // ====== KHAI BÁO PHÂN TRANG ======
     const PAGE_SIZE = 50;
     const [page, setPage] = useState(1);
     const totalPage = Math.ceil(ManagerReturnStatus.length / PAGE_SIZE);
-    const pageData = ManagerReturnStatus.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-    
+    // const pageData = ManagerReturnStatus.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
     // Hàm fetchData mới dùng API mới
     const fetchData = async () => {
         setLoading(true);
+          console.log('[fetchData] Call API:', { empid, qrydat, status, JPNM }); 
         try {
             const { payload } = await ManagerReturnStatusApiRequest.getList({
                 empid,
@@ -72,7 +73,9 @@ export default function ManagerReturnStatusPage() {
                         <CardContent className="space-y-2">
                             <div className="space-y-1">
                                 <ManagerReturnStatusTable
-                                    ManagerReturnStatus={ManagerReturnStatus}
+                                    ManagerReturnStatus={ManagerReturnStatus}  // truyền toàn bộ data!
+                                    page={page}
+                                    pageSize={PAGE_SIZE}
                                     loading={loading}
                                     empid={empid}
                                     setEmpid={setEmpid}
@@ -85,14 +88,14 @@ export default function ManagerReturnStatusPage() {
                                 />
                             </div>
                             {/* ====== PHÂN TRANG: HIỂN THỊ Ở DƯỚI BẢNG ====== */}
-                                <div className="mt-4 flex justify-center">
-                                    <Pagination
-                                        page={page}
-                                        totalPage={totalPage}
-                                        totalCount={ManagerReturnStatus.length}
-                                        onPageChange={setPage}
-                                    />
-                                </div>
+                            <div className="mt-4 flex justify-center">
+                                <Pagination
+                                    page={page}
+                                    totalPage={totalPage}
+                                    totalCount={ManagerReturnStatus.length}
+                                    onPageChange={setPage}
+                                />
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

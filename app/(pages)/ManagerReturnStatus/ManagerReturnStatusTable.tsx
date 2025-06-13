@@ -8,6 +8,7 @@ import { Toaster } from "react-hot-toast";
 import LogoLoading from "@/components/LogoLoading";
 
 // Định nghĩa header cho xuất excel và bảng
+
 const headers = {
     empid: "員工編號",
     nm: "姓名",
@@ -30,6 +31,8 @@ export default function ManagerReturnStatusTable({
     setStatus,
     JPNM,
     setJPNM,
+    page = 1,
+    pageSize = 50,
 }: {
     ManagerReturnStatus: any[];
     loading: boolean;
@@ -41,11 +44,14 @@ export default function ManagerReturnStatusTable({
     setStatus: (v: string) => void;
     JPNM: string;
     setJPNM: (v: string) => void;
+    page?: number;
+    pageSize?: number;
 }) {
     // Xuất excel
     const handleExportToExcel = () => {
         exportToExcel(ManagerReturnStatus, headers, "高階主管行蹤查詢");
     };
+
 
     return (
         <>
@@ -54,7 +60,7 @@ export default function ManagerReturnStatusTable({
                     // ====== Bộ lọc mã nhân viên ======
                     empid={empid}
                     onEmpidChange={setEmpid}
-                    showEmpidFilter={true}
+                    showEmpidFilter={false}
 
                     // ====== Bộ lọc trạng thái ======
                     status={status}
@@ -67,10 +73,12 @@ export default function ManagerReturnStatusTable({
                     showNewdutnmFilter={true}
 
                     // ====== Bộ lọc ngày tra cứu ======
+                    // dateMode="single"
+                    // onDateChange={from => setQrydat(from)}
                     dateMode="single"
-                    onDateChange={from => setQrydat(from)}
+                    onDateChange={(from, _to) => setQrydat(from)}
 
-                    // ====== Ẩn các bộ lọc không dùng (bắt buộc truyền để không lỗi) ======
+                    // ====== Ẩn các bộ lọc không dùng ======
                     showCompanyFilter={false}
                     showDepartmentFilter={false}
                     showNmFilter={false}
@@ -79,7 +87,6 @@ export default function ManagerReturnStatusTable({
                     onCompanyChange={() => { }}
                     department=""
                     onDepartmentChange={() => { }}
-                    // ====== HẾT PHẦN BẮT BUỘC ======
                 />
 
 
@@ -99,7 +106,12 @@ export default function ManagerReturnStatusTable({
                             <LogoLoading />
                         </div>
                     ) : (
-                        <GenericTable headers={headers} data={ManagerReturnStatus || []} />
+                        <GenericTable
+                            headers={headers}
+                            data={ManagerReturnStatus.slice((page - 1) * pageSize, page * pageSize) || []}
+                            page={page}
+                            pageSize={pageSize}
+                        />
                     )}
                 </div>
                 <ScrollBar orientation="horizontal" />

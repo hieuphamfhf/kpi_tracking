@@ -12,6 +12,7 @@ const getTodayString = () => {
     const d = new Date();
     return d.toISOString().slice(0, 10).replace(/-/g, "");
 };
+let currentRequestId = 0;
 
 export default function ManagerReturnStatusPage() {
     const [ManagerReturnStatus, setManagerReturnStatus] = useState<any[]>([]);
@@ -20,7 +21,7 @@ export default function ManagerReturnStatusPage() {
     const [empid, setEmpid] = useState("");
     const [qrydat, setQrydat] = useState(getTodayString());
     const [status, setStatus] = useState("");
-    const [JPNM, setJPNM] = useState("經營主管");         // Chức vụ, truyền "" nếu muốn "tất cả"
+    const [JPNM, setJPNM] = useState("經營主管");        
     // ====== KHAI BÁO PHÂN TRANG ======
     const PAGE_SIZE = 50;
     const [page, setPage] = useState(1);
@@ -29,8 +30,10 @@ export default function ManagerReturnStatusPage() {
 
     // Hàm fetchData mới dùng API mới
     const fetchData = async () => {
+        setManagerReturnStatus([]);   // <-- clear data trước khi loading
         setLoading(true);
-          console.log('[fetchData] Call API:', { empid, qrydat, status, JPNM }); 
+        const requestId = ++currentRequestId; // Mỗi lần gọi tăng requestId lên
+        console.log('[fetchData] Call API:', { empid, qrydat, status, JPNM });
         try {
             const { payload } = await ManagerReturnStatusApiRequest.getList({
                 empid,
@@ -38,12 +41,15 @@ export default function ManagerReturnStatusPage() {
                 status,
                 JPNM,
             });
-            setManagerReturnStatus(payload || []);
-            if (!payload || payload.length === 0) {
-                toast.error('資料為空！', { duration: 2000, position: 'top-center' });
+            // Chỉ cập nhật kết quả nếu là request mới nhất
+            if (requestId === currentRequestId) {
+                setManagerReturnStatus(payload || []);
+                if (!payload || payload.length === 0) {
+                    toast.error('資料為空！', { duration: 2000, position: 'top-center' });
+                }
             }
         } catch (error) {
-            toast.error('Lỗi khi lấy dữ liệu!');
+            toast.error('ERROR GET DATA FROM API!');
         } finally {
             setLoading(false);
         }
@@ -56,7 +62,7 @@ export default function ManagerReturnStatusPage() {
 
     // ====== RESET VỀ TRANG 1 KHI FILTER ĐỔI ======
     useEffect(() => {
-        setPage(1); // Reset lại trang đầu khi thay đổi bộ lọc
+        setPage(1); 
     }, [empid, qrydat, status, JPNM]);
 
     return (
@@ -65,7 +71,7 @@ export default function ManagerReturnStatusPage() {
                 <TabsContent value="account" className="bg-gray-50">
                     <Card>
                         <CardHeader className="p-4 pb-2">
-                            <CardTitle>高階主管行蹤查詢</CardTitle>
+                            <CardTitle>探親單查詢(依據日期)</CardTitle>
                             <CardDescription>
                                 查詢在台灣期間，請選擇過濾條件。
                             </CardDescription>
@@ -87,7 +93,7 @@ export default function ManagerReturnStatusPage() {
                                     setJPNM={setJPNM}
                                 />
                             </div>
-                            {/* ====== PHÂN TRANG: HIỂN THỊ Ở DƯỚI BẢNG ====== */}
+                            {/* ====== PHÂN TRANG ====== */}
                             <div className="mt-4 flex justify-center">
                                 <Pagination
                                     page={page}

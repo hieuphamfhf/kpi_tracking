@@ -93,7 +93,6 @@ export default function FamilyVisitPage() {
 
                         </CardHeader>
                         <CardContent className="pt-2 ">
-                            {/* Đặt Table có bộ lọc style lại ở đây */}
                             <FamilyVisitTable
                                 FamilyVisit={FamilyVisit}
                                 // FamilyVisit={pageData} // 

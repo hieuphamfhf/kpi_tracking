@@ -212,7 +212,7 @@ export default function FilterBar({
                         {/* <SelectItem value="ALL">全部狀態</SelectItem> */}
                         <SelectItem value="FlyToTaiwan">搭乘包機返台</SelectItem>
                         <SelectItem value="FlyToVienam">搭乘包機返越</SelectItem>
-                        <SelectItem value="InTaiwan">目前返台中</SelectItem>
+                        <SelectItem value="InTaiwan">返台中</SelectItem>
                     </SelectContent>
 
 

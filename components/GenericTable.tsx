@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 // Danh sách các key cho phép sort
-const SORTABLE_KEYS = ["dp", "nm", "newdutnm", "empid", "dpnm"];
+const SORTABLE_KEYS = ["dp", "nm", "newdutnm", "empid", "dpnm","backfrdat","backtodat"];
 type TableProps = {
     headers: Record<string, string>;
     data: any[];

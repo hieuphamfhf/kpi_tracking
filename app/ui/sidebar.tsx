@@ -41,7 +41,7 @@ export default function NavLinks() {
     if (isManager) {
       // Nếu đã có query, thêm vào sau dấu &
       if (href.includes("?")) {
-        return `${href}&admin_key=secret123`;
+        return `${href}&admin_key=secret123`; 
       } else {
         return `${href}?admin_key=secret123`;
       }

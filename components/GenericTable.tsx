@@ -98,4 +98,7 @@ const GenericTable = ({
         </Table>
     );
 };
+
+
+
 export default GenericTable;

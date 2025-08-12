@@ -10,9 +10,10 @@ export const links = [
   { id: 5, name: '4.2忘刷卡表', href: `http://localhost:3000/ForgetSenseCard`, icon:  CircleHelpIcon},
   { id: 6, name: '5_加班未於事前填單查詢', href: `http://localhost:3000/OverTimeDuty`, icon: ClockAlertIcon  }, // Time-related icon
   // {id: 7, name: '6_每月各部人事KPI統計表', href: `http://localhost:3000/MonthlyKPI`, icon: KPIIcon  }, // Time-related icon
-  { id: 7, name: '8_探親單查詢畫面', href: `http://localhost:3000/FamilyVisit`, icon: CircleUser , onlyManager: true }, // Time-related icon
+  { id: 7, name: '探親單查詢畫面', href: `http://localhost:3000/FamilyVisit`, icon: CircleUser , onlyManager: true }, // Time-related icon
   { id: 8, name: '探親單查詢(依據日期)', href: `http://localhost:3000/ManagerReturnStatus`, icon: CircleUser , onlyManager: true }, // Time-related icon
-  {id: 9, name: '6_每月各部人事KPI統計表', href: `http://localhost:3000/MonthlyKPI`, icon: ChartNoAxesCombined  }, // Time-related icon
+  { id: 9, name: 'admin update 探親單查詢畫面', href: `http://localhost:3000/EmpployeeInfo`, icon: CircleUser , onlyManager: true }, // Time-related icon
+  {id: 10, name: '6_每月各部人事KPI統計表', href: `http://localhost:3000/MonthlyKPI`, icon: ChartNoAxesCombined  }, // Time-related icon
   
 ];
 

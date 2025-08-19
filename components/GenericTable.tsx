@@ -30,7 +30,7 @@ const GenericTable = ({
             if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
             if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
             return 0;
-        });
+        }); 
     }, [data, sortColumn, sortDirection]);
 
     const handleSort = (key: string) => {

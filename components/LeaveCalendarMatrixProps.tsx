@@ -52,7 +52,7 @@ const chunkByWeek = (start: Date, end: Date, weekStartsOn: 0 | 1) => {
   const first = floorToWeek(start, weekStartsOn);
   const last = ceilToWeek(end, weekStartsOn);
   const weeks: Date[][] = [];
-  for (let d = new Date(first); d <= last; ) {
+  for (let d = new Date(first); d <= last;) {
     const arr: Date[] = [];
     for (let i = 0; i < 7; i++) {
       arr.push(new Date(d));
@@ -75,7 +75,7 @@ const badgeText: Record<DayType, string> = {
 };
 const TypeBadge: React.FC<{ t?: DayType; locked?: boolean }> = ({ t, locked }) => (
   !t ? <span className="opacity-40">—</span> :
-  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border ${locked ? "border-dashed" : "border"}`}>{badgeText[t]}{locked && <span className="ml-1 text-[10px] opacity-70">(固定)</span>}</span>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border ${locked ? "border-dashed" : "border"}`}>{badgeText[t]}{locked && <span className="ml-1 text-[10px] opacity-70">(固定)</span>}</span>
 );
 
 const HCell: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
@@ -99,7 +99,9 @@ const WeekBlock: React.FC<{
   return (
     <div className="mb-3 border rounded-xl overflow-hidden">
       {/* header tuần */}
-      <div className="px-4 py-2 text-sm bg-gray-50 border-b sticky top-0 z-10">
+      <div className="flex items-center justify-start gap-4 px-4 py-2 text-sm font-semibold
+    bg-slate-200 border-y border-slate-300 text-slate-800">
+
         週期：<span className="font-semibold">{from.toLocaleDateString("zh-TW")}</span>
         <span className="mx-1">→</span>
         <span className="font-semibold">{to.toLocaleDateString("zh-TW")}</span>
@@ -134,14 +136,31 @@ const WeekBlock: React.FC<{
             );
           })}
         </div>
-        {/* 備註 */}
+        {/* 備註 - ghi chu */}
         <div className="flex border-t">
           <StickyLabel label="備註" />
           {week.map((d) => {
             const k = keyOf(d);
             const v = values[k] || {};
+            const isSunday = d.getDay() === 0;
+            const locked = autoSundayWeeklyOff && isSunday; // Chủ Nhật khóa
+
             return (
-              <HCell key={k}>{v.note ? v.note : <span className="opacity-40">—</span>}</HCell>
+              <HCell key={k}>
+                {locked ? (
+                  <span className="opacity-70">{v.note || "—"}</span>
+                ) : (
+                  <input
+                    type="text"
+                    value={v.note || ""}
+                    onChange={(e) => {
+                      // TODO: cập nhật state values[k].note
+                    }}
+                    className="w-full h-10 px-2 bg-transparent outline-none focus:ring-2 focus:ring-slate-300 rounded-md text-sm"
+
+                  />
+                )}
+              </HCell>
             );
           })}
         </div>

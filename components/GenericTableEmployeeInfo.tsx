@@ -9,7 +9,7 @@ export default function Page() {
   return (
     <LeaveCalendarMatrix
       startDate="2025-08-25"
-      endDate="2025-09-15"
+      endDate="2025-10-15"
       values={values}
       autoSundayWeeklyOff
     />

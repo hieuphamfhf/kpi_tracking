@@ -1,108 +1,148 @@
-import { EmpployeeInfoListResType } from "@/app/schemaValidations/EmpployeeInfo";
-import { FileOutputIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import React from "react";
 import { exportToExcel } from "@/components/excelExportService";
-import GenericTableEmployeeInfo from "@/components/GenericTableEmployeeInfo";
-import { Toaster } from "react-hot-toast";
 import LogoLoading from "@/components/LogoLoading";
-import EmployeeFilterBar from "@/components/EmployeeFilterBar";
+import FilterBar from "@/components/FilterBar";
+import LeaveCalendarMatrix, { CellData } from "@/components/LeaveCalendarMatrixProps"; // ✅ ma trận tuần:contentReference[oaicite:2]{index=2}
+
+type Props = {
+  EmpployeeInfo: any[];
+  // --- các handler filter nhân sự ---
+  onEmpidChange: (v: string) => void;
+  onNmChange: (v: string) => void;
+  onDpChange: (v: string) => void;
+  onDpnmChange: (v: string) => void;
+  onNewdutnmChange: (v: string) => void;
+
+  // --- giá trị filter hiện tại ---
+  empid: string;
+  nm: string;
+  dp: string;
+  dpnm: string;
+  newdutnm: string;
+
+  // --- trạng thái tải dữ liệu ---
+  loading: boolean;
+
+  // --- tuỳ chọn khác (đã có sẵn nhưng để optional để không bắt buộc truyền từ page.tsx) ---
+  onRowClick?: (item: any) => void;
+  page?: number;
+  pageSize?: number;
+
+  // ✅ thêm các prop tuỳ chọn cho FilterBar & ma trận tuần
+  onCompanyChange?: (v: string) => void;
+  onStatusChange?: (v: string) => void;
+  onDateChange?: (from: string, to: string) => void;
+  company?: string;
+  status?: string;
+
+  // ✅ khoảng ngày & dữ liệu để vẽ ma trận
+  startDate?: string | Date;
+  endDate?: string | Date;
+  calendarValues?: Record<string, CellData>;
+};
 
 export default function EmpployeeInfoTable({
-    EmpployeeInfo,
-    onEmpidChange,
-    onNmChange,
-    onDpChange,
-    onDpnmChange,
-    onNewdutnmChange,
-    empid,
-    nm,
-    dp,
-    dpnm,
-    newdutnm,
-    loading,
-    onRowClick,
-    page = 1,                  
-    pageSize = 50
-}: {
-    EmpployeeInfo: any[],
-    onEmpidChange: (v: string) => void,
-    onNmChange: (v: string) => void,
-    onDpChange: (v: string) => void,
-    onDpnmChange: (v: string) => void,
-    onNewdutnmChange: (v: string) => void,
-    empid: string,
-    nm: string,
-    dp: string,
-    dpnm: string,
-    newdutnm: string,
-    loading: boolean,
-    onRowClick?: (item: any) => void;
-    page?: number,
-    pageSize?: number
-}) {
-    // Header cho xuất Excel và hiển thị bảng
-    const headers = {
-        empid: "員工編號",      // Mã nhân viên
-        nm: "姓名",            // Tên nhân viên
-        dp: "部門代號",         // Mã phòng ban
-        dpnm: "部門名稱",       // Tên phòng ban
-        newdutid: "新職稱代號", // Mã chức vụ mới
-        newdutnm: "新職稱名稱"  // Tên chức vụ mới
-    };
+  EmpployeeInfo,
+  onEmpidChange, onNmChange, onDpChange, onDpnmChange, onNewdutnmChange,
+  empid, nm, dp, dpnm, newdutnm,
+  loading,
+  // optional
+  onRowClick,
+  page = 1,
+  pageSize = 50,
+  // optional cho FilterBar
+  onCompanyChange,
+  onStatusChange,
+  onDateChange,
+  company,
+  status,
+  // dữ liệu cho ma trận
+  startDate,
+  endDate,
+  calendarValues
+}: Props) {
 
-    // Hàm xử lý xuất Excel từ bảng hiện tại
-    const handleExportToExcel = () => {
-        exportToExcel(EmpployeeInfo, headers, "8_探親單查詢畫面");
-    };
+  // (tuỳ chọn) nếu cần export ma trận sau này có thể dùng service này
+  const headers = {
+    empid: "員工編號",
+    nm: "姓名",
+    dp: "部門代號",
+    dpnm: "部門名稱",
+    newdutid: "新職稱代號",
+    newdutnm: "新職稱名稱"
+  };
+  const handleExportToExcel = () => {
+    exportToExcel(EmpployeeInfo, headers, "8_探親單查詢畫面");
+  };
 
-    return (
-        <>
-            <div className="flex items-center py-2 justify-between">
-                {/* Bộ lọc tìm kiếm */}
-                <EmployeeFilterBar
-                    empid={empid}
-                    nm={nm}
-                    dp={dp}
-                    dpnm={dpnm}
-                    newdutnm={newdutnm}
-                    onEmpidChange={onEmpidChange}
-                    onNmChange={onNmChange}
-                    onDpChange={onDpChange}
-                    onDpnmChange={onDpnmChange}
-                    onNewdutnmChange={onNewdutnmChange}
-                />
-                {/* Nút xuất dữ liệu ra Excel */}
-                {/* <Button
-                    onClick={handleExportToExcel}
-                    className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center"
+  // ✅ fallback khoảng ngày nếu cha chưa truyền: 4 tuần bắt đầu từ tuần hiện tại
+  const computeDefaultRange = () => {
+    const today = new Date();
+    const s = new Date(today);
+    s.setDate(s.getDate() - (s.getDay() === 0 ? 6 : s.getDay() - 1)); // về thứ 2
+    const e = new Date(s);
+    e.setDate(e.getDate() + 27); // 4 tuần
+    return { s, e };
+  };
+  const { s, e } = computeDefaultRange();
 
-                >
-                    <FileOutputIcon className="mr-2 h-4 w-4" />
-                    匯出到 Excel
-                </Button>
-                <Toaster position="bottom-right" reverseOrder={false} /> */}
-            </div>
-            {/* Bảng dữ liệu */}
-            <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
-                <div className="min-w-[1000px]">
-                    {loading ? (
-                        <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
-                            <LogoLoading />
-                        </div>
-                    ) : (
-                        // <GenericTableEmployeeInfo headers={headers} data={EmpployeeInfo || []} />
-                        <GenericTableEmployeeInfo
-                            // headers={headers}
-                            // data={EmpployeeInfo.slice((page - 1) * pageSize, page * pageSize) || []}
-                            // onRowClick={onRowClick}
-                            // page={page}
-                            // pageSize={pageSize}
-                        />
-                    )}
-                </div>
-                <ScrollBar orientation="horizontal" />
-            </ScrollArea>
-        </>
-    );
+  return (
+    <>
+      {/* HEADER FILTER */}
+      <div className="flex items-center py-2 justify-between">
+        <FilterBar
+          // --- Công ty (đang ẩn, nên fallback rỗng & no-op để không bắt buộc truyền) ---
+          company={company ?? ""}
+          onCompanyChange={onCompanyChange ?? (() => {})}
+          showCompanyFilter={false}
+
+          // --- Phòng ban (đang ẩn vì màn hình này dùng ma trận theo ngày) ---
+          department={dp}
+          onDepartmentChange={(v) => onDpChange(v)}
+          showDepartmentFilter={false}
+          showSearch={false}
+
+          // --- Mã nhân viên (ẩn trong ma trận; để ô tên hiển thị chính) ---
+          empid={empid}
+          onEmpidChange={(v) => onEmpidChange(v)}
+          showEmpidFilter={false}
+
+          // --- Tên nhân viên (giữ lại nếu muốn lọc theo người) ---
+          nm={nm}
+          onNmChange={(v) => onNmChange(v)}
+          showNmFilter={true}
+
+          // --- Trạng thái (tuỳ chọn) ---
+          status={status}
+          onStatusChange={onStatusChange}
+          showStatusFilter={!!onStatusChange}
+
+          // --- Chức vụ/cấp bậc ---
+          newdutnm={newdutnm}
+          onNewdutnmChange={onNewdutnmChange}
+          showNewdutnmFilter={true}
+
+          // --- Khoảng ngày: dùng RANGE để vẽ ma trận ---
+          dateMode="range"
+          onDateChange={(from, to) => onDateChange?.(from, to)}  // giá trị yyyyMMdd bắn lên; bạn map ở page.tsx:contentReference[oaicite:3]{index=3}
+        />
+      </div>
+
+      {/* ✅ THAY BẢNG CŨ BẰNG MA TRẬN TUẦN */}
+      <div className="w-full rounded-md border">
+        {loading ? (
+          <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
+            <LogoLoading />
+          </div>
+        ) : (
+          <LeaveCalendarMatrix
+            startDate={startDate ?? s}     // có thể truyền từ page.tsx
+            endDate={endDate ?? e}
+            values={calendarValues ?? {}}  // map dữ liệu API -> Record<YYYY-MM-DD, CellData>
+            autoSundayWeeklyOff
+          />
+        )}
+      </div>
+    </>
+  );
 }

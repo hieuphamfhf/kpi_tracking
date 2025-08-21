@@ -161,13 +161,26 @@ export default function FilterBar({
     //     }
     // };
 
+    // const handleDateChange = (range: DateRange | undefined) => {
+    //     setDate(range);
+    //     if (range?.from) {
+    //         const from = format(range.from, "yyyyMMdd");
+    //         onDateChange(from, from); // truyền 2 tham số giống nhau
+    //     }
+    // };
+
     const handleDateChange = (range: DateRange | undefined) => {
-        setDate(range);
-        if (range?.from) {
-            const from = format(range.from, "yyyyMMdd");
-            onDateChange(from, from); // truyền 2 tham số giống nhau
-        }
-    };
+  setDate(range);
+  if (!range?.from) return;
+  const from = format(range.from, "yyyyMMdd");
+  if (dateMode === "single") {
+    onDateChange(from, from);
+  } else if (range?.to) {
+    const to = format(range.to, "yyyyMMdd");
+    onDateChange(from, to);
+  }
+};
+
 
 
     return (
@@ -195,16 +208,15 @@ export default function FilterBar({
                     <SelectTrigger className="w-[160px] h-9">
                         <SelectValue placeholder="--請選擇--" />
                     </SelectTrigger>
-                    {/* <SelectContent>
-                        <SelectItem value="經營主管">經營主管級</SelectItem>
-                        <SelectItem value="一級主管">一級主管</SelectItem>
-                    </SelectContent> */}
                     <SelectContent>
-                        <SelectItem value="二級主管">二級主管</SelectItem>
+                        {/* <SelectItem value="經營主管">經營主管級</SelectItem> */}
+                        {/* <SelectItem value="一級主管">一級主管</SelectItem> */}
+                         <SelectItem value="二級主管">二級主管</SelectItem>
                         <SelectItem value="基層主管">基層主管</SelectItem>
                         <SelectItem value="基層人員">基層人員</SelectItem>
                         <SelectItem value="基層事務人員">基層事務人員</SelectItem>
                     </SelectContent>
+                  
 
                 </Select>
             )}
@@ -228,51 +240,7 @@ export default function FilterBar({
 
 
             {/* Chọn khoảng thời gian - có disabled khi chưa chọn công ty */}
-            <Popover>
-                <PopoverTrigger asChild>
-                    <button
-                        // disabled={!isCompanySelected}
-                        className={cn(
-                            dateMode === 'single' ? "w-[150px]" : "w-[210px]",
-                            "h-9 px-3 py-1 text-sm flex items-center justify-between rounded-md border bg-white shadow-sm"
-                        )}
-
-                    // disabled={!isCompanySelected}
-                    >
-                        {date?.from ? (
-                            date.to ? (
-                                `${format(date.from, "yyyy-MM-dd")} - ${format(date.to, "yyyy-MM-dd")}`
-                            ) : (
-                                format(date.from, "yyyy-MM-dd")
-                            )
-                        ) : (
-                            <span>Pick a date</span>
-                        )}
-                        <CalendarRangeIcon className="h-4 w-4 ml-2" />
-                    </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                    {dateMode === 'single' ? (
-                        <Calendar
-                            initialFocus
-                            mode="single"
-                            defaultMonth={date?.from}
-                            selected={date?.from}
-                            onSelect={selected => handleDateChange({ from: selected as Date })}
-                            numberOfMonths={1}
-                        />
-                    ) : (
-                        <Calendar
-                            initialFocus
-                            mode="range"
-                            defaultMonth={date?.from}
-                            selected={date}
-                            onSelect={selected => handleDateChange(selected as DateRange)}
-                            numberOfMonths={2}
-                        />
-                    )}
-                </PopoverContent>
-            </Popover>
+           
 
             {/* Ô tìm kiếm mã bộ phận - có thể ẩn thông qua props */}
             {showSearch !== false && (
@@ -322,7 +290,7 @@ export default function FilterBar({
                     <Input
                         value={nm}
                         onChange={e => onNmChange(e.target.value)}
-                        placeholder="姓名"
+                        placeholder="姓名_name"
                         className="border rounded h-9 pl-3 pr-8 w-full"
                     />
                 </div>
@@ -339,6 +307,51 @@ export default function FilterBar({
                     />
                 </div>
             )}
+             <Popover>
+                <PopoverTrigger asChild>
+                    <button
+                        // disabled={!isCompanySelected}
+                        className={cn(
+                            dateMode === 'single' ? "w-[150px]" : "w-[210px]",
+                            "h-9 px-3 py-1 text-sm flex items-center justify-between rounded-md border bg-white shadow-sm"
+                        )}
+
+                    // disabled={!isCompanySelected}
+                    >
+                        {date?.from ? (
+                            date.to ? (
+                                `${format(date.from, "yyyy-MM-dd")} - ${format(date.to, "yyyy-MM-dd")}`
+                            ) : (
+                                format(date.from, "yyyy-MM-dd")
+                            )
+                        ) : (
+                            <span>Pick a date</span>
+                        )}
+                        <CalendarRangeIcon className="h-4 w-4 ml-2" />
+                    </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                    {dateMode === 'single' ? (
+                        <Calendar
+                            initialFocus
+                            mode="single"
+                            defaultMonth={date?.from}
+                            selected={date?.from}
+                            onSelect={selected => handleDateChange({ from: selected as Date })}
+                            numberOfMonths={1}
+                        />
+                    ) : (
+                        <Calendar
+                            initialFocus
+                            mode="range"
+                            defaultMonth={date?.from}
+                            selected={date}
+                            onSelect={selected => handleDateChange(selected as DateRange)}
+                            numberOfMonths={2}
+                        />
+                    )}
+                </PopoverContent>
+            </Popover>
         </div>
     );
 }

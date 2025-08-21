@@ -28,9 +28,9 @@ export type CellData = {
 };
 
 // ==== ROC(民國年) -> ISO (YYYY-MM-DD) ====
-// offdat: "1140929" -> "2025-09-29"
+// "1140929" -> "2025-09-29"
 const rocToISO = (roc: string): string => {
-  if (!roc || roc.length < 7) return "";
+  if (!/^\d{7}$/.test(roc || "")) return "";
   const year = 1911 + parseInt(roc.slice(0, 3), 10);
   const mm = roc.slice(3, 5);
   const dd = roc.slice(5, 7);
@@ -42,16 +42,16 @@ const mapOffidnmToType = (name: string, opts?: { co?: string; dp?: string }): Da
   const n = (name || "").trim();
   switch (n) {
     case "國定假日": return "PUBLIC_HOL";
-    case "特休":     return "ANNUAL";
-    case "派駐假":   return "ASSIGNMENT";
-    case "出差":     return "BUSINESS_TW"; // sửa logic nếu cần phân TW/VN
-    default:         return undefined;
+    case "特休": return "ANNUAL";
+    case "派駐假": return "ASSIGNMENT";
+    case "出差": return "BUSINESS_TW"; // sửa logic nếu cần phân TW/VN
+    default: return undefined;
   }
 };
 
 // helpers
 const dashToYmd = (s: string) => s?.replace(/-/g, "") ?? "";
-const ymdToDash = (s: string) => `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+const ymdToDash = (s: string) => `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
 
 export default function ReturnTaiwanPeriodDetailsPage() {
   const PAGE_SIZE = 50;
@@ -100,39 +100,91 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   };
 
   // Row click -> legacy ReturnTaiwanPeriod (lịch sử 1 năm)
-  const handleRowClick = async (item: any) => {
-    setSelectedRow(item);
-    setModalOpen(true);
-    setModalLoading(true);
-    try {
-      const today = new Date();
-      const backtodat = today.toISOString().slice(0, 10).replace(/-/g, "");
-      const lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
-      const backfrdat = lastYear.toISOString().slice(0, 10).replace(/-/g, "");
-      const res = await fetch(
-        `http://10.198.170.99:5000/API/ReturnTaiwanPeriod?empid=${item.empid}&backfrdat=${backfrdat}&backtodat=${backtodat}`
-      );
-      const data = await res.json();
-      const parsed = ReturnTaiwanPeriodListRes.safeParse(data);
-      setModalData(parsed.success ? dedupeTaiwanPeriod(parsed.data) : []);
-    } catch {
-      setModalData([]);
-    }
-    setModalLoading(false);
+  // const handleRowClick = async (item: any) => {
+  //   setSelectedRow(item);
+  //   setModalOpen(true);
+  //   setModalLoading(true);
+  //   try {
+  //     const today = new Date();
+  //     const backtodat = today.toISOString().slice(0, 10).replace(/-/g, "");
+  //     const lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+  //     const backfrdat = lastYear.toISOString().slice(0, 10).replace(/-/g, "");
+  //     const res = await fetch(
+  //       `http://10.198.170.99:5000/API/ReturnTaiwanPeriod?empid=${item.empid}&backfrdat=${backfrdat}&backtodat=${backtodat}`
+  //     );
+  //     const data = await res.json();
+  //     const parsed = ReturnTaiwanPeriodListRes.safeParse(data);
+  //     setModalData(parsed.success ? dedupeTaiwanPeriod(parsed.data) : []);
+  //   } catch {
+  //     setModalData([]);
+  //   }
+  //   setModalLoading(false);
+  // };
+
+  // ==== Map theo offid (ổn định hơn) ====
+  const OFFID_TO_DAYTYPE: Record<string, DayType> = {
+    "51": "BUSINESS_TW",   // 出差
+    // TODO: thêm các mã khác khi backend cung cấp
+    // "01": "PUBLIC_HOL",
+    // "02": "ANNUAL",
+    // "??": "ASSIGNMENT",
   };
 
-  // Build matrix values from ReturnTaiwanPeriodDetails
-  const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
-    const out: Record<string, CellData> = {};
-    for (const r of rows) {
-      const day = rocToISO(r.offdat);
-      if (!day) continue;
-      const t = mapOffidnmToType(r.offidnm, { co: r.co, dp: r.dp });
-      const note = r.memo || "";
-      out[day] = { type: t, note };
+  const mapOffidToType = (id?: string): DayType | undefined =>
+    id ? OFFID_TO_DAYTYPE[id.trim()] : undefined;
+
+  // Giữ fallback theo tên (nếu offid chưa có trong bảng)
+  const mapOffidnmToType = (name?: string): DayType | undefined => {
+    const n = (name || "").trim();
+    switch (n) {
+      case "國定假日": return "PUBLIC_HOL";
+      case "特休": return "ANNUAL";
+      case "派駐假": return "ASSIGNMENT";
+      case "出差": return "BUSINESS_TW"; // TODO: tách TW/VN theo rule co/dp nếu cần
+      default: return undefined;
     }
-    return out;
   };
+
+  // Chủ nhật → WEEKLY_OFF + khóa
+  const isSunday = (isoDate: string) => {
+    // tránh lệch múi giờ
+    const d = new Date(`${isoDate}T00:00:00`);
+    return d.getDay() === 0;
+  };
+
+  // ==== Build matrix values (ưu tiên offid -> offidnm; CN override) ====
+// ==== Build matrix values (ƯU TIÊN offid -> offidnm; CN override) ====
+const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
+  const out: Record<string, CellData> = {};
+
+  for (const r of rows) {
+    // 1) Convert offdat (ROC 7 số) -> ISO để vẽ ma trận
+    const day = rocToISO(r.offdat);
+    if (!day) continue;
+
+    // 2) Xác định type theo mã (ổn định), fallback theo tên
+    let t: DayType | undefined = mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
+
+    // 3) Chủ nhật: WEEKLY_OFF + khoá (theo rule UI)
+    if (isSunday(day)) {
+      out[day] = { type: "WEEKLY_OFF", note: r.memo || "", lockedByRule: true };
+      continue;
+    }
+
+    // 4) Ghi chú hiển thị:
+    // - Nếu mã 51 (出差) => note hiển thị chữ "出差"
+    // - Nếu không, ưu tiên memo, rồi tới offidnm
+    const note =
+      r.offid?.trim() === "51"
+        ? "出差"
+        : (r.memo && String(r.memo).trim()) || (r.offidnm && String(r.offidnm).trim()) || "";
+
+    out[day] = { type: t, note };
+  }
+
+  return out;
+};
+
 
   // Fetch details (ReturnTaiwanPeriodDetails) whenever empid/from/to change
   const fetchDetailsForMatrix = async (emp: string, fromISO: string, toISO: string) => {
@@ -187,7 +239,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
                 dpnm={dpnm}
                 newdutnm={newdutnm}
                 loading={loading}
-                onRowClick={handleRowClick}
+                // onRowClick={handleRowClick}
                 page={page}
                 pageSize={PAGE_SIZE}
 

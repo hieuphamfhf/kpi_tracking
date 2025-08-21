@@ -3,7 +3,7 @@ import { exportToExcel } from "@/components/excelExportService";
 import LogoLoading from "@/components/LogoLoading";
 import FilterBar from "@/components/FilterBar";
 import LeaveCalendarMatrix, { CellData } from "@/components/LeaveCalendarMatrixProps"; // ma trận tuần:contentReference[oaicite:2]{index=2}
-
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 type Props = {
   ReturnTaiwanPeriodDetails: any[];
   // --- các handler filter nhân sự ---
@@ -84,9 +84,9 @@ export default function ReturnTaiwanPeriodDetailsTable({
     e.setDate(e.getDate() + 27); // 4 tuần
     return { s, e };
   };
-  
+
   const { s, e } = computeDefaultRange();
-  
+
 
   return (
     <>
@@ -95,7 +95,7 @@ export default function ReturnTaiwanPeriodDetailsTable({
         <FilterBar
           // --- Công ty (đang ẩn, nên fallback rỗng & no-op để không bắt buộc truyền) ---
           company={company ?? ""}
-          onCompanyChange={onCompanyChange ?? (() => {})}
+          onCompanyChange={onCompanyChange ?? (() => { })}
           showCompanyFilter={false}
 
           // --- Phòng ban (đang ẩn vì màn hình này dùng ma trận theo ngày) ---
@@ -129,22 +129,24 @@ export default function ReturnTaiwanPeriodDetailsTable({
           onDateChange={(from, to) => onDateChange?.(from, to)}  // giá trị yyyyMMdd bắn lên; bạn map ở page.tsx:contentReference[oaicite:3]{index=3}
         />
       </div>
-
+      <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
+        <div className="w-full rounded-md border">
+          {loading ? (
+            <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
+              <LogoLoading />
+            </div>
+          ) : (
+            <LeaveCalendarMatrix
+              startDate={startDate ?? s}     // có thể truyền từ page.tsx
+              endDate={endDate ?? e}
+              values={calendarValues ?? {}}  // map dữ liệu API -> Record<YYYY-MM-DD, CellData>
+              autoSundayWeeklyOff
+            />
+          )}
+        </div>
+      </ScrollArea>
       {/*  THAY BẢNG CŨ BẰNG MA TRẬN TUẦN */}
-      <div className="w-full rounded-md border">
-        {loading ? (
-          <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
-            <LogoLoading />
-          </div>
-        ) : (
-          <LeaveCalendarMatrix
-            startDate={startDate ?? s}     // có thể truyền từ page.tsx
-            endDate={endDate ?? e}
-            values={calendarValues ?? {}}  // map dữ liệu API -> Record<YYYY-MM-DD, CellData>
-            autoSundayWeeklyOff
-          />
-        )}
-      </div>
+
     </>
   );
 }

@@ -2,10 +2,10 @@ import React from "react";
 import { exportToExcel } from "@/components/excelExportService";
 import LogoLoading from "@/components/LogoLoading";
 import FilterBar from "@/components/FilterBar";
-import LeaveCalendarMatrix, { CellData } from "@/components/LeaveCalendarMatrixProps"; // ✅ ma trận tuần:contentReference[oaicite:2]{index=2}
+import LeaveCalendarMatrix, { CellData } from "@/components/LeaveCalendarMatrixProps"; // ma trận tuần:contentReference[oaicite:2]{index=2}
 
 type Props = {
-  EmpployeeInfo: any[];
+  ReturnTaiwanPeriodDetails: any[];
   // --- các handler filter nhân sự ---
   onEmpidChange: (v: string) => void;
   onNmChange: (v: string) => void;
@@ -28,21 +28,21 @@ type Props = {
   page?: number;
   pageSize?: number;
 
-  // ✅ thêm các prop tuỳ chọn cho FilterBar & ma trận tuần
+  // thêm các prop tuỳ chọn cho FilterBar & ma trận tuần
   onCompanyChange?: (v: string) => void;
   onStatusChange?: (v: string) => void;
   onDateChange?: (from: string, to: string) => void;
   company?: string;
   status?: string;
 
-  // ✅ khoảng ngày & dữ liệu để vẽ ma trận
+  // khoảng ngày & dữ liệu để vẽ ma trận
   startDate?: string | Date;
   endDate?: string | Date;
   calendarValues?: Record<string, CellData>;
 };
 
-export default function EmpployeeInfoTable({
-  EmpployeeInfo,
+export default function ReturnTaiwanPeriodDetailsTable({
+  ReturnTaiwanPeriodDetails,
   onEmpidChange, onNmChange, onDpChange, onDpnmChange, onNewdutnmChange,
   empid, nm, dp, dpnm, newdutnm,
   loading,
@@ -72,10 +72,10 @@ export default function EmpployeeInfoTable({
     newdutnm: "新職稱名稱"
   };
   const handleExportToExcel = () => {
-    exportToExcel(EmpployeeInfo, headers, "8_探親單查詢畫面");
+    exportToExcel(ReturnTaiwanPeriodDetails, headers, "8_探親單查詢畫面");
   };
 
-  // ✅ fallback khoảng ngày nếu cha chưa truyền: 4 tuần bắt đầu từ tuần hiện tại
+  // fallback khoảng ngày nếu cha chưa truyền: 4 tuần bắt đầu từ tuần hiện tại
   const computeDefaultRange = () => {
     const today = new Date();
     const s = new Date(today);
@@ -84,7 +84,9 @@ export default function EmpployeeInfoTable({
     e.setDate(e.getDate() + 27); // 4 tuần
     return { s, e };
   };
+  
   const { s, e } = computeDefaultRange();
+  
 
   return (
     <>
@@ -105,7 +107,7 @@ export default function EmpployeeInfoTable({
           // --- Mã nhân viên (ẩn trong ma trận; để ô tên hiển thị chính) ---
           empid={empid}
           onEmpidChange={(v) => onEmpidChange(v)}
-          showEmpidFilter={false}
+          showEmpidFilter={true}
 
           // --- Tên nhân viên (giữ lại nếu muốn lọc theo người) ---
           nm={nm}
@@ -128,7 +130,7 @@ export default function EmpployeeInfoTable({
         />
       </div>
 
-      {/* ✅ THAY BẢNG CŨ BẰNG MA TRẬN TUẦN */}
+      {/*  THAY BẢNG CŨ BẰNG MA TRẬN TUẦN */}
       <div className="w-full rounded-md border">
         {loading ? (
           <div className="h-[calc(100vh-16rem)] flex items-center justify-center">

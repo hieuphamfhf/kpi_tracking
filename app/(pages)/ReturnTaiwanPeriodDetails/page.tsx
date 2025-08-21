@@ -1,0 +1,235 @@
+"use client";
+import { useEffect, useState } from "react";
+import ReturnTaiwanPeriodDetailsTable from "./ReturnTaiwanPeriodDetailsTable";
+import { ReturnTaiwanPeriodDetailsApiRequest } from "@/app/apiRequest/ReturnTaiwanPeriodDetails";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import TaiwanPeriodModal from "@/components/TaiwanPeriodModal";
+import { ReturnTaiwanPeriodListRes } from "@/app/schemaValidations/ReturnTaiwanPeriod";
+import Pagination from "@/components/Pagination";
+import { dedupeTaiwanPeriod } from "@/utils/dedupeTaiwanPeriod";
+// import { ReturnTaiwanPeriodDetailsRes } from "@/app/apiRequest/returnTaiwanPeriodDetails";
+
+import { getReturnTaiwanPeriodDetails } from "@/app/apiRequest/ReturnTaiwanPeriodDetails";
+// ==== DayType/CellData (khớp LeaveCalendarMatrixProps) ====
+export type DayType =
+  | "WORK"
+  | "WEEKLY_OFF"
+  | "PUBLIC_HOL"
+  | "ANNUAL"
+  | "ASSIGNMENT"
+  | "BUSINESS_TW"
+  | "BUSINESS_VN";
+
+export type CellData = {
+  type?: DayType;
+  note?: string;
+  lockedByRule?: boolean;
+};
+
+// ==== ROC(民國年) -> ISO (YYYY-MM-DD) ====
+// offdat: "1140929" -> "2025-09-29"
+const rocToISO = (roc: string): string => {
+  if (!roc || roc.length < 7) return "";
+  const year = 1911 + parseInt(roc.slice(0, 3), 10);
+  const mm = roc.slice(3, 5);
+  const dd = roc.slice(5, 7);
+  return `${year}-${mm}-${dd}`;
+};
+
+// ==== Map loại nghỉ (zh-TW) -> DayType ====
+const mapOffidnmToType = (name: string, opts?: { co?: string; dp?: string }): DayType | undefined => {
+  const n = (name || "").trim();
+  switch (n) {
+    case "國定假日": return "PUBLIC_HOL";
+    case "特休":     return "ANNUAL";
+    case "派駐假":   return "ASSIGNMENT";
+    case "出差":     return "BUSINESS_TW"; // sửa logic nếu cần phân TW/VN
+    default:         return undefined;
+  }
+};
+
+// helpers
+const dashToYmd = (s: string) => s?.replace(/-/g, "") ?? "";
+const ymdToDash = (s: string) => `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
+
+export default function ReturnTaiwanPeriodDetailsPage() {
+  const PAGE_SIZE = 50;
+
+  // -------- Pagination
+  const [page, setPage] = useState(1);
+
+  // -------- Filters (employee)
+  const [empid, setEmpid] = useState<string>("");
+  const [nm, setNm] = useState<string>("");
+  const [dp, setDp] = useState<string>("");
+  const [dpnm, setDpnm] = useState<string>("");
+  const [newdutnm, setNewdutnm] = useState<string>("");
+
+  // -------- Data (list)
+  const [ReturnTaiwanPeriodDetails, setReturnTaiwanPeriodDetails] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // -------- Modal (period history)
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalData, setModalData] = useState<any[]>([]);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<any | null>(null);
+
+  // -------- Date range & matrix values
+  const [fromDate, setFromDate] = useState<string>("");   // yyyy-MM-dd
+  const [toDate, setToDate] = useState<string>("");       // yyyy-MM-dd
+  const [calendarValues, setCalendarValues] = useState<Record<string, CellData>>({});
+
+  // Fetch list (ReturnTaiwanPeriodDetails)
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const { payload } = await ReturnTaiwanPeriodDetailsApiRequest.getList({
+        empid, nm, dp, dpnm, newdutnm,
+        // Nếu muốn lọc server theo ngày từ FilterBar:
+        // backfrdat: fromDate ? dashToYmd(fromDate) : undefined,
+        // backtodat: toDate ? dashToYmd(toDate) : undefined,
+      });
+      setReturnTaiwanPeriodDetails(payload);
+    } catch {
+      // handle error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Row click -> legacy ReturnTaiwanPeriod (lịch sử 1 năm)
+  const handleRowClick = async (item: any) => {
+    setSelectedRow(item);
+    setModalOpen(true);
+    setModalLoading(true);
+    try {
+      const today = new Date();
+      const backtodat = today.toISOString().slice(0, 10).replace(/-/g, "");
+      const lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+      const backfrdat = lastYear.toISOString().slice(0, 10).replace(/-/g, "");
+      const res = await fetch(
+        `http://10.198.170.99:5000/API/ReturnTaiwanPeriod?empid=${item.empid}&backfrdat=${backfrdat}&backtodat=${backtodat}`
+      );
+      const data = await res.json();
+      const parsed = ReturnTaiwanPeriodListRes.safeParse(data);
+      setModalData(parsed.success ? dedupeTaiwanPeriod(parsed.data) : []);
+    } catch {
+      setModalData([]);
+    }
+    setModalLoading(false);
+  };
+
+  // Build matrix values from ReturnTaiwanPeriodDetails
+  const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
+    const out: Record<string, CellData> = {};
+    for (const r of rows) {
+      const day = rocToISO(r.offdat);
+      if (!day) continue;
+      const t = mapOffidnmToType(r.offidnm, { co: r.co, dp: r.dp });
+      const note = r.memo || "";
+      out[day] = { type: t, note };
+    }
+    return out;
+  };
+
+  // Fetch details (ReturnTaiwanPeriodDetails) whenever empid/from/to change
+  const fetchDetailsForMatrix = async (emp: string, fromISO: string, toISO: string) => {
+    if (!emp || !fromISO || !toISO) { setCalendarValues({}); return; }
+    try {
+      const rows = await getReturnTaiwanPeriodDetails({
+        empid: emp,
+        startdate: dashToYmd(fromISO),
+        enddate: dashToYmd(toISO),
+      });
+      setCalendarValues(buildCalendarValues(rows));
+    } catch {
+      setCalendarValues({});
+    }
+  };
+
+  // Auto fetch list when basic filters change (giữ nguyên flow cũ) 
+  useEffect(() => {
+    if (!empid && !nm && !dp && !dpnm && !newdutnm) return;
+    fetchData();
+  }, [empid, nm, dp, dpnm, newdutnm]);
+
+  // Auto fetch matrix details when empid & date range change
+  useEffect(() => {
+    if (!empid || !fromDate || !toDate) return;
+    fetchDetailsForMatrix(empid, fromDate, toDate);
+  }, [empid, fromDate, toDate]);
+
+  const totalPage = Math.ceil(ReturnTaiwanPeriodDetails.length / PAGE_SIZE);
+
+  return (
+    <div>
+      <Tabs defaultValue="account" className="bg-gray-50 min-h-screen">
+        <TabsContent value="account" className="bg-gray-50 ">
+          <Card>
+            <CardHeader className="p-4 pb-2">
+              <CardTitle>探親單查詢畫面</CardTitle>
+              <CardDescription>請使用條件篩選數據，可匯出報告到 Excel。</CardDescription>
+            </CardHeader>
+
+            <CardContent className="pt-2 ">
+              <ReturnTaiwanPeriodDetailsTable
+                ReturnTaiwanPeriodDetails={ReturnTaiwanPeriodDetails}
+                onEmpidChange={setEmpid}
+                onNmChange={setNm}
+                onDpChange={setDp}
+                onDpnmChange={setDpnm}
+                onNewdutnmChange={setNewdutnm}
+                empid={empid}
+                nm={nm}
+                dp={dp}
+                dpnm={dpnm}
+                newdutnm={newdutnm}
+                loading={loading}
+                onRowClick={handleRowClick}
+                page={page}
+                pageSize={PAGE_SIZE}
+
+                // nhận (from,to) từ FilterBar (ReturnTaiwanPeriodDetailsTable forward)
+                onDateChange={(from, to) => {
+                  setFromDate(ymdToDash(from));
+                  setToDate(ymdToDash(to));
+                }}
+
+                // đồng bộ matrix range với FilterBar
+                startDate={fromDate || undefined}
+                endDate={toDate || undefined}
+
+                // dữ liệu chi tiết theo ngày từ ReturnTaiwanPeriodDetails
+                calendarValues={calendarValues}
+              />
+
+              <TaiwanPeriodModal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                data={modalLoading ? [] : modalData}
+                selectedRow={selectedRow}
+              />
+
+              {modalLoading && modalOpen && (
+                <div className="fixed inset-0 flex items-center justify-center z-50">
+                  <div className="bg-white px-8 py-4 rounded shadow">Loading...</div>
+                </div>
+              )}
+
+              <div className="max-w-5xl mx-auto">
+                <Pagination
+                  page={page}
+                  totalPage={totalPage}
+                  totalCount={ReturnTaiwanPeriodDetails.length}
+                  onPageChange={setPage}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

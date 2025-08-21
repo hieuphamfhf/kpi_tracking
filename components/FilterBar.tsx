@@ -302,7 +302,7 @@ export default function FilterBar({
                     <Input
                         value={empid}
                         onChange={e => onEmpidChange(e.target.value.toUpperCase())}
-                        placeholder="員工編號"
+                        placeholder="員工編號_empid"
                         className="border rounded h-9 pl-3 pr-8 w-full"
                     />
                 </div>

@@ -10,7 +10,11 @@ export type DayType =
   | "ANNUAL"
   | "ASSIGNMENT"
   | "BUSINESS_TW"
-  | "BUSINESS_VN";
+  | "BUSINESS_VN"
+  | "BEREAVEMENT"
+  | "SPECIAL_LEAVE"
+  | "COMP_LEAVE";   // 新增：補休
+
 
 export type CellData = {
   type?: DayType;
@@ -70,20 +74,26 @@ const badgeText: Record<DayType, string> = {
   PUBLIC_HOL: "國定假日",
   ANNUAL: "特休",
   ASSIGNMENT: "派駐假",
-  BUSINESS_TW: "因公返台",
-  BUSINESS_VN: "因公返越",
+  BUSINESS_TW: "出差",
+  BUSINESS_VN: "駐越假",
+  BEREAVEMENT: "喪假",
+  SPECIAL_LEAVE: "特別休假",
+  COMP_LEAVE: "補休",
 };
-
 
 const badgeStyle: Record<DayType, string> = {
   WORK: "bg-slate-100 text-slate-700 border-slate-300",
-  WEEKLY_OFF: "bg-gray-100 text-gray-700 border-gray-300",
-  PUBLIC_HOL: "bg-rose-100 text-rose-700 border-rose-300",
-  ANNUAL: "bg-amber-100 text-amber-700 border-amber-300",
-  ASSIGNMENT: "bg-violet-100 text-violet-700 border-violet-300",
-  BUSINESS_TW: "bg-sky-100 text-sky-700 border-sky-300",
-  BUSINESS_VN: "bg-teal-100 text-teal-700 border-teal-300",
+  WEEKLY_OFF: "bg-gray-100 text-gray-700 border-gray-300",           // xám: CHỈ cho CN
+  PUBLIC_HOL: "bg-rose-100 text-rose-700 border-rose-300",           // 國定假日
+  ANNUAL: "bg-amber-100 text-amber-700 border-amber-300",            // 特休
+  ASSIGNMENT: "bg-violet-100 text-violet-700 border-violet-300",     // 派駐假
+  BUSINESS_TW: "bg-sky-100 text-sky-700 border-sky-300",             // 出差
+  BUSINESS_VN: "bg-teal-100 text-teal-700 border-teal-300",          // 駐越假
+  BEREAVEMENT: "bg-red-100 text-red-700 border-red-300",             // 喪假 (tránh xám)
+  SPECIAL_LEAVE: "bg-emerald-100 text-emerald-700 border-emerald-300",// 特別休假 (xanh lục rõ)
+  COMP_LEAVE: "bg-indigo-100 text-indigo-700 border-indigo-300",     // 補休
 };
+
 
 const TypeBadge: React.FC<{ t?: DayType; locked?: boolean; labelOverride?: string }> = ({ t, locked, labelOverride }) => {
   // Không có type => coi là ngày đi làm bình thường
@@ -156,14 +166,24 @@ const WeekBlock: React.FC<{
             const k = keyOf(d);
             const v = values[k] || {};
             const locked = autoSundayWeeklyOff && d.getDay() === 0 && !v.type;
-            const t = (locked ? "WEEKLY_OFF" : v.type) as DayType | undefined;
 
-            // offid === "51" (BUSINESS_TW)  hiện đúng chữ 出差
-            const labelOverride = t === "BUSINESS_TW" ? "出差" : undefined;
+            const t = (locked ? "WEEKLY_OFF" : v.type) as DayType | undefined;
+            const label = (v.note && v.note.trim()) || ""; // offidnm được gửi từ page
 
             return (
               <HCell key={k}>
-                <TypeBadge t={t} locked={locked || v.lockedByRule} labelOverride={labelOverride} />
+                {t ? (
+                  // Có type: dùng màu theo type, text override = offidnm (nếu có)
+                  <TypeBadge t={t} locked={locked || v.lockedByRule} labelOverride={label || undefined} />
+                ) : label ? (
+                  // Không có type nhưng có nhãn -> badge trung tính
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs border bg-slate-50 text-slate-500 border-slate-200">
+                    {label}
+                  </span>
+                ) : (
+                  // Không có gì -> mặc định 出勤
+                  <TypeBadge t={undefined} locked={locked || v.lockedByRule} />
+                )}
               </HCell>
             );
           })}
@@ -178,27 +198,21 @@ const WeekBlock: React.FC<{
             const k = keyOf(d);
             const v = values[k] || {};
             const isSunday = d.getDay() === 0;
-            const locked = autoSundayWeeklyOff && isSunday; // CN khoá
 
-            //  Nếu type là BUSINESS_TW và note = "出差" thì không hiển thị lại ở 備註
-            const noteToShow =
-              v.type === "BUSINESS_TW" && v.note?.trim() === "出差"
-                ? "—"
-                : (v.note || "—");
+            // CN khoá: vẫn hiển thị note của CN (đã đặt ở page là '台、越均放假')
+            const locked = autoSundayWeeklyOff && isSunday;
+
+            // Nếu không phải CN, và đã dùng v.note làm nhãn ở 申請假別 -> tránh lặp => "—"
+            const noteToShow = (v.type === "WEEKLY_OFF")
+              ? (v.note || "—")
+              : "—";
 
             return (
               <HCell key={k}>
                 {locked ? (
                   <span className="opacity-70">{noteToShow}</span>
                 ) : (
-                  <input
-                    type="text"
-                    value={noteToShow === "—" ? "" : noteToShow}
-                    onChange={() => {
-                      /* TODO: cập nhật state nếu cần cho editable */
-                    }}
-                    className="w-full h-10 px-2 bg-transparent outline-none focus:ring-2 focus:ring-slate-300 rounded-md text-sm"
-                  />
+                  <span>{noteToShow}</span>
                 )}
               </HCell>
             );

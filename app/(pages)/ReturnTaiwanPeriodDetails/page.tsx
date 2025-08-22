@@ -13,13 +13,10 @@ import { dedupeTaiwanPeriod } from "@/utils/dedupeTaiwanPeriod";
 import { getReturnTaiwanPeriodDetails } from "@/app/apiRequest/ReturnTaiwanPeriodDetails";
 // ==== DayType/CellData (khớp LeaveCalendarMatrixProps) ====
 export type DayType =
-  | "WORK"
-  | "WEEKLY_OFF"
-  | "PUBLIC_HOL"
-  | "ANNUAL"
-  | "ASSIGNMENT"
-  | "BUSINESS_TW"
-  | "BUSINESS_VN";
+  | "WORK" | "WEEKLY_OFF" | "PUBLIC_HOL" | "ANNUAL"
+  | "ASSIGNMENT" | "BUSINESS_TW" | "BUSINESS_VN"
+  | "BEREAVEMENT" | "SPECIAL_LEAVE" | "COMP_LEAVE"; // + 補休
+
 
 export type CellData = {
   type?: DayType;
@@ -123,12 +120,13 @@ export default function ReturnTaiwanPeriodDetailsPage() {
 
   // ==== Map theo offid (ổn định hơn) ====
   const OFFID_TO_DAYTYPE: Record<string, DayType> = {
-    "51": "BUSINESS_TW",   // 出差 công tác
-    // TODO: thêm các mã khác khi backend cung cấp
-    // "01": "PUBLIC_HOL",
-    // "02": "ANNUAL",
-    // "??": "ASSIGNMENT",
-  };
+  "51": "BUSINESS_TW",   // 出差
+  "58": "BUSINESS_VN",   // 駐越假
+  "52": "ASSIGNMENT",    // 派駐假
+  "03": "SPECIAL_LEAVE", // 特別休假
+  "10": "BEREAVEMENT",   // 喪假
+  "08": "COMP_LEAVE",    // 補休  ← tách riêng để có màu riêng
+};
 
   // Ghi chú mặc định theo DayType
 const defaultNoteByType = (t?: DayType): string => {
@@ -141,18 +139,21 @@ const defaultNoteByType = (t?: DayType): string => {
     id ? OFFID_TO_DAYTYPE[id.trim()] : undefined;
 
   // Giữ fallback theo tên (nếu offid chưa có trong bảng)
-  const mapOffidnmToType = (name?: string): DayType | undefined => {
-    const n = (name || "").trim();
-    switch (n) {
-      
-      case "台、越均放假_CN": return "WEEKLY_OFF";
-      case "國定假日": return "PUBLIC_HOL";
-      case "特休": return "ANNUAL";
-      case "派駐假": return "ASSIGNMENT";
-      case "出差_": return "BUSINESS_TW"; // TODO: tách TW/VN theo rule co/dp nếu cần
-      default: return undefined;
-    }
-  };
+ const mapOffidnmToType = (name?: string): DayType | undefined => {
+  const n = (name || "").trim();
+  switch (n) {
+    case "國定假日": return "PUBLIC_HOL";
+    case "特休":     return "ANNUAL";
+    case "派駐假":   return "ASSIGNMENT";
+    case "駐越假":   return "BUSINESS_VN";
+    case "喪假":     return "BEREAVEMENT";
+    case "特別休假": return "SPECIAL_LEAVE";
+    case "補休":     return "COMP_LEAVE";
+    case "出差":     return "BUSINESS_TW";
+    default:         return undefined;
+  }
+};
+
 
   // Chủ nhật → WEEKLY_OFF + khóa
   

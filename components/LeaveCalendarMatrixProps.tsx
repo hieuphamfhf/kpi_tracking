@@ -168,7 +168,9 @@ const WeekBlock: React.FC<{
             const locked = autoSundayWeeklyOff && d.getDay() === 0 && !v.type;
 
             const t = (locked ? "WEEKLY_OFF" : v.type) as DayType | undefined;
-            const label = (v.note && v.note.trim()) || ""; // offidnm được gửi từ page
+            // const label = (v.note && v.note.trim()) || ""; // offidnm được gửi từ page
+            const label = v.type ? badgeText[v.type] : ""; // hoặc r.offidnm nếu muốn raw text
+
 
             return (
               <HCell key={k}>
@@ -203,9 +205,8 @@ const WeekBlock: React.FC<{
             const locked = autoSundayWeeklyOff && isSunday;
 
             // Nếu không phải CN, và đã dùng v.note làm nhãn ở 申請假別 -> tránh lặp => "—"
-            const noteToShow = (v.type === "WEEKLY_OFF")
-              ? (v.note || "—")
-              : "—";
+            const noteToShow = v.note || "—";
+
 
             return (
               <HCell key={k}>

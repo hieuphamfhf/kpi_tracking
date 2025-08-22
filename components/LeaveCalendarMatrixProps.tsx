@@ -73,10 +73,35 @@ const badgeText: Record<DayType, string> = {
   BUSINESS_TW: "因公返台",
   BUSINESS_VN: "因公返越",
 };
-const TypeBadge: React.FC<{ t?: DayType; locked?: boolean }> = ({ t, locked }) => (
-  !t ? <span className="opacity-40">—</span> :
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border ${locked ? "border-dashed" : "border"}`}>{badgeText[t]}{locked && <span className="ml-1 text-[10px] opacity-70">(固定)</span>}</span>
-);
+
+
+const badgeStyle: Record<DayType, string> = {
+  WORK: "bg-slate-100 text-slate-700 border-slate-300",
+  WEEKLY_OFF: "bg-gray-100 text-gray-700 border-gray-300",
+  PUBLIC_HOL: "bg-rose-100 text-rose-700 border-rose-300",
+  ANNUAL: "bg-amber-100 text-amber-700 border-amber-300",
+  ASSIGNMENT: "bg-violet-100 text-violet-700 border-violet-300",
+  BUSINESS_TW: "bg-sky-100 text-sky-700 border-sky-300",
+  BUSINESS_VN: "bg-teal-100 text-teal-700 border-teal-300",
+};
+
+const TypeBadge: React.FC<{ t?: DayType; locked?: boolean; labelOverride?: string }> = ({ t, locked, labelOverride }) => {
+  // Không có type => coi là ngày đi làm bình thường
+  if (!t) {
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs border bg-slate-50 text-slate-500 border-slate-200">
+        出勤
+      </span>
+    );
+  }
+  const style = badgeStyle[t] || "bg-slate-100 text-slate-700 border-slate-300";
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border ${style} ${locked ? "opacity-70" : ""}`}>
+      {labelOverride ?? badgeText[t]}
+      {locked && t === "WEEKLY_OFF" && <span className="ml-1 text-[10px] opacity-70">(固定)</span>}
+    </span>
+  );
+};
 
 const HCell: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
   <div className="flex-1 basis-0 min-w-[120px] h-12 flex items-center justify-center border-l last:border-r">
@@ -123,19 +148,29 @@ const WeekBlock: React.FC<{
             <HCell key={keyOf(d)}>{zhWeekday(d)}</HCell>
           ))}
         </div>
-        {/* 申請假別 */}
+
+        {/* 申請假別 - loai phep nghĩ*/}
         <div className="flex border-t">
           <StickyLabel label="申請假別" />
           {week.map((d) => {
             const k = keyOf(d);
             const v = values[k] || {};
             const locked = autoSundayWeeklyOff && d.getDay() === 0 && !v.type;
-            const t = locked ? "WEEKLY_OFF" : v.type;
+            const t = (locked ? "WEEKLY_OFF" : v.type) as DayType | undefined;
+
+            // offid === "51" (BUSINESS_TW)  hiện đúng chữ 出差
+            const labelOverride = t === "BUSINESS_TW" ? "出差" : undefined;
+
             return (
-              <HCell key={k}><TypeBadge t={t} locked={locked || v.lockedByRule} /></HCell>
+              <HCell key={k}>
+                <TypeBadge t={t} locked={locked || v.lockedByRule} labelOverride={labelOverride} />
+              </HCell>
             );
           })}
         </div>
+
+
+
         {/* 備註 - ghi chu */}
         <div className="flex border-t">
           <StickyLabel label="備註" />
@@ -143,27 +178,33 @@ const WeekBlock: React.FC<{
             const k = keyOf(d);
             const v = values[k] || {};
             const isSunday = d.getDay() === 0;
-            const locked = autoSundayWeeklyOff && isSunday; // Chủ Nhật khóa
+            const locked = autoSundayWeeklyOff && isSunday; // CN khoá
+
+            //  Nếu type là BUSINESS_TW và note = "出差" thì không hiển thị lại ở 備註
+            const noteToShow =
+              v.type === "BUSINESS_TW" && v.note?.trim() === "出差"
+                ? "—"
+                : (v.note || "—");
 
             return (
               <HCell key={k}>
                 {locked ? (
-                  <span className="opacity-70">{v.note || "—"}</span>
+                  <span className="opacity-70">{noteToShow}</span>
                 ) : (
                   <input
                     type="text"
-                    value={v.note || ""}
-                    onChange={(e) => {
-                      // TODO: cập nhật state values[k].note
+                    value={noteToShow === "—" ? "" : noteToShow}
+                    onChange={() => {
+                      /* TODO: cập nhật state nếu cần cho editable */
                     }}
                     className="w-full h-10 px-2 bg-transparent outline-none focus:ring-2 focus:ring-slate-300 rounded-md text-sm"
-
                   />
                 )}
               </HCell>
             );
           })}
         </div>
+
       </div>
     </div>
   );

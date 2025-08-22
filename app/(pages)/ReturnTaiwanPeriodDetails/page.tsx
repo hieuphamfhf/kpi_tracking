@@ -123,13 +123,20 @@ export default function ReturnTaiwanPeriodDetailsPage() {
 
   // ==== Map theo offid (ổn định hơn) ====
   const OFFID_TO_DAYTYPE: Record<string, DayType> = {
-    "51": "BUSINESS_TW",   // 出差
+    "51": "BUSINESS_TW",   // 出差 công tác
     // TODO: thêm các mã khác khi backend cung cấp
     // "01": "PUBLIC_HOL",
     // "02": "ANNUAL",
     // "??": "ASSIGNMENT",
   };
 
+  // Ghi chú mặc định theo DayType
+const defaultNoteByType = (t?: DayType): string => {
+  switch (t) {
+    case "WEEKLY_OFF": return "台、越均放假"; // CHỈ cho nghỉ cuối tuần
+    default:           return "—";          // các loại khác thì để "—"
+  }
+};
   const mapOffidToType = (id?: string): DayType | undefined =>
     id ? OFFID_TO_DAYTYPE[id.trim()] : undefined;
 
@@ -137,47 +144,53 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   const mapOffidnmToType = (name?: string): DayType | undefined => {
     const n = (name || "").trim();
     switch (n) {
+      
+      case "台、越均放假_CN": return "WEEKLY_OFF";
       case "國定假日": return "PUBLIC_HOL";
       case "特休": return "ANNUAL";
       case "派駐假": return "ASSIGNMENT";
-      case "出差": return "BUSINESS_TW"; // TODO: tách TW/VN theo rule co/dp nếu cần
+      case "出差_": return "BUSINESS_TW"; // TODO: tách TW/VN theo rule co/dp nếu cần
       default: return undefined;
     }
   };
 
   // Chủ nhật → WEEKLY_OFF + khóa
-  const isSunday = (isoDate: string) => {
-    // tránh lệch múi giờ
-    const d = new Date(`${isoDate}T00:00:00`);
-    return d.getDay() === 0;
-  };
+  
+const isSunday = (iso: string) => new Date(`${iso}T00:00:00`).getDay() === 0;
 
-  // ==== Build matrix values (ưu tiên offid -> offidnm; CN override) ====
-// ==== Build matrix values (ƯU TIÊN offid -> offidnm; CN override) ====
+// Lấy note theo loại phép (ưu tiên cao nhất)
+const noteFromType = (r: any, t?: DayType): string => {
+  // Ưu tiên mã (ổn định nhất)
+  if (r?.offid?.trim?.() === "51") return "出差";
+  // Fallback tên loại nếu backend gửi
+  const nm = (r?.offidnm && String(r.offidnm).trim()) || "";
+  return nm;
+};
+
+// ==== Build matrix values (ƯU TIÊN: loại phép -> mặc định; KHÔNG dùng memo) ====
 const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
   const out: Record<string, CellData> = {};
 
   for (const r of rows) {
-    // 1) Convert offdat (ROC 7 số) -> ISO để vẽ ma trận
     const day = rocToISO(r.offdat);
     if (!day) continue;
 
-    // 2) Xác định type theo mã (ổn định), fallback theo tên
-    let t: DayType | undefined = mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
+    // type từ mã (ổn định), fallback theo tên
+    let t: DayType | undefined =
+      mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
 
-    // 3) Chủ nhật: WEEKLY_OFF + khoá (theo rule UI)
+    // Chủ nhật: WEEKLY_OFF + khóa + note mặc định
     if (isSunday(day)) {
-      out[day] = { type: "WEEKLY_OFF", note: r.memo || "", lockedByRule: true };
+      out[day] = {
+        type: "WEEKLY_OFF",
+        note: defaultNoteByType("WEEKLY_OFF"),
+        lockedByRule: true,
+      };
       continue;
     }
 
-    // 4) Ghi chú hiển thị:
-    // - Nếu mã 51 (出差) => note hiển thị chữ "出差"
-    // - Nếu không, ưu tiên memo, rồi tới offidnm
-    const note =
-      r.offid?.trim() === "51"
-        ? "出差"
-        : (r.memo && String(r.memo).trim()) || (r.offidnm && String(r.offidnm).trim()) || "";
+    // NOTE: KHÔNG dùng memo
+    const note = noteFromType(r, t) || defaultNoteByType(t);
 
     out[day] = { type: t, note };
   }

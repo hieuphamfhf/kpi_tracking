@@ -23,6 +23,69 @@ export type CellData = {
   note?: string;
   lockedByRule?: boolean;
 };
+// YYYYMMDD -> YYYY-MM-DD
+const ymdToISO = (s: string) => `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+
+type TaiwanPeriodItem = {
+  empid: string;
+  sts: string;
+  backfrdat?: string;
+  backtodat?: string;
+  prefrdat?: string;
+  pretodat?: string;
+  createdtime?: string;
+  deleted?: boolean;
+};
+// chọn bản ghi mới nhất theo createdtime (nếu API trả trùng kỳ)
+// const pickLatest = (rows: TaiwanPeriodItem[]) =>
+//   rows.sort((a, b) => new Date(b.createdtime || 0).getTime() - new Date(a.createdtime || 0).getTime())[0];
+
+// Gom nhóm theo (backfrdat, backtodat) và giữ bản mới nhất mỗi nhóm
+const dedupeByPeriod = (rows: TaiwanPeriodItem[]) => {
+  const groups = new Map<string, TaiwanPeriodItem[]>();
+  for (const r of rows) {
+    const key = `${r.backfrdat || ""}-${r.backtodat || ""}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(r);
+  }
+  return Array.from(groups.values()).map(arr =>
+    arr.sort((a, b) =>
+      new Date(b.createdtime || 0).getTime() - new Date(a.createdtime || 0).getTime()
+    )[0]
+  );
+};
+
+
+// Lấy map { "YYYY-MM-DD": { note: "返台" | "返越" } }
+async function fetchReturnTaiwanPeriodNotes(emp: string, fromISO: string, toISO: string) {
+  const url = `http://10.198.170.99:5000/API/ReturnTaiwanPeriod?empid=${emp}&backfrdat=${fromISO.replace(/-/g, "")}&backtodat=${toISO.replace(/-/g, "")}`;
+  const res = await fetch(url);
+  const data: TaiwanPeriodItem[] = await res.json();
+
+  // const valid = (data || []).filter(r => r.sts === "核准" && r.deleted === false);
+  // if (!valid.length) return {} as Record<string, CellData>;
+
+  // const r = pickLatest(valid);
+  // const out: Record<string, CellData> = {};
+  // if (r.backfrdat) out[ymdToISO(r.backfrdat)] = { note: "返台_TW" };
+  // if (r.backtodat) out[ymdToISO(r.backtodat)] = { note: "返越_VN" };
+  // return out;
+  const valid = (data || []).filter(r => r.sts === "核准" && r.deleted === false);
+  const deduped = dedupeByPeriod(valid);
+  const out: Record<string, CellData> = {};
+  const inRange = (iso: string) => iso >= fromISO && iso <= toISO;
+  for (const r of deduped) {
+    if (r.backfrdat) {
+      const iso = ymdToISO(r.backfrdat);
+      if (inRange(iso)) out[iso] = { note: "返台" };
+    }
+    if (r.backtodat) {
+      const iso = ymdToISO(r.backtodat);
+      if (inRange(iso)) out[iso] = { note: "返越" };
+    }
+  }
+  return out;
+}
 
 // ==== ROC(民國年) -> ISO (YYYY-MM-DD) ====
 // "1140929" -> "2025-09-29"
@@ -123,7 +186,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
     "51": "BUSINESS_TW",   // 出差
     "58": "BUSINESS_VN",   // 駐越假
     "52": "ASSIGNMENT",    // 派駐假
-    "03": "SPECIAL_LEAVE", // 特別休假
+    "03": "SPECIAL_LEAVE", // 特別休假  
     "10": "BEREAVEMENT",   // 喪假
     "08": "COMP_LEAVE",    // 補休  ← tách riêng để có màu riêng
   };
@@ -140,8 +203,8 @@ export default function ReturnTaiwanPeriodDetailsPage() {
 
   // Ghi chú mặc định theo từng offidnm đặc thù
   const SPECIAL_NOTE_BY_OFFIDNM: Record<string, string> = {
-    "因公返台": "在台上班",
-    // "特別休假": "在台上班_test",
+    // "因公返台": "在台上班",
+    "特別休假": "在台上班_test",
   };
 
   // Giữ fallback theo tên (nếu offid chưa có trong bảng)
@@ -217,7 +280,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
       // }
 
       // out[day] = { type: t, note };
-      
+
     }
 
     return out;
@@ -233,7 +296,24 @@ export default function ReturnTaiwanPeriodDetailsPage() {
         startdate: dashToYmd(fromISO),
         enddate: dashToYmd(toISO),
       });
-      setCalendarValues(buildCalendarValues(rows));
+      // setCalendarValues(buildCalendarValues(rows));
+
+      const base = buildCalendarValues(rows);
+      const noteMap = await fetchReturnTaiwanPeriodNotes(emp, fromISO, toISO);
+      const merged: Record<string, CellData> = { ...base };
+      // for (const [k, v] of Object.entries(noteMap)) {
+      //   // chỉ thêm/ghi đè NOTE, KHÔNG đụng type để hàng 申請假別 giữ nguyên
+      //   merged[k] = { ...(merged[k] || {}), note: v.note };
+      for (const [k, v] of Object.entries(noteMap)) {
+        const prev = (merged[k]?.note || "").trim();
+        merged[k] = {
+          ...(merged[k] || {}),
+          note: prev ? `${prev} / ${v.note}` : v.note, // ghép an toàn
+        };
+
+      }
+      setCalendarValues(merged);
+
     } catch {
       setCalendarValues({});
     }

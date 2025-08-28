@@ -112,7 +112,7 @@ export default function ReturnTaiwanPeriodDetailsTable({
           // --- Tên nhân viên (giữ lại nếu muốn lọc theo người) ---
           nm={nm}
           onNmChange={(v) => onNmChange(v)}
-          showNmFilter={true}
+          showNmFilter={false}
 
           // --- Trạng thái (tuỳ chọn) ---
           status={status}
@@ -122,7 +122,7 @@ export default function ReturnTaiwanPeriodDetailsTable({
           // --- Chức vụ/cấp bậc ---
           newdutnm={newdutnm}
           onNewdutnmChange={onNewdutnmChange}
-          showNewdutnmFilter={true}
+          showNewdutnmFilter={false}
 
           // --- Khoảng ngày: dùng RANGE để vẽ ma trận ---
           dateMode="range"

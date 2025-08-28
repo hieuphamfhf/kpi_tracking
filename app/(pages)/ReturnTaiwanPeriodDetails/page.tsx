@@ -127,29 +127,56 @@ const plusDays = (iso: string, n: number) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-// Đếm liên tục 派駐假1..N; KHÔNG reset nếu giữa hai ngày chỉ rơi vào Chủ nhật
+// Đếm liên tục 派駐假1..N; KHÔNG reset nếu giữa hai ngày chỉ rơi vào Chủ nhật va...
+// function addAssignmentOrdinal(vals: Record<string, CellData>) {
+//   const days = Object.keys(vals)
+//     .filter(k => vals[k].type === "ASSIGNMENT")
+//     .sort(isoKeySort);
+
+//   let seq = 0;
+//   let prev: string | null = null;
+
+//   for (const d of days) {
+//     if (!prev) {
+//       seq = 1;
+//     } else {
+//       const next1 = plusDays(prev, 1);
+//       const next2 = plusDays(prev, 2);
+//       if (d === next1) {
+//         seq += 1;
+//       } else if (d === next2 && dayOfWeek(next1) === 0) {
+//         // bỏ qua đúng 1 ngày và ngày đó là Chủ nhật -> vẫn tăng
+//         seq += 1;
+//       } else {
+//         seq = 1;
+//       }
+//     }
+//     vals[d] = { ...vals[d], note: `派駐假${seq}` };
+//     prev = d;
+//   }
+//   return vals;
+// }
+const ASSIGNMENT_GAP_MAX = 6; // số ngày tối đa cho phép để KHÔNG reset
+
+const diffDays = (aISO: string, bISO: string) =>
+  Math.round(
+    (new Date(`${bISO}T00:00:00`).getTime() - new Date(`${aISO}T00:00:00`).getTime()) /
+    86400000
+  );
 function addAssignmentOrdinal(vals: Record<string, CellData>) {
   const days = Object.keys(vals)
     .filter(k => vals[k].type === "ASSIGNMENT")
-    .sort(isoKeySort);
+    .sort(isoKeySort); // đã có trong file
 
   let seq = 0;
   let prev: string | null = null;
 
   for (const d of days) {
     if (!prev) {
-      seq = 1;
+      seq = 1; // ngày 派駐假 đầu tiên
     } else {
-      const next1 = plusDays(prev, 1);
-      const next2 = plusDays(prev, 2);
-      if (d === next1) {
-        seq += 1;
-      } else if (d === next2 && dayOfWeek(next1) === 0) {
-        // bỏ qua đúng 1 ngày và ngày đó là Chủ nhật -> vẫn tăng
-        seq += 1;
-      } else {
-        seq = 1;
-      }
+      const gap = diffDays(prev, d);  // số ngày cách nhau
+      seq = gap > ASSIGNMENT_GAP_MAX ? 1 : (seq + 1);
     }
     vals[d] = { ...vals[d], note: `派駐假${seq}` };
     prev = d;
@@ -263,8 +290,8 @@ export default function ReturnTaiwanPeriodDetailsPage() {
 
   // Ghi chú mặc định theo từng offidnm đặc thù
   const SPECIAL_NOTE_BY_OFFIDNM: Record<string, string> = {
-    // "因公返台": "在台上班",
-    "特別休假": "在台上班_test",
+    "因公返台": "在台上班",
+    // "特別休假": "在台上班_test",
   };
 
   // Giữ fallback theo tên (nếu offid chưa có trong bảng)

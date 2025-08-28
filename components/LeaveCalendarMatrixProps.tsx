@@ -169,8 +169,11 @@ const WeekBlock: React.FC<{
 
             const t = (locked ? "WEEKLY_OFF" : v.type) as DayType | undefined;
             // const label = (v.note && v.note.trim()) || ""; // offidnm được gửi từ page
-            const label = v.type ? badgeText[v.type] : ""; // hoặc r.offidnm nếu muốn raw text
-
+            // const label = v.type ? badgeText[v.type] : ""; // hoặc r.offidnm nếu muốn raw text
+            const label =
+              v.type === "ASSIGNMENT"
+                ? (v.note && v.note.trim()) || badgeText[v.type]
+                : (v.type ? badgeText[v.type] : "");
 
             return (
               <HCell key={k}>
@@ -205,8 +208,12 @@ const WeekBlock: React.FC<{
             const locked = autoSundayWeeklyOff && isSunday;
 
             // Nếu không phải CN, và đã dùng v.note làm nhãn ở 申請假別 -> tránh lặp => "—"
-            const noteToShow = v.note || "—";
-
+            // const noteToShow = v.note || "—";
+            // Ẩn note nếu là 派駐假(ASSIGNMENT) để tránh lặp (vì 申請假別 đã hiển thị 派駐假1..N)
+            const rawNote = (v.note || "").trim();
+            const hideAssignmentNote =
+              v.type === "ASSIGNMENT" && /^派駐假\d+/.test(rawNote);
+            const noteToShow = hideAssignmentNote ? "—" : (rawNote || "—");
 
             return (
               <HCell key={k}>

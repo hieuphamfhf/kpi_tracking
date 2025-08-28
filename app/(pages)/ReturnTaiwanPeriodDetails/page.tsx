@@ -97,6 +97,66 @@ const rocToISO = (roc: string): string => {
   return `${year}-${mm}-${dd}`;
 };
 
+
+// const isoKeySort = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+// const plusDays = (iso: string, n: number) => {
+//   const d = new Date(`${iso}T00:00:00`);
+//   d.setDate(d.getDate() + n);
+//   const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), dd = String(d.getDate()).padStart(2, "0");
+//   return `${y}-${m}-${dd}`;
+// };
+// function addAssignmentOrdinal(vals: Record<string, CellData>) {
+//   const days = Object.keys(vals).filter(k => vals[k].type === "ASSIGNMENT").sort(isoKeySort);
+//   let seq = 0;
+//   let prev: string | null = null;
+//   for (const d of days) {
+//     // nếu không liền kề ngày trước đó -> reset về 1
+//     if (!prev || d !== plusDays(prev, 1)) seq = 1;
+//     else seq += 1;
+//     vals[d] = { ...vals[d], note: `派駐假${seq}` };
+//     prev = d;
+//   }
+//   return vals;
+// }
+
+const dayOfWeek = (iso: string) => new Date(`${iso}T00:00:00`).getDay();
+const isoKeySort = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+const plusDays = (iso: string, n: number) => {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+// Đếm liên tục 派駐假1..N; KHÔNG reset nếu giữa hai ngày chỉ rơi vào Chủ nhật
+function addAssignmentOrdinal(vals: Record<string, CellData>) {
+  const days = Object.keys(vals)
+    .filter(k => vals[k].type === "ASSIGNMENT")
+    .sort(isoKeySort);
+
+  let seq = 0;
+  let prev: string | null = null;
+
+  for (const d of days) {
+    if (!prev) {
+      seq = 1;
+    } else {
+      const next1 = plusDays(prev, 1);
+      const next2 = plusDays(prev, 2);
+      if (d === next1) {
+        seq += 1;
+      } else if (d === next2 && dayOfWeek(next1) === 0) {
+        // bỏ qua đúng 1 ngày và ngày đó là Chủ nhật -> vẫn tăng
+        seq += 1;
+      } else {
+        seq = 1;
+      }
+    }
+    vals[d] = { ...vals[d], note: `派駐假${seq}` };
+    prev = d;
+  }
+  return vals;
+}
+
 // ==== Map loại nghỉ (zh-TW) -> DayType ====
 const mapOffidnmToType = (name: string, opts?: { co?: string; dp?: string }): DayType | undefined => {
   const n = (name || "").trim();
@@ -237,7 +297,8 @@ export default function ReturnTaiwanPeriodDetailsPage() {
     return nm;
   };
 
-  // ==== Build matrix values (ƯU TIÊN: loại phép -> mặc định; KHÔNG dùng memo) ====
+  // ==== Build matrix values (ƯU TIÊN: loại phép -> m
+  // ặc định; KHÔNG dùng memo) ====
   const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
     const out: Record<string, CellData> = {};
 
@@ -312,6 +373,10 @@ export default function ReturnTaiwanPeriodDetailsPage() {
         };
 
       }
+
+      // ĐÁNH SỐ cho mọi ngày có offid=52 (ASSIGNMENT)
+      addAssignmentOrdinal(merged);
+
       setCalendarValues(merged);
 
     } catch {

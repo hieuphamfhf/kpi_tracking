@@ -4,6 +4,7 @@ import LogoLoading from "@/components/LogoLoading";
 import FilterBar from "@/components/FilterBar";
 import LeaveCalendarMatrix, { CellData } from "@/components/LeaveCalendarMatrixProps"; // ma trận tuần:contentReference[oaicite:2]{index=2}
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 type Props = {
   ReturnTaiwanPeriodDetails: any[];
   // --- các handler filter nhân sự ---
@@ -39,6 +40,7 @@ type Props = {
   startDate?: string | Date;
   endDate?: string | Date;
   calendarValues?: Record<string, CellData>;
+  onSaveNotes?: (edited: Record<string, string>) => Promise<void>;
 };
 
 export default function ReturnTaiwanPeriodDetailsTable({
@@ -59,7 +61,8 @@ export default function ReturnTaiwanPeriodDetailsTable({
   // dữ liệu cho ma trận
   startDate,
   endDate,
-  calendarValues
+  calendarValues,
+  onSaveNotes
 }: Props) {
 
   // (tuỳ chọn) nếu cần export ma trận sau này có thể dùng service này
@@ -75,6 +78,7 @@ export default function ReturnTaiwanPeriodDetailsTable({
     exportToExcel(ReturnTaiwanPeriodDetails, headers, "8_探親單查詢畫面");
   };
 
+
   // fallback khoảng ngày nếu cha chưa truyền: 4 tuần bắt đầu từ tuần hiện tại
   const computeDefaultRange = () => {
     const today = new Date();
@@ -87,7 +91,17 @@ export default function ReturnTaiwanPeriodDetailsTable({
 
   const { s, e } = computeDefaultRange();
 
+  const [editedNotes, setEditedNotes] = React.useState<Record<string, string>>({});
 
+  const onNoteChange = (iso: string, v: string) => {
+    setEditedNotes(prev => ({ ...prev, [iso]: v }));
+  };
+
+  const handleSave = async () => {
+    if (!onSaveNotes) return;
+    await onSaveNotes(editedNotes);
+    setEditedNotes({}); // clear sau khi lưu
+  };
   return (
     <>
       {/* HEADER FILTER */}
@@ -129,6 +143,15 @@ export default function ReturnTaiwanPeriodDetailsTable({
           onDateChange={(from, to) => onDateChange?.(from, to)}  // giá trị yyyyMMdd bắn lên; bạn map ở page.tsx:contentReference[oaicite:3]{index=3}
         />
       </div>
+      <div className="flex items-center justify-end mb-2">
+        {/* <button onClick={handleSave} className="px-3 py-1.5 border rounded text-sm">
+          儲存
+        </button> */}
+        <Button onClick={handleSave} variant="outline" size="sm" className="gap-2">
+          儲存_save
+        </Button>
+      </div>
+
       <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
         <div className="w-full rounded-md border">
           {loading ? (
@@ -141,6 +164,8 @@ export default function ReturnTaiwanPeriodDetailsTable({
               endDate={endDate ?? e}
               values={calendarValues ?? {}}  // map dữ liệu API -> Record<YYYY-MM-DD, CellData>
               autoSundayWeeklyOff
+              onNoteChange={onNoteChange}
+              editedNotes={editedNotes}
             />
           )}
         </div>

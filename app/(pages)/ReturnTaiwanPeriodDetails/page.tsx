@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import ReturnTaiwanPeriodDetailsTable from "./ReturnTaiwanPeriodDetailsTable";
 import { ReturnTaiwanPeriodDetailsApiRequest } from "@/app/apiRequest/ReturnTaiwanPeriodDetails";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,8 @@ import { dedupeTaiwanPeriod } from "@/utils/dedupeTaiwanPeriod";
 // import { ReturnTaiwanPeriodDetailsRes } from "@/app/apiRequest/returnTaiwanPeriodDetails";
 
 import { getReturnTaiwanPeriodDetails } from "@/app/apiRequest/ReturnTaiwanPeriodDetails";
+import { saveMemosBatch } from "@/components/saveHelp";
+
 // ==== DayType/CellData (khớp LeaveCalendarMatrixProps) ====
 export type DayType =
   | "WORK" | "WEEKLY_OFF" | "PUBLIC_HOL" | "ANNUAL"
@@ -196,6 +198,8 @@ const mapOffidnmToType = (name: string, opts?: { co?: string; dp?: string }): Da
   }
 };
 
+
+
 // helpers
 const dashToYmd = (s: string) => s?.replace(/-/g, "") ?? "";
 const ymdToDash = (s: string) => `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
@@ -290,8 +294,8 @@ export default function ReturnTaiwanPeriodDetailsPage() {
 
   // Ghi chú mặc định theo từng offidnm đặc thù
   const SPECIAL_NOTE_BY_OFFIDNM: Record<string, string> = {
-    "因公返台": "在台上班",
-    // "特別休假": "在台上班_test",
+    // "因公返台": "在台上班",
+    "特別休假": "在台上班_test",
   };
 
   // Giữ fallback theo tên (nếu offid chưa có trong bảng)
@@ -326,21 +330,65 @@ export default function ReturnTaiwanPeriodDetailsPage() {
 
   // ==== Build matrix values (ƯU TIÊN: loại phép -> m
   // ặc định; KHÔNG dùng memo) ====
+  // const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
+  //   const out: Record<string, CellData> = {};
+
+  //   for (const r of rows) {
+  //     const day = rocToISO(r.offdat);
+
+  //     if (!day) continue;
+
+  //     // type từ mã (ổn định), fallback theo tên
+  //     let t: DayType | undefined =
+  //       mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
+
+  //     // Chủ nhật: WEEKLY_OFF + khóa + note mặc định
+
+  //     // Chủ nhật -> giữ nguyên như đang làm
+  //     if (isSunday(day)) {
+  //       out[day] = {
+  //         type: "WEEKLY_OFF",
+  //         note: defaultNoteByType("WEEKLY_OFF"),
+  //         lockedByRule: true,
+  //       };
+  //       continue;
+  //     }
+
+
+
+
+  //     let note = noteFromType(r?.offidnm) ?? defaultNoteByType(t);
+  //     const offName = (r?.offidnm || "").trim();
+  //     if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
+  //       note = SPECIAL_NOTE_BY_OFFIDNM[offName];  // 因公返台 -> 在台上班
+  //     }
+
+  //     out[day] = { type: t, note };
+  //     //  let note = defaultNoteByType(t); // "—" (hoặc "台、越均放假" nếu là WEEKLY_OFF đã xử lý phía trên)
+  //     // const offName = (r?.offidnm || "").trim();
+  //     // if (/特別休假/.test(offName)) {
+  //     //   note = "在台上班_test";
+  //     // }
+
+  //     // out[day] = { type: t, note };
+
+  //   }
+
+  //   return out;
+  // };
+
   const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
     const out: Record<string, CellData> = {};
 
     for (const r of rows) {
       const day = rocToISO(r.offdat);
-
       if (!day) continue;
 
-      // type từ mã (ổn định), fallback theo tên
+      // type từ offid (ổn định), fallback theo offidnm
       let t: DayType | undefined =
         mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
 
-      // Chủ nhật: WEEKLY_OFF + khóa + note mặc định
-
-      // Chủ nhật -> giữ nguyên như đang làm
+      // Chủ nhật → WEEKLY_OFF (ghi chú mặc định + locked)
       if (isSunday(day)) {
         out[day] = {
           type: "WEEKLY_OFF",
@@ -350,29 +398,24 @@ export default function ReturnTaiwanPeriodDetailsPage() {
         continue;
       }
 
+      // === ƯU TIÊN MEMO ===
+      let note = String(r?.memo ?? "").trim();
 
-      // NOTE: KHÔNG dùng memo
-      // const note = noteFromType(r, t) || defaultNoteByType(t);
-
-      let note = noteFromType(r?.offidnm) ?? defaultNoteByType(t);
-      const offName = (r?.offidnm || "").trim();
-      if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
-        note = SPECIAL_NOTE_BY_OFFIDNM[offName];  // 因公返台 -> 在台上班
+      if (!note) {
+        const offName = (r?.offidnm || "").trim();
+        if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
+          note = SPECIAL_NOTE_BY_OFFIDNM[offName];
+        } else {
+          note = defaultNoteByType(t);
+        }
       }
 
       out[day] = { type: t, note };
-      //  let note = defaultNoteByType(t); // "—" (hoặc "台、越均放假" nếu là WEEKLY_OFF đã xử lý phía trên)
-      // const offName = (r?.offidnm || "").trim();
-      // if (/特別休假/.test(offName)) {
-      //   note = "在台上班_test";
-      // }
-
-      // out[day] = { type: t, note };
-
     }
 
     return out;
   };
+
 
 
   // Fetch details (ReturnTaiwanPeriodDetails) whenever empid/from/to change
@@ -424,14 +467,31 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   }, [empid, fromDate, toDate]);
 
   const totalPage = Math.ceil(ReturnTaiwanPeriodDetails.length / PAGE_SIZE);
+  const originalNotes = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const [k, v] of Object.entries(calendarValues)) m[k] = v.note ?? "";
+    return m;
+  }, [calendarValues]);
 
+  const handleSaveNotes = async (edited: Record<string, string>) => {
+    if (!empid || !fromDate || !toDate) return;
+    const { ok, fail } = await saveMemosBatch({
+      baseUrl: "http://10.198.170.99:5000",
+      empid,
+      originalNotes,
+      editedNotes: edited,
+      concurrency: 4,
+    });
+    // (tùy chọn) hiện toast theo ok/fail
+    await fetchDetailsForMatrix(empid, fromDate, toDate); // refresh lại ma trận
+  };
   return (
     <div>
       <Tabs defaultValue="account" className="bg-gray-50 min-h-screen">
         <TabsContent value="account" className="bg-gray-50 ">
           <Card>
             <CardHeader className="p-4 pb-2">
-              <CardTitle>探親單查詢畫面</CardTitle>
+              <CardTitle>need rename</CardTitle>
               <CardDescription>請使用條件篩選數據，可匯出報告到 Excel。</CardDescription>
             </CardHeader>
 
@@ -465,6 +525,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
 
                 // dữ liệu chi tiết theo ngày từ ReturnTaiwanPeriodDetails
                 calendarValues={calendarValues}
+                onSaveNotes={handleSaveNotes}
               />
 
               <TaiwanPeriodModal

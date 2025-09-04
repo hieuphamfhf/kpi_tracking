@@ -28,6 +28,8 @@ export type LeaveCalendarMatrixWeeklyProps = {
   values?: Record<string, CellData>; // key = YYYY-MM-DD
   autoSundayWeeklyOff?: boolean;
   weekStartsOn?: 0 | 1; // 0: Sunday, 1: Monday (default)
+  onNoteChange?: (isoDate: string, value: string) => void;
+  editedNotes?: Record<string, string>;
 };
 
 // ===== Helpers =====
@@ -128,7 +130,9 @@ const WeekBlock: React.FC<{
   week: Date[];
   values: Record<string, CellData>;
   autoSundayWeeklyOff: boolean;
-}> = ({ week, values, autoSundayWeeklyOff }) => {
+  editedNotes?: Record<string, string>;
+  onNoteChange?: (isoDate: string, value: string) => void;
+}> = ({ week, values, autoSundayWeeklyOff, editedNotes, onNoteChange }) => {
   const from = week[0];
   const to = week[6];
   return (
@@ -200,32 +204,37 @@ const WeekBlock: React.FC<{
         <div className="flex border-t">
           <StickyLabel label="備註" />
           {week.map((d) => {
-            const k = keyOf(d);
+            const k = keyOf(d);                  // "YYYY-MM-DD"
             const v = values[k] || {};
             const isSunday = d.getDay() === 0;
-
-            // CN khoá: vẫn hiển thị note của CN (đã đặt ở page là '台、越均放假')
             const locked = autoSundayWeeklyOff && isSunday;
 
-            // Nếu không phải CN, và đã dùng v.note làm nhãn ở 申請假別 -> tránh lặp => "—"
-            // const noteToShow = v.note || "—";
-            // Ẩn note nếu là 派駐假(ASSIGNMENT) để tránh lặp (vì 申請假別 đã hiển thị 派駐假1..N)
-            const rawNote = (v.note || "").trim();
+            const rawNoteFromData = (v.note || "").trim();
+            const edited = (editedNotes?.[k] ?? rawNoteFromData);   // ưu tiên note user đang gõ
+            const rawNote = (edited || "").trim();
             const hideAssignmentNote =
               v.type === "ASSIGNMENT" && /^派駐假\d+/.test(rawNote);
-            const noteToShow = hideAssignmentNote ? "—" : (rawNote || "—");
+            const noteToShow = hideAssignmentNote ? "—" : rawNote;
 
             return (
               <HCell key={k}>
                 {locked ? (
-                  <span className="opacity-70">{noteToShow}</span>
+                  <span className="opacity-70">{noteToShow || "—"}</span>
                 ) : (
-                  <span>{noteToShow}</span>
+                  <input
+                    className="w-[95%] px-2 py-1 border rounded text-sm outline-none focus:ring"
+                    value={noteToShow}
+                    onChange={(e) => onNoteChange?.(k, e.target.value)}
+                    placeholder="輸入備註…"
+                    maxLength={60}
+                  />
                 )}
               </HCell>
             );
           })}
         </div>
+
+
 
       </div>
     </div>
@@ -238,6 +247,8 @@ const LeaveCalendarMatrixWeekly: React.FC<LeaveCalendarMatrixWeeklyProps> = ({
   values = {},
   autoSundayWeeklyOff = true,
   weekStartsOn = 1,
+  editedNotes,
+  onNoteChange,
 }) => {
   const s = toDate(startDate);
   const e = toDate(endDate);
@@ -254,14 +265,21 @@ const LeaveCalendarMatrixWeekly: React.FC<LeaveCalendarMatrixWeeklyProps> = ({
           <span className="font-semibold">{e.toLocaleDateString("zh-TW")}</span>
           <span className="ml-2 text-gray-500">（共{totalDays}日）</span>
         </div>
-        <Button variant="outline" size="sm" className="gap-2">
+        {/* <Button variant="outline" size="sm" className="gap-2">
           <Download className="w-4 h-4" /> 匯出Excel
-        </Button>
+        </Button> */}
       </div>
 
       <CardContent className="p-3 overflow-y-auto max-h-[70vh]">
         {weeks.map((w, idx) => (
-          <WeekBlock key={idx} week={w} values={values} autoSundayWeeklyOff={autoSundayWeeklyOff} />
+          <WeekBlock
+            key={idx}
+            week={w}
+            values={values}
+            autoSundayWeeklyOff={autoSundayWeeklyOff}
+            editedNotes={editedNotes}
+            onNoteChange={onNoteChange}
+          />
         ))}
       </CardContent>
     </Card>

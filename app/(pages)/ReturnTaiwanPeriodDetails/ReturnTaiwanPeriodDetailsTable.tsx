@@ -24,7 +24,7 @@ type Props = {
   // --- trạng thái tải dữ liệu ---
   loading: boolean;
 
-  // --- tuỳ chọn khác (đã có sẵn nhưng để optional để không bắt buộc truyền từ page.tsx) ---
+  
   onRowClick?: (item: any) => void;
   page?: number;
   pageSize?: number;
@@ -65,7 +65,6 @@ export default function ReturnTaiwanPeriodDetailsTable({
   onSaveNotes
 }: Props) {
 
-  // (tuỳ chọn) nếu cần export ma trận sau này có thể dùng service này
   const headers = {
     empid: "員工編號",
     nm: "姓名",
@@ -80,16 +79,16 @@ export default function ReturnTaiwanPeriodDetailsTable({
 
 
   // fallback khoảng ngày nếu cha chưa truyền: 4 tuần bắt đầu từ tuần hiện tại
-  const computeDefaultRange = () => {
-    const today = new Date();
-    const s = new Date(today);
-    s.setDate(s.getDate() - (s.getDay() === 0 ? 6 : s.getDay() - 1)); // về thứ 2
-    const e = new Date(s);
-    e.setDate(e.getDate() + 27); // 4 tuần
-    return { s, e };
-  };
+  // const computeDefaultRange = () => {
+  //   const today = new Date();
+  //   const s = new Date(today);
+  //   s.setDate(s.getDate() - (s.getDay() === 0 ? 6 : s.getDay() - 1)); // về thứ 2
+  //   const e = new Date(s);
+  //   e.setDate(e.getDate() + 27); // 4 tuần
+  //   return { s, e };
+  // };
 
-  const { s, e } = computeDefaultRange();
+  // const { s, e } = computeDefaultRange();
 
   const [editedNotes, setEditedNotes] = React.useState<Record<string, string>>({});
 
@@ -102,6 +101,8 @@ export default function ReturnTaiwanPeriodDetailsTable({
     await onSaveNotes(editedNotes);
     setEditedNotes({}); // clear sau khi lưu
   };
+
+
   return (
     <>
       {/* HEADER FILTER */}
@@ -140,38 +141,44 @@ export default function ReturnTaiwanPeriodDetailsTable({
 
           // --- Khoảng ngày: dùng RANGE để vẽ ma trận ---
           dateMode="range"
-          onDateChange={(from, to) => onDateChange?.(from, to)}  // giá trị yyyyMMdd bắn lên; bạn map ở page.tsx:contentReference[oaicite:3]{index=3}
+          onDateChange={(from, to) => onDateChange?.(from, to)} 
         />
       </div>
-      <div className="flex items-center justify-end mb-2">
-        {/* <button onClick={handleSave} className="px-3 py-1.5 border rounded text-sm">
-          儲存
-        </button> */}
-        <Button onClick={handleSave} variant="outline" size="sm" className="gap-2">
-          儲存_save
-        </Button>
-      </div>
-
-      <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
-        <div className="w-full rounded-md border">
-          {loading ? (
-            <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
-              <LogoLoading />
-            </div>
-          ) : (
-            <LeaveCalendarMatrix
-              startDate={startDate ?? s}     // có thể truyền từ page.tsx
-              endDate={endDate ?? e}
-              values={calendarValues ?? {}}  // map dữ liệu API -> Record<YYYY-MM-DD, CellData>
-              autoSundayWeeklyOff
-              onNoteChange={onNoteChange}
-              editedNotes={editedNotes}
-            />
-          )}
+      
+       {/* Chỉ hiện nút Lưu & ma trận khi đã đủ filter */}
+    {empid && startDate && endDate ? (
+      <>
+        <div className="flex items-center justify-end mb-2">
+          <Button onClick={handleSave} variant="outline" size="sm" className="gap-2">
+            儲存_save
+          </Button>
         </div>
-      </ScrollArea>
-      {/*  THAY BẢNG CŨ BẰNG MA TRẬN TUẦN */}
 
-    </>
-  );
+        <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
+          <div className="w-full rounded-md border">
+            {loading ? (
+              <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
+                <LogoLoading />
+              </div>
+            ) : (
+              <LeaveCalendarMatrix
+                startDate={startDate}   
+                endDate={endDate}
+                values={calendarValues ?? {}}
+                autoSundayWeeklyOff
+                onNoteChange={onNoteChange}
+                editedNotes={editedNotes}
+              />
+            )}
+          </div>
+        </ScrollArea>
+      </>
+    ) : (
+      // Placeholder khi chưa nhập filter
+      <div className="mt-3 p-4 rounded border bg-white text-sm text-gray-600">
+        請先輸入 <span className="font-semibold">員工編號</span> 並選擇 <span className="font-semibold">期間</span> 才能顯示資料與備註欄位。
+      </div>
+    )}
+  </>
+);
 }

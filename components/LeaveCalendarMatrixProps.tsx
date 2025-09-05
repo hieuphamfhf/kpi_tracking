@@ -214,12 +214,12 @@ const WeekBlock: React.FC<{
             const rawNote = (edited || "").trim();
             const hideAssignmentNote =
               v.type === "ASSIGNMENT" && /^派駐假\d+/.test(rawNote);
-            const noteToShow = hideAssignmentNote ? "—" : rawNote;
+            const noteToShow = hideAssignmentNote ? "" : rawNote;
 
             return (
               <HCell key={k}>
                 {locked ? (
-                  <span className="opacity-70">{noteToShow || "—"}</span>
+                  <span className="opacity-70">{noteToShow || ""}</span>
                 ) : (
                   <input
                     className="w-[95%] px-2 py-1 border rounded text-sm outline-none focus:ring"

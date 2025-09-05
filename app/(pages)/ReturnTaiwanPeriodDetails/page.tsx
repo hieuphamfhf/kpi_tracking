@@ -232,6 +232,20 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   const [toDate, setToDate] = useState<string>("");       // yyyy-MM-dd
   const [calendarValues, setCalendarValues] = useState<Record<string, CellData>>({});
 
+   useEffect(() => {
+    if (fromDate || toDate) return;
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    const start = new Date(y, m, 1);            // đầu tháng
+    const end   = new Date(y, m + 1, 0);        // cuối tháng
+
+    const toISO = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
+    setFromDate(toISO(start));
+    setToDate(toISO(end));
+  }, []); // chạy 1 lần khi vào trang
   // Fetch list (ReturnTaiwanPeriodDetails)
   const fetchData = async () => {
     setLoading(true);
@@ -286,7 +300,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   const defaultNoteByType = (t?: DayType): string => {
     switch (t) {
       case "WEEKLY_OFF": return "台、越均放假"; // CHỈ cho nghỉ cuối tuần
-      default: return "—";          // các loại khác thì để "—"
+      default: return "";          // các loại khác thì để "—"
     }
   };
   const mapOffidToType = (id?: string): DayType | undefined =>

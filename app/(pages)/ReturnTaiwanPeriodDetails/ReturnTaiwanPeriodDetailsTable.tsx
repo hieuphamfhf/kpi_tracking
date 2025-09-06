@@ -5,6 +5,7 @@ import FilterBar from "@/components/FilterBar";
 import LeaveCalendarMatrix, { CellData } from "@/components/LeaveCalendarMatrixProps"; // ma trận tuần:contentReference[oaicite:2]{index=2}
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { FileOutputIcon, SaveIcon } from "lucide-react";
 type Props = {
   ReturnTaiwanPeriodDetails: any[];
   // --- các handler filter nhân sự ---
@@ -24,7 +25,7 @@ type Props = {
   // --- trạng thái tải dữ liệu ---
   loading: boolean;
 
-  
+
   onRowClick?: (item: any) => void;
   page?: number;
   pageSize?: number;
@@ -141,44 +142,45 @@ export default function ReturnTaiwanPeriodDetailsTable({
 
           // --- Khoảng ngày: dùng RANGE để vẽ ma trận ---
           dateMode="range"
-          onDateChange={(from, to) => onDateChange?.(from, to)} 
+          onDateChange={(from, to) => onDateChange?.(from, to)}
         />
       </div>
-      
-       {/* Chỉ hiện nút Lưu & ma trận khi đã đủ filter */}
-    {empid && startDate && endDate ? (
-      <>
-        <div className="flex items-center justify-end mb-2">
-          <Button onClick={handleSave} variant="outline" size="sm" className="gap-2">
-            儲存_save
-          </Button>
-        </div>
 
-        <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
-          <div className="w-full rounded-md border">
-            {loading ? (
-              <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
-                <LogoLoading />
-              </div>
-            ) : (
-              <LeaveCalendarMatrix
-                startDate={startDate}   
-                endDate={endDate}
-                values={calendarValues ?? {}}
-                autoSundayWeeklyOff
-                onNoteChange={onNoteChange}
-                editedNotes={editedNotes}
-              />
-            )}
+      {/* Chỉ hiện nút Lưu & ma trận khi đã đủ filter */}
+      {empid && startDate && endDate ? (
+        <>
+          <div className="flex items-center justify-end mb-2">
+            <Button onClick={handleSave} variant="outline" size="sm" className="gap-2">
+              <SaveIcon className=" h-4 w-4" /> 
+              儲存
+            </Button>
           </div>
-        </ScrollArea>
-      </>
-    ) : (
-      // Placeholder khi chưa nhập filter
-      <div className="mt-3 p-4 rounded border bg-white text-sm text-gray-600">
-        請先輸入 <span className="font-semibold">員工編號</span> 並選擇 <span className="font-semibold">期間</span> 才能顯示資料與備註欄位。
-      </div>
-    )}
-  </>
-);
+
+          <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
+            <div className="w-full rounded-md border">
+              {loading ? (
+                <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
+                  <LogoLoading />
+                </div>
+              ) : (
+                <LeaveCalendarMatrix
+                  startDate={startDate}
+                  endDate={endDate}
+                  values={calendarValues ?? {}}
+                  autoSundayWeeklyOff
+                  onNoteChange={onNoteChange}
+                  editedNotes={editedNotes}
+                />
+              )}
+            </div>
+          </ScrollArea>
+        </>
+      ) : (
+        // Placeholder khi chưa nhập filter
+        <div className="mt-3 p-4 rounded border bg-white text-sm text-gray-600">
+          請先輸入 <span className="font-semibold">員工編號</span> 並選擇 <span className="font-semibold">期間</span> 才能顯示資料與備註欄位。
+        </div>
+      )}
+    </>
+  );
 }

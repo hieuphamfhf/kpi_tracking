@@ -20,6 +20,7 @@ export type CellData = {
   type?: DayType;
   note?: string;
   lockedByRule?: boolean;
+  badgeLabel?: string;
 };
 
 export type LeaveCalendarMatrixWeeklyProps = {
@@ -176,9 +177,8 @@ const WeekBlock: React.FC<{
             // const label = v.type ? badgeText[v.type] : ""; // hoặc r.offidnm nếu muốn raw text
             const label =
               v.type === "ASSIGNMENT"
-                ? (v.note && v.note.trim()) || badgeText[v.type]
+                ? (v as any).badgeLabel || badgeText[v.type]   //  ưu tiên badgeLabel
                 : (v.type ? badgeText[v.type] : "");
-
             return (
               <HCell key={k}>
                 {t ? (

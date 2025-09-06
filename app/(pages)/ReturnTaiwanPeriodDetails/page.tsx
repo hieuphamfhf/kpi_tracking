@@ -25,6 +25,7 @@ export type CellData = {
   type?: DayType;
   note?: string;
   lockedByRule?: boolean;
+    badgeLabel?: string;
 };
 // YYYYMMDD -> YYYY-MM-DD
 const ymdToISO = (s: string) => `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
@@ -181,7 +182,8 @@ function addAssignmentOrdinal(vals: Record<string, CellData>) {
       const gap = diffDays(prev, d);  // số ngày cách nhau
       seq = gap > ASSIGNMENT_GAP_MAX ? 1 : (seq + 1);
     }
-    vals[d] = { ...vals[d], note: `派駐假${seq}` };
+    // vals[d] = { ...vals[d], note: `派駐假${seq}` };
+    vals[d] = { ...vals[d], badgeLabel: `派駐假${seq}` };
     prev = d;
   }
   return vals;
@@ -506,7 +508,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
         <TabsContent value="account" className="bg-gray-50 ">
           <Card>
             <CardHeader className="p-4 pb-2">
-              <CardTitle>返台休假資料</CardTitle>
+              <CardTitle>探親單詳細內容查詢(日曆)</CardTitle>
               <CardDescription>請使用條件篩選數據。</CardDescription>
             </CardHeader>
 

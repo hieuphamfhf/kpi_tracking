@@ -8,6 +8,7 @@ import TaiwanPeriodModal from "@/components/TaiwanPeriodModal";
 import { ReturnTaiwanPeriodListRes } from "@/app/schemaValidations/ReturnTaiwanPeriod";
 import Pagination from "@/components/Pagination";
 import { dedupeTaiwanPeriod } from "@/utils/dedupeTaiwanPeriod";
+import toast from "react-hot-toast";
 // import { ReturnTaiwanPeriodDetailsRes } from "@/app/apiRequest/returnTaiwanPeriodDetails";
 
 import { getReturnTaiwanPeriodDetails } from "@/app/apiRequest/ReturnTaiwanPeriodDetails";
@@ -505,8 +506,8 @@ export default function ReturnTaiwanPeriodDetailsPage() {
         <TabsContent value="account" className="bg-gray-50 ">
           <Card>
             <CardHeader className="p-4 pb-2">
-              <CardTitle>need rename</CardTitle>
-              <CardDescription>請使用條件篩選數據，可匯出報告到 Excel。</CardDescription>
+              <CardTitle>返台休假資料</CardTitle>
+              <CardDescription>請使用條件篩選數據。</CardDescription>
             </CardHeader>
 
             <CardContent className="pt-2 ">

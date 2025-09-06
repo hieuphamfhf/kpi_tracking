@@ -204,22 +204,27 @@ const WeekBlock: React.FC<{
         <div className="flex border-t">
           <StickyLabel label="備註" />
           {week.map((d) => {
-            const k = keyOf(d);                  // "YYYY-MM-DD"
+            const k = keyOf(d);
             const v = values[k] || {};
             const isSunday = d.getDay() === 0;
             const locked = autoSundayWeeklyOff && isSunday;
 
-            const rawNoteFromData = (v.note || "").trim();
-            const edited = (editedNotes?.[k] ?? rawNoteFromData);   // ưu tiên note user đang gõ
-            const rawNote = (edited || "").trim();
-            const hideAssignmentNote =
-              v.type === "ASSIGNMENT" && /^派駐假\d+/.test(rawNote);
-            const noteToShow = hideAssignmentNote ? "" : rawNote;
+            // lấy note từ dữ liệu (KHÔNG trim nếu bạn muốn giữ khoảng trắng người dùng)
+            const baseNote = (v.note ?? "").trim();
+
+            // Nếu Chủ nhật bị khóa mà chưa có note -> dùng mặc định
+            const sundayDefault = "台、越均放假";
+            const withDefault = locked && !baseNote ? sundayDefault : baseNote;
+
+            // Nếu không locked thì ưu tiên note đang gõ; locked thì hiển thị withDefault
+            const noteToShow = locked ? withDefault : (editedNotes?.[k] ?? withDefault);
 
             return (
               <HCell key={k}>
                 {locked ? (
-                  <span className="opacity-70">{noteToShow || ""}</span>
+                  <span className="opacity-70" style={{ whiteSpace: "pre-wrap" }}>
+                    {noteToShow}
+                  </span>
                 ) : (
                   <input
                     className="w-[95%] px-2 py-1 border rounded text-sm outline-none focus:ring"
@@ -227,6 +232,7 @@ const WeekBlock: React.FC<{
                     onChange={(e) => onNoteChange?.(k, e.target.value)}
                     placeholder="輸入備註…"
                     maxLength={60}
+                    onKeyDown={(e) => e.stopPropagation()}
                   />
                 )}
               </HCell>

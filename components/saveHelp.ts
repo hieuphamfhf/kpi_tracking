@@ -1,5 +1,14 @@
 // components/saveHelp.ts
 // Service lưu memo cho ReturnTaiwanPeriodDetails
+import toast from "react-hot-toast";
+
+type SaveBatchParams = {
+  baseUrl: string;
+  empid: string;
+  originalNotes: Record<string, string>;
+  editedNotes: Record<string, string>;
+  concurrency?: number;
+};
 
 export type SaveResult = { isoDate: string; ok: boolean; raw: string };
 
@@ -75,3 +84,4 @@ export async function saveMemosBatch(opts: {
   const fail = results.length - ok;
   return { results, ok, fail, total: results.length };
 }
+

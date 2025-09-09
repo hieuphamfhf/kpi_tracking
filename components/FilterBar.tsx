@@ -211,11 +211,18 @@ export default function FilterBar({
                     <SelectContent>
                         {/* <SelectItem value="經營主管">經營主管級</SelectItem> */}
                         {/* <SelectItem value="一級主管">一級主管</SelectItem> */}
-                         <SelectItem value="二級主管">二級主管</SelectItem>
+                         {/* <SelectItem value="二級主管">二級主管</SelectItem>
+                        <SelectItem value="基層主管">基層主管</SelectItem>
+                        <SelectItem value="基層人員">基層人員</SelectItem>
+                        <SelectItem value="基層事務人員">基層事務人員</SelectItem> */}
+                        <SelectItem value="經營主管">經營主管</SelectItem>
+                        <SelectItem value="一級主管">一級主管</SelectItem>
+                        <SelectItem value="二級主管">二級主管</SelectItem>
                         <SelectItem value="基層主管">基層主管</SelectItem>
                         <SelectItem value="基層人員">基層人員</SelectItem>
                         <SelectItem value="基層事務人員">基層事務人員</SelectItem>
                     </SelectContent>
+                    
                   
 
                 </Select>

@@ -311,8 +311,8 @@ export default function ReturnTaiwanPeriodDetailsPage() {
 
   // Ghi chú mặc định theo từng offidnm đặc thù
   const SPECIAL_NOTE_BY_OFFIDNM: Record<string, string> = {
-    // "因公返台": "在台上班",
-    "特別休假": "在台上班_test",
+    "因公返台": "在台上班",
+    // "特別休假": "在台上班_test",
   };
 
   // Giữ fallback theo tên (nếu offid chưa có trong bảng)
@@ -395,43 +395,98 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   // };
 
   const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
-    const out: Record<string, CellData> = {};
+  const out: Record<string, CellData> = {};
 
-    for (const r of rows) {
-      const day = rocToISO(r.offdat);
-      if (!day) continue;
+  for (const r of rows) {
+    const day = rocToISO(r.offdat);
+    if (!day) continue;
 
-      // type từ offid (ổn định), fallback theo offidnm
-      let t: DayType | undefined =
-        mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
+    // type từ offid (ổn định), fallback theo offidnm
+    const t: DayType | undefined =
+      mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
 
-      // Chủ nhật → WEEKLY_OFF (ghi chú mặc định + locked)
-      if (isSunday(day)) {
-        out[day] = {
-          type: "WEEKLY_OFF",
-          note: defaultNoteByType("WEEKLY_OFF"),
-          lockedByRule: true,
-        };
-        continue;
-      }
-
-      // === ƯU TIÊN MEMO ===
-      let note = String(r?.memo ?? "").trim();
-
-      if (!note) {
-        const offName = (r?.offidnm || "").trim();
-        if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
-          note = SPECIAL_NOTE_BY_OFFIDNM[offName];
-        } else {
-          note = defaultNoteByType(t);
-        }
-      }
-
-      out[day] = { type: t, note };
+    // Chủ nhật → WEEKLY_OFF (giữ nguyên)
+    if (isSunday(day)) {
+      out[day] = {
+        type: "WEEKLY_OFF",
+        note: defaultNoteByType("WEEKLY_OFF"),
+        lockedByRule: true,
+      };
+      continue;
     }
 
-    return out;
-  };
+    // === Lấy note như hiện tại ===
+    let note = String(r?.memo ?? "").trim();
+    if (!note) {
+      const offName = (r?.offidnm || "").trim();
+      if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
+        note = SPECIAL_NOTE_BY_OFFIDNM[offName];
+      } else {
+        note = defaultNoteByType(t);
+      }
+    }
+
+    // === ƯU TIÊN offid === "52" (派駐假) khi cùng ngày có nhiều record ===
+    const isCurrentAssignment = r?.offid?.trim() === "52";
+    const wasSet = out[day];
+    const wasAssignment = wasSet?.type === "ASSIGNMENT";
+
+    if (!wasSet) {
+      // chưa có gì → gán bình thường
+      out[day] = { type: t, note };
+    } else if (wasAssignment && !isCurrentAssignment) {
+      // đã là 派駐假 rồi → giữ nguyên, bỏ qua record mới
+      continue;
+    } else if (isCurrentAssignment) {
+      // record hiện tại là 派駐假 → ghi đè
+      out[day] = { type: t, note };
+    } else {
+      // cả hai đều không phải 派駐假 → giữ hành vi cũ: record sau ghi đè record trước
+      out[day] = { type: t, note };
+    }
+  }
+
+  return out;
+};
+
+  // const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
+  //   const out: Record<string, CellData> = {};
+
+  //   for (const r of rows) {
+  //     const day = rocToISO(r.offdat);
+  //     if (!day) continue;
+
+  //     // type từ offid (ổn định), fallback theo offidnm
+  //     let t: DayType | undefined =
+  //       mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
+
+  //     // Chủ nhật → WEEKLY_OFF (ghi chú mặc định + locked)
+  //     if (isSunday(day)) {
+  //       out[day] = {
+  //         type: "WEEKLY_OFF",
+  //         note: defaultNoteByType("WEEKLY_OFF"),
+  //         lockedByRule: true,
+  //       };
+  //       continue;
+  //     }
+
+  //     // === ƯU TIÊN MEMO ===
+  //     let note = String(r?.memo ?? "").trim();
+
+  //     if (!note) {
+  //       const offName = (r?.offidnm || "").trim();
+  //       if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
+  //         note = SPECIAL_NOTE_BY_OFFIDNM[offName];
+  //       } else {
+  //         note = defaultNoteByType(t);
+  //       }
+  //     }
+
+  //     out[day] = { type: t, note };
+  //   }
+
+  //   return out;
+  // };
 
 
 
@@ -509,7 +564,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
           <Card>
             <CardHeader className="p-4 pb-2">
               <CardTitle>探親單詳細內容查詢(日曆)</CardTitle>
-              <CardDescription>請使用條件篩選數據。</CardDescription>
+              <CardDescription>探親單詳細內容查詢(日曆)</CardDescription>
             </CardHeader>
 
             <CardContent className="pt-2 ">

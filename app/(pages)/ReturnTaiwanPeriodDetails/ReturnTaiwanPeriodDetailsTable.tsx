@@ -151,13 +151,13 @@ export default function ReturnTaiwanPeriodDetailsTable({
         <>
           <div className="flex items-center justify-end mb-2">
             <Button onClick={handleSave} variant="outline" size="sm" className="gap-2">
-              <SaveIcon className=" h-4 w-4" /> 
+              <SaveIcon className=" h-4 w-4" />
               儲存
             </Button>
           </div>
 
-          <ScrollArea className="w-full h-[calc(100vh-16rem)] overflow-y-auto rounded-md border">
-            <div className="w-full rounded-md border">
+          <ScrollArea className="w-full h-[calc(100vh-16rem)] rounded-md border overflow-auto">
+            <div className="min-w-[1100px]">
               {loading ? (
                 <div className="h-[calc(100vh-16rem)] flex items-center justify-center">
                   <LogoLoading />
@@ -173,7 +173,9 @@ export default function ReturnTaiwanPeriodDetailsTable({
                 />
               )}
             </div>
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
+
         </>
       ) : (
         // Placeholder khi chưa nhập filter

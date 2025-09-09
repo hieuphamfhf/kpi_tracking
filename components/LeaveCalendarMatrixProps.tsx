@@ -13,8 +13,9 @@ export type DayType =
   | "BUSINESS_VN"
   | "BEREAVEMENT"
   | "SPECIAL_LEAVE"
-  | "COMP_LEAVE";   // 新增：補休
-
+  | "COMP_LEAVE"
+  | "LOCAL_OFF";  // 新增：補休
+    
 
 export type CellData = {
   type?: DayType;
@@ -82,6 +83,7 @@ const badgeText: Record<DayType, string> = {
   BEREAVEMENT: "喪假",
   SPECIAL_LEAVE: "特別休假",
   COMP_LEAVE: "補休",
+  LOCAL_OFF: "駐地放假",
 };
 
 const badgeStyle: Record<DayType, string> = {
@@ -95,6 +97,7 @@ const badgeStyle: Record<DayType, string> = {
   BEREAVEMENT: "bg-red-100 text-red-700 border-red-300",             // 喪假 (tránh xám)
   SPECIAL_LEAVE: "bg-emerald-100 text-emerald-700 border-emerald-300",// 特別休假 (xanh lục rõ)
   COMP_LEAVE: "bg-indigo-100 text-indigo-700 border-indigo-300",     // 補休
+  LOCAL_OFF: "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300",
 };
 
 

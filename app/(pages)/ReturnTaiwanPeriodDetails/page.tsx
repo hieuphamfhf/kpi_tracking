@@ -18,14 +18,17 @@ import { saveMemosBatch } from "@/components/saveHelp";
 export type DayType =
   | "WORK" | "WEEKLY_OFF" | "PUBLIC_HOL" | "ANNUAL"
   | "ASSIGNMENT" | "BUSINESS_TW" | "BUSINESS_VN"
-  | "BEREAVEMENT" | "SPECIAL_LEAVE" | "COMP_LEAVE"; // + 補休
+  | "BEREAVEMENT" | "SPECIAL_LEAVE" | "COMP_LEAVE"
+   | "LOCAL_OFF";
+
+// + 補休
 
 
 export type CellData = {
   type?: DayType;
   note?: string;
   lockedByRule?: boolean;
-    badgeLabel?: string;
+  badgeLabel?: string;
 };
 // YYYYMMDD -> YYYY-MM-DD
 const ymdToISO = (s: string) => `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
@@ -59,6 +62,20 @@ const dedupeByPeriod = (rows: TaiwanPeriodItem[]) => {
   );
 };
 
+const eachDayISO = (fromISO: string, toISO: string) => {
+  const out: string[] = [];
+  const start = new Date(`${fromISO}T00:00:00`);
+  const end = new Date(`${toISO}T00:00:00`);
+  // đi từ ngày +1 đến ngày -1 để tránh ghi đè 返台/返越 (nếu muốn inclusive thì điều chỉnh)
+  for (let d = new Date(start); ;) {
+    d.setDate(d.getDate() + 1);
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    if (iso >= toISO) break;
+    out.push(iso);
+  }
+  return out;
+};
+
 
 // Lấy map { "YYYY-MM-DD": { note: "返台" | "返越" } }
 async function fetchReturnTaiwanPeriodNotes(emp: string, fromISO: string, toISO: string) {
@@ -76,19 +93,34 @@ async function fetchReturnTaiwanPeriodNotes(emp: string, fromISO: string, toISO:
   // return out;
   const valid = (data || []).filter(r => r.sts === "核准" && r.deleted === false);
   const deduped = dedupeByPeriod(valid);
-  const out: Record<string, CellData> = {};
+
+  const noteMap: Record<string, CellData> = {};
+  const periods: Array<{ from: string; to: string }> = [];
+
   const inRange = (iso: string) => iso >= fromISO && iso <= toISO;
+
   for (const r of deduped) {
     if (r.backfrdat) {
       const iso = ymdToISO(r.backfrdat);
-      if (inRange(iso)) out[iso] = { note: "返台" };
+      if (inRange(iso)) noteMap[iso] = { note: "返台" };
     }
     if (r.backtodat) {
       const iso = ymdToISO(r.backtodat);
-      if (inRange(iso)) out[iso] = { note: "返越" };
+      if (inRange(iso)) noteMap[iso] = { note: "返越" };
+    }
+    if (r.backfrdat && r.backtodat) {
+      const from = ymdToISO(r.backfrdat);
+      const to = ymdToISO(r.backtodat);
+      // chỉ push period nếu giao với [fromISO, toISO]
+      if (!(to < fromISO || from > toISO)) {
+        periods.push({
+          from: from < fromISO ? fromISO : from,
+          to: to > toISO ? toISO : to,
+        });
+      }
     }
   }
-  return out;
+  return { noteMap, periods };
 }
 
 // ==== ROC(民國年) -> ISO (YYYY-MM-DD) ====
@@ -202,7 +234,6 @@ const mapOffidnmToType = (name: string, opts?: { co?: string; dp?: string }): Da
 };
 
 
-
 // helpers
 const dashToYmd = (s: string) => s?.replace(/-/g, "") ?? "";
 const ymdToDash = (s: string) => `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
@@ -235,16 +266,16 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   const [toDate, setToDate] = useState<string>("");       // yyyy-MM-dd
   const [calendarValues, setCalendarValues] = useState<Record<string, CellData>>({});
 
-   useEffect(() => {
+  useEffect(() => {
     if (fromDate || toDate) return;
     const today = new Date();
     const y = today.getFullYear();
     const m = today.getMonth();
     const start = new Date(y, m, 1);            // đầu tháng
-    const end   = new Date(y, m + 1, 0);        // cuối tháng
+    const end = new Date(y, m + 1, 0);        // cuối tháng
 
     const toISO = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
     setFromDate(toISO(start));
     setToDate(toISO(end));
@@ -395,59 +426,59 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   // };
 
   const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
-  const out: Record<string, CellData> = {};
+    const out: Record<string, CellData> = {};
 
-  for (const r of rows) {
-    const day = rocToISO(r.offdat);
-    if (!day) continue;
+    for (const r of rows) {
+      const day = rocToISO(r.offdat);
+      if (!day) continue;
 
-    // type từ offid (ổn định), fallback theo offidnm
-    const t: DayType | undefined =
-      mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
+      // type từ offid (ổn định), fallback theo offidnm
+      const t: DayType | undefined =
+        mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
 
-    // Chủ nhật → WEEKLY_OFF (giữ nguyên)
-    if (isSunday(day)) {
-      out[day] = {
-        type: "WEEKLY_OFF",
-        note: defaultNoteByType("WEEKLY_OFF"),
-        lockedByRule: true,
-      };
-      continue;
-    }
+      // Chủ nhật → WEEKLY_OFF (giữ nguyên)
+      if (isSunday(day)) {
+        out[day] = {
+          type: "WEEKLY_OFF",
+          note: defaultNoteByType("WEEKLY_OFF"),
+          lockedByRule: true,
+        };
+        continue;
+      }
 
-    // === Lấy note như hiện tại ===
-    let note = String(r?.memo ?? "").trim();
-    if (!note) {
-      const offName = (r?.offidnm || "").trim();
-      if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
-        note = SPECIAL_NOTE_BY_OFFIDNM[offName];
+      // === Lấy note như hiện tại ===
+      let note = String(r?.memo ?? "").trim();
+      if (!note) {
+        const offName = (r?.offidnm || "").trim();
+        if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
+          note = SPECIAL_NOTE_BY_OFFIDNM[offName];
+        } else {
+          note = defaultNoteByType(t);
+        }
+      }
+
+      // === ƯU TIÊN offid === "52" (派駐假) khi cùng ngày có nhiều record ===
+      const isCurrentAssignment = r?.offid?.trim() === "52";
+      const wasSet = out[day];
+      const wasAssignment = wasSet?.type === "ASSIGNMENT";
+
+      if (!wasSet) {
+        // chưa có gì → gán bình thường
+        out[day] = { type: t, note };
+      } else if (wasAssignment && !isCurrentAssignment) {
+        // đã là 派駐假 rồi → giữ nguyên, bỏ qua record mới
+        continue;
+      } else if (isCurrentAssignment) {
+        // record hiện tại là 派駐假 → ghi đè
+        out[day] = { type: t, note };
       } else {
-        note = defaultNoteByType(t);
+        // cả hai đều không phải 派駐假 → giữ hành vi cũ: record sau ghi đè record trước
+        out[day] = { type: t, note };
       }
     }
 
-    // === ƯU TIÊN offid === "52" (派駐假) khi cùng ngày có nhiều record ===
-    const isCurrentAssignment = r?.offid?.trim() === "52";
-    const wasSet = out[day];
-    const wasAssignment = wasSet?.type === "ASSIGNMENT";
-
-    if (!wasSet) {
-      // chưa có gì → gán bình thường
-      out[day] = { type: t, note };
-    } else if (wasAssignment && !isCurrentAssignment) {
-      // đã là 派駐假 rồi → giữ nguyên, bỏ qua record mới
-      continue;
-    } else if (isCurrentAssignment) {
-      // record hiện tại là 派駐假 → ghi đè
-      out[day] = { type: t, note };
-    } else {
-      // cả hai đều không phải 派駐假 → giữ hành vi cũ: record sau ghi đè record trước
-      out[day] = { type: t, note };
-    }
-  }
-
-  return out;
-};
+    return out;
+  };
 
   // const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
   //   const out: Record<string, CellData> = {};
@@ -502,21 +533,29 @@ export default function ReturnTaiwanPeriodDetailsPage() {
       // setCalendarValues(buildCalendarValues(rows));
 
       const base = buildCalendarValues(rows);
-      const noteMap = await fetchReturnTaiwanPeriodNotes(emp, fromISO, toISO);
+
+      const { noteMap, periods } = await fetchReturnTaiwanPeriodNotes(emp, fromISO, toISO);
       const merged: Record<string, CellData> = { ...base };
-      // for (const [k, v] of Object.entries(noteMap)) {
-      //   // chỉ thêm/ghi đè NOTE, KHÔNG đụng type để hàng 申請假別 giữ nguyên
-      //   merged[k] = { ...(merged[k] || {}), note: v.note };
+
+      // 1) ghép note 返台 / 返越 (giữ nguyên logic cũ)
       for (const [k, v] of Object.entries(noteMap)) {
         const prev = (merged[k]?.note || "").trim();
-        merged[k] = {
-          ...(merged[k] || {}),
-          note: prev ? `${prev} / ${v.note}` : v.note, // ghép an toàn
-        };
-
+        merged[k] = { ...(merged[k] || {}), note: prev ? `${prev} / ${v.note}` : v.note };
       }
 
-      // ĐÁNH SỐ cho mọi ngày có offid=52 (ASSIGNMENT)
+      // 2) Tô “駐地放假” cho các ngày trống nằm giữa backfrdat → backtodat
+      for (const p of periods) {
+        for (const iso of eachDayISO(p.from, p.to)) {
+          const cur = merged[iso] || {};
+          const isSunday = new Date(`${iso}T00:00:00`).getDay() === 0;
+          // chỉ gán nếu: chưa có type & không phải CN (CN đang bị khoá là WEEKLY_OFF)
+          if (!cur.type && !isSunday) {
+            merged[iso] = { ...cur, type: "LOCAL_OFF" }; // ← 駐地放假
+          }
+        }
+      }
+
+      // 3) Đánh số 派駐假 như hiện tại
       addAssignmentOrdinal(merged);
 
       setCalendarValues(merged);

@@ -12,6 +12,8 @@ import { CalendarRangeIcon } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { cn } from "@/lib/utils";
+import { toast } from "react-hot-toast";
+
 // === Dữ liệu nhân viên từ API EmpployeeInfo ===
 type EmpRecord = {
     empid: string;
@@ -35,6 +37,7 @@ type Props = {
     showDate?: boolean;
     dateMode?: "range" | "single";
     onDateChange?: (from: string, to: string) => void;
+    autoFillEmpidOnName?: boolean;
 };
 
 export default function EmployeeFilterBar({
@@ -43,6 +46,7 @@ export default function EmployeeFilterBar({
     showDate = true,
     dateMode = "range",
     onDateChange,
+    autoFillEmpidOnName = true,
 }: Props) {
 
     // ===== Dropdown "Tên bộ phận" & "Tên nhân viên" phụ thuộc chức vụ =====
@@ -113,7 +117,7 @@ export default function EmployeeFilterBar({
         const qs = new URLSearchParams({
             empid: "",
             NM: "",
-            dp: "",                          // không ép buộc mã, dùng dpnm cho đúng yêu cầu
+            dp: "",
             dpnm: dpnm || "",
             newdutnm
         }).toString();
@@ -149,10 +153,65 @@ export default function EmployeeFilterBar({
     };
 
     // Khi đổi tên nhân viên → chỉ set nm (empid vẫn để người dùng nhập tay theo yêu cầu)
+    // const handlePickName = (pickedNm: string) => {
+    //     onNmChange(pickedNm);
+    //     // Không tự fill empid; nếu muốn, có thể dò 1 emp trùng tên và gợi ý empid
+    // };
+
+
+    // Khi đổi tên nhân viên → set nm; nếu duy nhất một empid thì auto-fill empid
+    // 
     const handlePickName = (pickedNm: string) => {
         onNmChange(pickedNm);
-        // Không tự fill empid; nếu muốn, có thể dò 1 emp trùng tên và gợi ý empid
+
+        // Lấy các bản ghi trùng tên trong pool đã được lọc theo newdutnm + dpnm
+        const matches = empPoolForName.filter(r => r.nm === pickedNm);
+        const uniqEmpids = Array.from(new Set(matches.map(m => m.empid)));
+
+        if (uniqEmpids.length === 1) {
+            // Tự động điền khi chỉ có 1 mã
+            onEmpidChange(uniqEmpids[0]);
+        } else {
+            // Nhiều mã hoặc không tìm thấy -> không tự điền, clear để user chọn/nhập
+            onEmpidChange("");
+        }
     };
+
+    // Thay vì onChange={(e) => onEmpidChange(e.target.value.toUpperCase())}
+    const handleEmpidInput = async (raw: string) => {
+        const v = raw.trim().toUpperCase();
+        onEmpidChange(v);
+
+        if (!v) { onNmChange(""); return; }
+
+        let candidates = empPoolForName.filter(r => r.empid === v);
+
+        if (candidates.length === 0) {
+            const qs = new URLSearchParams({
+                empid: v, NM: "", dp: "", dpnm: dpnm || "", newdutnm: newdutnm || ""
+            }).toString();
+            try {
+                const res = await fetch(`http://10.198.170.99:5000/API/EmpployeeInfo?${qs}`);
+                const data: EmpRecord[] = await res.json();
+                candidates = Array.isArray(data) ? data : [];
+            } catch { /* ignore */ }
+        }
+
+        const uniqNames = Array.from(new Set(candidates.map(c => c.nm)));
+        if (uniqNames.length === 1) {
+            onNmChange(uniqNames[0]);
+        } else if (uniqNames.length === 0 && v) {
+            //  Không tìm thấy mã → hiện toast + gợi ý reset
+            // toast.error("Không tìm thấy mã nhân viên trong bộ lọc hiện tại. Vui lòng nhấn nút '重置' và chọn lại bộ lọc.");
+
+            toast.error("當前篩選條件中找不到此員工編號，請點擊「重置」重新選擇篩選條件。", {
+                position: "top-center"
+            });
+
+            onNmChange(""); // clear tên để tránh hiển thị sai
+        }
+    };
+
 
     return (
         <div className="flex items-center gap-4 overflow-x-auto w-full">
@@ -215,13 +274,21 @@ export default function EmployeeFilterBar({
             {/* === Mã nhân viên: giữ input tự do === */}
             <div className="relative w-[180px]">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
+                {/* <Input
                     value={empid}
                     onChange={(e) => onEmpidChange(e.target.value.toUpperCase())}
                     placeholder="員工編號"
                     className="h-9 pr-8"
+                /> */}
+                <Input
+                    value={empid}
+                    onChange={(e) => handleEmpidInput(e.target.value)}
+                    placeholder="員工編號"
+                    className="h-9 pr-8"
                 />
+
             </div>
+
             {/* ---- Date filter (optional) ---- */}
             {showDate && (
                 <Popover>

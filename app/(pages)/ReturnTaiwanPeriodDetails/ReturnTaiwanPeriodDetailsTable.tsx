@@ -6,6 +6,7 @@ import LeaveCalendarMatrix, { CellData } from "@/components/LeaveCalendarMatrixP
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { FileOutputIcon, SaveIcon } from "lucide-react";
+import EmployeeFilterBar from "@/components/EmployeeFilterBar";
 type Props = {
   ReturnTaiwanPeriodDetails: any[];
   // --- các handler filter nhân sự ---
@@ -108,42 +109,21 @@ export default function ReturnTaiwanPeriodDetailsTable({
     <>
       {/* HEADER FILTER */}
       <div className="flex items-center py-2 justify-between">
-        <FilterBar
-          // --- Công ty (đang ẩn, nên fallback rỗng & no-op để không bắt buộc truyền) ---
-          company={company ?? ""}
-          onCompanyChange={onCompanyChange ?? (() => { })}
-          showCompanyFilter={false}
-
-          // --- Phòng ban (đang ẩn vì màn hình này dùng ma trận theo ngày) ---
-          department={dp}
-          onDepartmentChange={(v) => onDpChange(v)}
-          showDepartmentFilter={false}
-          showSearch={false}
-
-          // --- Mã nhân viên (ẩn trong ma trận; để ô tên hiển thị chính) ---
-          empid={empid}
-          onEmpidChange={(v) => onEmpidChange(v)}
-          showEmpidFilter={true}
-
-          // --- Tên nhân viên (giữ lại nếu muốn lọc theo người) ---
-          nm={nm}
-          onNmChange={(v) => onNmChange(v)}
-          showNmFilter={false}
-
-          // --- Trạng thái (tuỳ chọn) ---
-          status={status}
-          onStatusChange={onStatusChange}
-          showStatusFilter={!!onStatusChange}
-
-          // --- Chức vụ/cấp bậc ---
-          newdutnm={newdutnm}
-          onNewdutnmChange={onNewdutnmChange}
-          showNewdutnmFilter={false}
-
-          // --- Khoảng ngày: dùng RANGE để vẽ ma trận ---
-          dateMode="range"
-          onDateChange={(from, to) => onDateChange?.(from, to)}
-        />
+        <EmployeeFilterBar
+  empid={empid}
+  nm={nm}
+  dp={dp}
+  dpnm={dpnm}
+  newdutnm={newdutnm}
+  onEmpidChange={onEmpidChange}
+  onNmChange={onNmChange}
+  onDpChange={onDpChange}
+  onDpnmChange={onDpnmChange}
+  onNewdutnmChange={onNewdutnmChange}
+  showDate
+  dateMode="range"
+  onDateChange={(from, to) => onDateChange?.(from, to)}
+/>
       </div>
 
       {/* Chỉ hiện nút Lưu & ma trận khi đã đủ filter */}

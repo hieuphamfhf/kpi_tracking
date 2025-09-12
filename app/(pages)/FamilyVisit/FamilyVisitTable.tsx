@@ -71,6 +71,7 @@ export default function FamilyVisitTable({
                     onDpChange={onDpChange}
                     onDpnmChange={onDpnmChange}
                     onNewdutnmChange={onNewdutnmChange}
+                     showDate={false} 
                 />
                 {/* Nút xuất dữ liệu ra Excel */}
                 {/* <Button

@@ -6,6 +6,12 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarRangeIcon } from "lucide-react";
+import { DateRange } from "react-day-picker";
+import { format, startOfMonth, endOfMonth } from "date-fns";
+import { cn } from "@/lib/utils";
 // === Dữ liệu nhân viên từ API EmpployeeInfo ===
 type EmpRecord = {
     empid: string;
@@ -26,11 +32,17 @@ type Props = {
     onDpChange: (v: string) => void;
     onDpnmChange: (v: string) => void;
     onNewdutnmChange: (v: string) => void;
+    showDate?: boolean;
+    dateMode?: "range" | "single";
+    onDateChange?: (from: string, to: string) => void;
 };
 
 export default function EmployeeFilterBar({
     empid, nm, dp, dpnm, newdutnm,
-    onEmpidChange, onNmChange, onDpChange, onDpnmChange, onNewdutnmChange
+    onEmpidChange, onNmChange, onDpChange, onDpnmChange, onNewdutnmChange,
+    showDate = true,
+    dateMode = "range",
+    onDateChange,
 }: Props) {
 
     // ===== Dropdown "Tên bộ phận" & "Tên nhân viên" phụ thuộc chức vụ =====
@@ -41,6 +53,23 @@ export default function EmployeeFilterBar({
     const [empPoolForDept, setEmpPoolForDept] = useState<EmpRecord[]>([]);
     const [empPoolForName, setEmpPoolForName] = useState<EmpRecord[]>([]);
 
+
+    const [date, setDate] = useState<DateRange | undefined>(() => {
+        if (dateMode === "single") return { from: new Date(), to: undefined };
+        return { from: startOfMonth(new Date()), to: endOfMonth(new Date()) };
+    });
+
+    const handleDateChange = (range: DateRange | undefined) => {
+        setDate(range);
+        if (!range?.from || !onDateChange) return;
+        const from = format(range.from, "yyyyMMdd");
+        if (dateMode === "single") {
+            onDateChange(from, from);
+        } else if (range?.to) {
+            const to = format(range.to, "yyyyMMdd");
+            onDateChange(from, to);
+        }
+    };
     // 1) Khi chọn/chỉnh "chức vụ" → nạp pool để suy ra danh sách TÊN BỘ PHẬN
     useEffect(() => {
         setEmpPoolForDept([]);
@@ -193,6 +222,49 @@ export default function EmployeeFilterBar({
                     className="h-9 pr-8"
                 />
             </div>
+            {/* ---- Date filter (optional) ---- */}
+            {showDate && (
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <button
+                            className={cn(
+                                dateMode === "single" ? "w-[150px]" : "w-[210px]",
+                                "h-9 px-3 py-1 text-sm flex items-center justify-between rounded-md border bg-white shadow-sm"
+                            )}
+                        >
+                            {date?.from ? (
+                                date.to
+                                    ? `${format(date.from, "yyyy-MM-dd")} - ${format(date.to, "yyyy-MM-dd")}`
+                                    : format(date.from, "yyyy-MM-dd")
+                            ) : (
+                                <span>Pick a date</span>
+                            )}
+                            <CalendarRangeIcon className="h-4 w-4 ml-2" />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        {dateMode === "single" ? (
+                            <Calendar
+                                initialFocus
+                                mode="single"
+                                defaultMonth={date?.from}
+                                selected={date?.from}
+                                onSelect={(d) => handleDateChange({ from: d as Date })}
+                                numberOfMonths={1}
+                            />
+                        ) : (
+                            <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={date?.from}
+                                selected={date}
+                                onSelect={(r) => handleDateChange(r as DateRange)}
+                                numberOfMonths={2}
+                            />
+                        )}
+                    </PopoverContent>
+                </Popover>
+            )}
             <Button
                 variant="outline"
                 size="sm"

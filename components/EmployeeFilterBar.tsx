@@ -1,47 +1,139 @@
-// components/EmployeeFilterBar.tsx
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-type EmployeeFilterBarProps = {
+// === Dữ liệu nhân viên từ API EmpployeeInfo ===
+type EmpRecord = {
     empid: string;
     nm: string;
     dp: string;
     dpnm: string;
     newdutnm: string;
-    onEmpidChange: (value: string) => void;
-    onNmChange: (value: string) => void;
-    onDpChange: (value: string) => void;
-    onDpnmChange: (value: string) => void;
-    onNewdutnmChange: (value: string) => void;
+};
+
+type Props = {
+    empid: string;
+    nm: string;
+    dp: string;
+    dpnm: string;
+    newdutnm: string;
+    onEmpidChange: (v: string) => void;
+    onNmChange: (v: string) => void;
+    onDpChange: (v: string) => void;
+    onDpnmChange: (v: string) => void;
+    onNewdutnmChange: (v: string) => void;
 };
 
 export default function EmployeeFilterBar({
-    empid,
-    nm,
-    dp,
-    dpnm,
-    newdutnm,
-    onEmpidChange,
-    onNmChange,
-    onDpChange,
-    onDpnmChange,
-    onNewdutnmChange
-}: EmployeeFilterBarProps) {
+    empid, nm, dp, dpnm, newdutnm,
+    onEmpidChange, onNmChange, onDpChange, onDpnmChange, onNewdutnmChange
+}: Props) {
+
+    // ===== Dropdown "Tên bộ phận" & "Tên nhân viên" phụ thuộc chức vụ =====
+    const [loadingDept, setLoadingDept] = useState(false);
+    const [loadingName, setLoadingName] = useState(false);
+
+    // Dữ liệu từ EmpployeeInfo (lọc theo newdutnm, dpnm)
+    const [empPoolForDept, setEmpPoolForDept] = useState<EmpRecord[]>([]);
+    const [empPoolForName, setEmpPoolForName] = useState<EmpRecord[]>([]);
+
+    // 1) Khi chọn/chỉnh "chức vụ" → nạp pool để suy ra danh sách TÊN BỘ PHẬN
+    useEffect(() => {
+        setEmpPoolForDept([]);
+        setEmpPoolForName([]);
+        onDpnmChange("");   // reset khi đổi chức vụ
+        // không gọi nếu chưa chọn chức vụ
+        if (!newdutnm) return;
+
+        const qs = new URLSearchParams({
+            empid: "", NM: "", dp: "", dpnm: "", newdutnm
+        }).toString();
+
+        (async () => {
+            setLoadingDept(true);
+            try {
+                const res = await fetch(`http://10.198.170.99:5000/API/EmpployeeInfo?${qs}`);
+                const data: EmpRecord[] = await res.json();
+                setEmpPoolForDept(Array.isArray(data) ? data : []);
+            } catch {
+                setEmpPoolForDept([]);
+            } finally {
+                setLoadingDept(false);
+            }
+        })();
+    }, [newdutnm, onDpnmChange]);
+
+    // Rút trích danh sách TÊN BỘ PHẬN duy nhất từ empPoolForDept
+    const deptNameOptions = useMemo(() => {
+        const map = new Map<string, string>(); // key=dpnm, val=dp (ưu tiên dp đầu tiên gặp)
+        for (const r of empPoolForDept) {
+            if (!map.has(r.dpnm)) map.set(r.dpnm, r.dp);
+        }
+        // hiển thị "Tên bộ phận — Mã"
+        return Array.from(map.entries()).map(([name, code]) => ({ label: `${name} — ${code}`, dpnm: name, dp: code }));
+    }, [empPoolForDept]);
+
+    // 2) Khi chọn "tên bộ phận" (hoặc chỉ có chức vụ) → nạp pool để suy ra danh sách TÊN NHÂN VIÊN
+    useEffect(() => {
+        setEmpPoolForName([]);
+        if (!newdutnm) return; // cần có chức vụ
+        const qs = new URLSearchParams({
+            empid: "",
+            NM: "",
+            dp: "",                          // không ép buộc mã, dùng dpnm cho đúng yêu cầu
+            dpnm: dpnm || "",
+            newdutnm
+        }).toString();
+
+        const t = setTimeout(async () => {
+            setLoadingName(true);
+            try {
+                const res = await fetch(`http://10.198.170.99:5000/API/EmpployeeInfo?${qs}`);
+                const data: EmpRecord[] = await res.json();
+                setEmpPoolForName(Array.isArray(data) ? data : []);
+            } catch {
+                setEmpPoolForName([]);
+            } finally {
+                setLoadingName(false);
+            }
+        }, 250); // debounce nhẹ
+        return () => clearTimeout(t);
+    }, [newdutnm, dpnm]);
+
+    // Rút trích danh sách TÊN NHÂN VIÊN duy nhất
+    const nameOptions = useMemo(() => {
+        const set = new Set<string>();
+        for (const r of empPoolForName) set.add(r.nm);
+        return Array.from(set);
+    }, [empPoolForName]);
+
+    // Khi đổi tên bộ phận từ dropdown → sync cả dp (mã) cho nhất quán
+    const handlePickDeptName = (pickedDpnm: string) => {
+        onDpnmChange(pickedDpnm);
+        const first = empPoolForDept.find(r => r.dpnm === pickedDpnm);
+        onDpChange(first?.dp ?? "");
+        onNmChange(""); // reset tên để user chọn lại theo bộ phận mới
+    };
+
+    // Khi đổi tên nhân viên → chỉ set nm (empid vẫn để người dùng nhập tay theo yêu cầu)
+    const handlePickName = (pickedNm: string) => {
+        onNmChange(pickedNm);
+        // Không tự fill empid; nếu muốn, có thể dò 1 emp trùng tên và gợi ý empid
+    };
+
     return (
         <div className="flex items-center gap-4 overflow-x-auto w-full">
-            {/* Dropdown chức vụ mới*/}
 
-
-            <Select
-                value={newdutnm}
-                onValueChange={v => onNewdutnmChange(v)}
-            >
+            {/* === Chức vụ (điểm xuất phát cho 2 dropdown) === */}
+            <Select value={newdutnm} onValueChange={(v) => { onNewdutnmChange(v); }}>
                 <SelectTrigger className="w-[160px] h-9">
-                    <SelectValue placeholder="請選擇" />
+                    <SelectValue placeholder="--請選擇職級--" />
                 </SelectTrigger>
                 <SelectContent>
-                    {/* <SelectItem value="經營主管級">經營主管級</SelectItem>
-                    <SelectItem value="一級主管">一級主管</SelectItem> */}
                     <SelectItem value="經營主管">經營主管</SelectItem>
                     <SelectItem value="一級主管">一級主管</SelectItem>
                     <SelectItem value="二級主管">二級主管</SelectItem>
@@ -51,48 +143,71 @@ export default function EmployeeFilterBar({
                 </SelectContent>
             </Select>
 
-
-
-
-            {/* Mã phòng ban có icon tìm kiếm */}
-            <div className="relative w-[160px]">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                    value={dp}
-                    onChange={e => onDpChange(e.target.value.toUpperCase())}
-                    placeholder="部門代號"
-                    className="border rounded h-9 pl-3 pr-8 w-full"
-                />
-            </div>
-
-            {/* Tên nhân viên */}
-            <div className="relative w-[160px]">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
-                <input
-                    value={nm}
-                    onChange={e => onNmChange(e.target.value)}
-                    placeholder="姓名"
-                    className="border rounded h-9 pl-3 pr-8 w-full"
-                />
-            </div>
-            {/* Mã Nhân viên VNW    */}
-            <div className="relative w-[160px]">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                    value={empid}
-                    onChange={e => onEmpidChange(e.target.value.toUpperCase())}
-                    placeholder="員工編號"
-                    className="border rounded h-9 pl-3 pr-8 w-full"
-                />
-            </div>
-
-            {/* <input
+            {/* === Tên bộ phận (dropdown, phụ thuộc chức vụ) === */}
+            <Select
                 value={dpnm}
-                onChange={e => onDpnmChange(e.target.value)}
-                placeholder="部門名稱"
-                className="border p-2 rounded"
-            /> */}
+                onValueChange={handlePickDeptName}
+                disabled={!newdutnm || loadingDept}
+            >
+                <SelectTrigger className="w-[260px] h-9">
+                    <SelectValue placeholder={!newdutnm ? "請先選擇職級" : (loadingDept ? "載入中…" : "--選擇部門名稱--")} />
+                </SelectTrigger>
+                <SelectContent className="max-h-64 overflow-y-auto">
+                    {deptNameOptions.length === 0
+                        ? <div className="px-3 py-2 text-sm text-muted-foreground">無資料</div>
+                        : deptNameOptions.map(opt => (
+                            <SelectItem key={`${opt.dpnm}-${opt.dp}`} value={opt.dpnm}>
+                                {opt.label}
+                            </SelectItem>
+                        ))
+                    }
+                </SelectContent>
+            </Select>
 
+            {/* === Tên nhân viên (dropdown, phụ thuộc chức vụ + bộ phận đã chọn) === */}
+            <Select
+                value={nm}
+                onValueChange={handlePickName}
+                disabled={!newdutnm || loadingName}
+            >
+                <SelectTrigger className="w-[200px] h-9">
+                    <SelectValue placeholder={!newdutnm ? "請先選擇職級" : (loadingName ? "載入中…" : "--選擇姓名--")} />
+                </SelectTrigger>
+                <SelectContent className="max-h-64 overflow-y-auto">
+                    {nameOptions.length === 0
+                        ? <div className="px-3 py-2 text-sm text-muted-foreground">無資料</div>
+                        : nameOptions.map(n => (
+                            <SelectItem key={n} value={n}>{n}</SelectItem>
+                        ))
+                    }
+                </SelectContent>
+            </Select>
+
+            {/* === Mã nhân viên: giữ input tự do === */}
+            <div className="relative w-[180px]">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                    value={empid}
+                    onChange={(e) => onEmpidChange(e.target.value.toUpperCase())}
+                    placeholder="員工編號"
+                    className="h-9 pr-8"
+                />
+            </div>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                    onNewdutnmChange("");
+                    onDpnmChange("");
+                    onDpChange("");
+                    onNmChange("");
+                    onEmpidChange("");
+                    // nếu bạn có state nội bộ cho options thì clear luôn:
+                    // setEmpPoolForDept([]); setEmpPoolForName([]);
+                }}
+            >
+                重置
+            </Button>
         </div>
     );
 }

@@ -9,20 +9,17 @@ import { ReturnTaiwanPeriodListRes } from "@/app/schemaValidations/ReturnTaiwanP
 import Pagination from "@/components/Pagination";
 import { dedupeTaiwanPeriod } from "@/utils/dedupeTaiwanPeriod";
 import toast from "react-hot-toast";
-
 // import { ReturnTaiwanPeriodDetailsRes } from "@/app/apiRequest/returnTaiwanPeriodDetails";
 
 import { getReturnTaiwanPeriodDetails } from "@/app/apiRequest/ReturnTaiwanPeriodDetails";
 import { saveMemosBatch } from "@/components/saveHelp";
-import { useSearchParams } from "next/navigation";
-
 
 // ==== DayType/CellData (khớp LeaveCalendarMatrixProps) ====
 export type DayType =
   | "WORK" | "WEEKLY_OFF" | "PUBLIC_HOL" | "ANNUAL"
   | "ASSIGNMENT" | "BUSINESS_TW" | "BUSINESS_VN"
   | "BEREAVEMENT" | "SPECIAL_LEAVE" | "COMP_LEAVE"
-  | "LOCAL_OFF";
+   | "LOCAL_OFF";
 
 // + 補休
 
@@ -271,7 +268,6 @@ export default function ReturnTaiwanPeriodDetailsPage() {
 
   useEffect(() => {
     if (fromDate || toDate) return;
-
     const today = new Date();
     const y = today.getFullYear();
     const m = today.getMonth();
@@ -581,22 +577,6 @@ export default function ReturnTaiwanPeriodDetailsPage() {
     fetchDetailsForMatrix(empid, fromDate, toDate);
   }, [empid, fromDate, toDate]);
 
-
-  const params = useSearchParams();
-
-  useEffect(() => {
-    const qEmp = params.get("empid");
-    const qFrom = params.get("from"); 
-    const qTo = params.get("to");   
-
-    if (qEmp) setEmpid(qEmp);
-
-  
-    if (qFrom && qTo) {
-      setFromDate(ymdToDash(qFrom)); // "yyyymmdd" -> "yyyy-mm-dd"
-      setToDate(ymdToDash(qTo));
-    }
-  }, [params]);
   const totalPage = Math.ceil(ReturnTaiwanPeriodDetails.length / PAGE_SIZE);
   const originalNotes = useMemo(() => {
     const m: Record<string, string> = {};

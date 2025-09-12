@@ -7,26 +7,16 @@ import { toast } from "react-hot-toast"; // Thêm dòng này nếu chưa có
 import { exportModalTableExcel } from "@/components/excelExportService";
 import * as XLSX from "xlsx"; // nhớ import ở đầu file nếu chưa có
 import { FileOutputIcon } from "lucide-react";
-import { useRouter } from "next/navigation"; // thêm
 type Props = {
     open: boolean;
     onClose: () => void;
     data: ReturnTaiwanPeriodListResType;
-    selectedRow?: any;
+    selectedRow?: any; 
 };
 
 const TaiwanPeriodModal: React.FC<Props> = ({ open, onClose, data, selectedRow }) => {
     if (!open) return null;
-    const router = useRouter(); // thêm
-    if (!open) return null;
-
-    const goToDetail = () => {
-        if (!selectedRow?.empid) return;
-        // Đóng modal trước khi điều hướng (tránh overlay còn treo)
-        onClose?.();
-           router.push(`/ReturnTaiwanPeriodDetails?admin_key=secret123&empid=${encodeURIComponent(selectedRow.empid)}`);
-        // router.push(`/ReturnTaiwanPeriodDetails?admin_key=secret123?empid=${encodeURIComponent(selectedRow.empid)}`);
-    };
+  
     const handleExportModalExcel = () => {
         if (!data || data.length === 0) {
             toast.error('資料為空！', { duration: 2000 });
@@ -107,12 +97,6 @@ const TaiwanPeriodModal: React.FC<Props> = ({ open, onClose, data, selectedRow }
                     </tbody>
                 </table>
                 <div className="mt-4 flex justify-end">
-                    <Button
-                        onClick={goToDetail}
-                        className="bg-blue-600 text-white py-2 px-4 hover:bg-blue-700 transition-colors duration-200"
-                    >
-                        查看詳細
-                    </Button>
                     <Button
                         onClick={handleExportModalExcel}
                         className="bg-gray-100 text-black py-2 px-4 hover:bg-gray-300 transition-colors duration-200 flex items-center"

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarRangeIcon } from "lucide-react";
+import { CalendarRangeIcon,IterationCcw  } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -285,6 +285,7 @@ export default function EmployeeFilterBar({
                     onChange={(e) => handleEmpidInput(e.target.value)}
                     placeholder="員工編號"
                     className="h-9 pr-8"
+                     disabled={!newdutnm} // disable nếu chưa chọn chức vụ
                 />
 
             </div>
@@ -345,6 +346,7 @@ export default function EmployeeFilterBar({
                     // setEmpPoolForDept([]); setEmpPoolForName([]);
                 }}
             >
+                <IterationCcw  className="h-4 w-4 mr-2" />
                 重置
             </Button>
         </div>

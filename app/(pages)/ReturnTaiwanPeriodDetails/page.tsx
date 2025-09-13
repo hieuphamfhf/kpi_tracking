@@ -603,7 +603,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
           <Card>
             <CardHeader className="p-4 pb-2">
               <CardTitle>探親單詳細內容查詢(日曆)</CardTitle>
-              <CardDescription>探親單詳細內容查詢(日曆)</CardDescription>
+              {/* <CardDescription>探親單詳細內容查詢(日曆)</CardDescription> */}
             </CardHeader>
 
             <CardContent className="pt-2 ">

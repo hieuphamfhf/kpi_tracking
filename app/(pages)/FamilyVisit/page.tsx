@@ -87,9 +87,9 @@ export default function FamilyVisitPage() {
                     <Card >
                         <CardHeader className="p-4 pb-2">
                             <CardTitle>探親單查詢畫面</CardTitle>
-                            <CardDescription>
+                            {/* <CardDescription>
                                 請使用條件篩選數據，可匯出報告到 Excel。
-                            </CardDescription>
+                            </CardDescription> */}
 
                         </CardHeader>
                         <CardContent className="pt-2 ">

@@ -72,9 +72,9 @@ export default function ManagerReturnStatusPage() {
                     <Card>
                         <CardHeader className="p-4 pb-2">
                             <CardTitle>探親單查詢(依據日期)</CardTitle>
-                            <CardDescription>
+                            {/* <CardDescription>
                                 查詢在台灣期間，請選擇過濾條件。
-                            </CardDescription>
+                            </CardDescription> */}
                         </CardHeader>
                         <CardContent className="space-y-2">
                             <div className="space-y-1">

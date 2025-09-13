@@ -150,11 +150,17 @@ export default function EmployeeFilterBar({
     }, [newdutnm, dpnm]);
 
     // Rút trích danh sách TÊN NHÂN VIÊN duy nhất
+    // const nameOptions = useMemo(() => {
+    //     const set = new Set<string>();
+    //     for (const r of empPoolForName) set.add(r.nm);
+    //     return Array.from(set);
+    // }, [empPoolForName]);
     const nameOptions = useMemo(() => {
         const set = new Set<string>();
         for (const r of empPoolForName) set.add(r.nm);
-        return Array.from(set);
+        return Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-Hant'));
     }, [empPoolForName]);
+
 
     // Khi đổi tên bộ phận từ dropdown → sync cả dp (mã) cho nhất quán
     const handlePickDeptName = (pickedDpnm: string) => {

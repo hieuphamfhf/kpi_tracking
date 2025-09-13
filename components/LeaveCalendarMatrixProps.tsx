@@ -15,7 +15,7 @@ export type DayType =
   | "SPECIAL_LEAVE"
   | "COMP_LEAVE"
   | "LOCAL_OFF";  // 新增：補休
-    
+
 
 export type CellData = {
   type?: DayType;
@@ -32,6 +32,8 @@ export type LeaveCalendarMatrixWeeklyProps = {
   weekStartsOn?: 0 | 1; // 0: Sunday, 1: Monday (default)
   onNoteChange?: (isoDate: string, value: string) => void;
   editedNotes?: Record<string, string>;
+
+
 };
 
 // ===== Helpers =====
@@ -70,6 +72,9 @@ const chunkByWeek = (start: Date, end: Date, weekStartsOn: 0 | 1) => {
   }
   return weeks;
 };
+
+const inRange = (d: Date, s: Date, e: Date) => d >= s && d <= e;
+
 
 // ===== UI parts =====
 const badgeText: Record<DayType, string> = {
@@ -136,9 +141,14 @@ const WeekBlock: React.FC<{
   autoSundayWeeklyOff: boolean;
   editedNotes?: Record<string, string>;
   onNoteChange?: (isoDate: string, value: string) => void;
-}> = ({ week, values, autoSundayWeeklyOff, editedNotes, onNoteChange }) => {
+  s: Date;   
+  e: Date;   
+}> = ({ week, values, autoSundayWeeklyOff, editedNotes, onNoteChange, s, e }) => {
   const from = week[0];
   const to = week[6];
+
+  // const inRange = (d: Date, s: Date, e: Date) => d >= s && d <= e;
+
   return (
     <div className="mb-3 border rounded-xl overflow-hidden">
       {/* header tuần */}
@@ -157,7 +167,10 @@ const WeekBlock: React.FC<{
           <StickyLabel label="日期" />
           {week.map((d) => (
             <HCell key={keyOf(d)}>{mmddTW(d)}</HCell>
+
           ))}
+
+
         </div>
         {/* 星期 */}
         <div className="flex border-t">
@@ -173,6 +186,13 @@ const WeekBlock: React.FC<{
           {week.map((d) => {
             const k = keyOf(d);
             const v = values[k] || {};
+            const isIn = inRange(d, s, e); // dùng s/e từ props
+
+            if (!isIn) {
+              return <HCell key={k}>
+                <span className="text-gray-300 select-none"> </span>
+              </HCell>;
+            }
             const locked = autoSundayWeeklyOff && d.getDay() === 0 && !v.type;
 
             const t = (locked ? "WEEKLY_OFF" : v.type) as DayType | undefined;
@@ -214,7 +234,13 @@ const WeekBlock: React.FC<{
 
             // lấy note từ dữ liệu (KHÔNG trim nếu bạn muốn giữ khoảng trắng người dùng)
             const baseNote = (v.note ?? "").trim();
+            const isIn = inRange(d, s, e); // dùng s/e từ props
 
+            if (!isIn) {
+              return <HCell key={k}>
+                <div className="w-full h-7 rounded bg-gray-50/70" />
+              </HCell>;
+            }
             // Nếu Chủ nhật bị khóa mà chưa có note -> dùng mặc định
             const sundayDefault = "台、越均放假";
             const withDefault = locked && !baseNote ? sundayDefault : baseNote;
@@ -288,6 +314,8 @@ const LeaveCalendarMatrixWeekly: React.FC<LeaveCalendarMatrixWeeklyProps> = ({
             autoSundayWeeklyOff={autoSundayWeeklyOff}
             editedNotes={editedNotes}
             onNoteChange={onNoteChange}
+            s={s}   
+            e={e}  
           />
         ))}
       </CardContent>

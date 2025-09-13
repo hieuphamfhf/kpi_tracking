@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarRangeIcon,IterationCcw  } from "lucide-react";
+import { CalendarRangeIcon, IterationCcw } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -101,14 +101,26 @@ export default function EmployeeFilterBar({
     }, [newdutnm, onDpnmChange]);
 
     // Rút trích danh sách TÊN BỘ PHẬN duy nhất từ empPoolForDept
+    // const deptNameOptions = useMemo(() => {
+    //     const map = new Map<string, string>(); // key=dpnm, val=dp (ưu tiên dp đầu tiên gặp)
+    //     for (const r of empPoolForDept) {
+    //         if (!map.has(r.dpnm)) map.set(r.dpnm, r.dp);
+    //     }
+    //     // hiển thị "Tên bộ phận — Mã"
+    //     return Array.from(map.entries()).map(([name, code]) => ({ label: `${name} — ${code}`, dpnm: name, dp: code }));
+    // }, [empPoolForDept]);
     const deptNameOptions = useMemo(() => {
-        const map = new Map<string, string>(); // key=dpnm, val=dp (ưu tiên dp đầu tiên gặp)
+        const map = new Map<string, string>();
         for (const r of empPoolForDept) {
             if (!map.has(r.dpnm)) map.set(r.dpnm, r.dp);
         }
-        // hiển thị "Tên bộ phận — Mã"
-        return Array.from(map.entries()).map(([name, code]) => ({ label: `${name} — ${code}`, dpnm: name, dp: code }));
+        return Array.from(map.entries())
+            .map(([name, code]) => ({ label: `${name} — ${code}`, dpnm: name, dp: code }))
+            .sort((a, b) => a.label.localeCompare(b.label, 'zh-Hant'));
     }, [empPoolForDept]);
+
+
+
 
     // 2) Khi chọn "tên bộ phận" (hoặc chỉ có chức vụ) → nạp pool để suy ra danh sách TÊN NHÂN VIÊN
     useEffect(() => {
@@ -258,7 +270,7 @@ export default function EmployeeFilterBar({
                 onValueChange={handlePickName}
                 disabled={!newdutnm || loadingName}
             >
-                <SelectTrigger className="w-[200px] h-9">
+                <SelectTrigger className="w-[160px] h-9">
                     <SelectValue placeholder={!newdutnm ? "請先選擇職級" : (loadingName ? "載入中…" : "--選擇姓名--")} />
                 </SelectTrigger>
                 <SelectContent className="max-h-64 overflow-y-auto">
@@ -272,7 +284,7 @@ export default function EmployeeFilterBar({
             </Select>
 
             {/* === Mã nhân viên: giữ input tự do === */}
-            <div className="relative w-[180px]">
+            <div className="relative w-[160px]">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 {/* <Input
                     value={empid}
@@ -285,7 +297,7 @@ export default function EmployeeFilterBar({
                     onChange={(e) => handleEmpidInput(e.target.value)}
                     placeholder="員工編號"
                     className="h-9 pr-8"
-                     disabled={!newdutnm} // disable nếu chưa chọn chức vụ
+                    disabled={!newdutnm} // disable nếu chưa chọn chức vụ
                 />
 
             </div>
@@ -346,7 +358,7 @@ export default function EmployeeFilterBar({
                     // setEmpPoolForDept([]); setEmpPoolForName([]);
                 }}
             >
-                <IterationCcw  className="h-4 w-4 mr-2" />
+                <IterationCcw className="h-4 w-4 mr-2" />
                 重置
             </Button>
         </div>

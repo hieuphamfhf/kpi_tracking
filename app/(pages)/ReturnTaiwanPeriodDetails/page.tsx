@@ -19,7 +19,7 @@ export type DayType =
   | "WORK" | "WEEKLY_OFF" | "PUBLIC_HOL" | "ANNUAL"
   | "ASSIGNMENT" | "BUSINESS_TW" | "BUSINESS_VN"
   | "BEREAVEMENT" | "SPECIAL_LEAVE" | "COMP_LEAVE"
-   | "LOCAL_OFF";
+  | "LOCAL_OFF";
 
 // + 補休
 
@@ -79,25 +79,34 @@ const eachDayISO = (fromISO: string, toISO: string) => {
 
 // Lấy map { "YYYY-MM-DD": { note: "返台" | "返越" } }
 async function fetchReturnTaiwanPeriodNotes(emp: string, fromISO: string, toISO: string) {
-  const url = `http://10.198.170.99:5000/API/ReturnTaiwanPeriod?empid=${emp}&backfrdat=${fromISO.replace(/-/g, "")}&backtodat=${toISO.replace(/-/g, "")}`;
+  // Cộng/trừ THÁNG cho ISO yyyy-mm-dd
+  const addMonthsISO = (iso: string, months: number) => {
+    const d = new Date(`${iso}T00:00:00`);
+    d.setMonth(d.getMonth() + months);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${dd}`;
+  };
+  const queryFrom = addMonthsISO(fromISO, -2);
+  const queryTo = addMonthsISO(toISO, +2);
+
+  // const url = `http://10.198.170.99:5000/API/ReturnTaiwanPeriod?empid=${emp}&backfrdat=${fromISO.replace(/-/g, "")}&backtodat=${toISO.replace(/-/g, "")}`;
+  const url = `http://10.198.170.99:5000/API/ReturnTaiwanPeriod?empid=${emp}`
+    + `&backfrdat=${queryFrom.replace(/-/g, "")}`
+    + `&backtodat=${queryTo.replace(/-/g, "")}`;
   const res = await fetch(url);
   const data: TaiwanPeriodItem[] = await res.json();
 
-  // const valid = (data || []).filter(r => r.sts === "核准" && r.deleted === false);
-  // if (!valid.length) return {} as Record<string, CellData>;
-
-  // const r = pickLatest(valid);
-  // const out: Record<string, CellData> = {};
-  // if (r.backfrdat) out[ymdToISO(r.backfrdat)] = { note: "返台_TW" };
-  // if (r.backtodat) out[ymdToISO(r.backtodat)] = { note: "返越_VN" };
-  // return out;
   const valid = (data || []).filter(r => r.sts === "核准" && r.deleted === false);
   const deduped = dedupeByPeriod(valid);
 
   const noteMap: Record<string, CellData> = {};
-  const periods: Array<{ from: string; to: string }> = [];
+  const periods: Array<{ from: string; to: string; origFrom: string; origTo: string }> = [];
 
   const inRange = (iso: string) => iso >= fromISO && iso <= toISO;
+
+
 
   for (const r of deduped) {
     if (r.backfrdat) {
@@ -109,13 +118,14 @@ async function fetchReturnTaiwanPeriodNotes(emp: string, fromISO: string, toISO:
       if (inRange(iso)) noteMap[iso] = { note: "返越" };
     }
     if (r.backfrdat && r.backtodat) {
-      const from = ymdToISO(r.backfrdat);
-      const to = ymdToISO(r.backtodat);
-      // chỉ push period nếu giao với [fromISO, toISO]
-      if (!(to < fromISO || from > toISO)) {
+      const origFrom = ymdToISO(r.backfrdat);
+      const origTo = ymdToISO(r.backtodat);
+      // chỉ push nếu giao với [fromISO, toISO]
+      if (!(origTo < fromISO || origFrom > toISO)) {
         periods.push({
-          from: from < fromISO ? fromISO : from,
-          to: to > toISO ? toISO : to,
+          from: origFrom < fromISO ? fromISO : origFrom,
+          to: origTo > toISO ? toISO : origTo,
+          origFrom, origTo,
         });
       }
     }
@@ -544,16 +554,38 @@ export default function ReturnTaiwanPeriodDetailsPage() {
       }
 
       // 2) Tô “駐地放假” cho các ngày trống nằm giữa backfrdat → backtodat
+      // for (const p of periods) {
+      //   for (const iso of eachDayISO(p.from, p.to)) {
+      //     const cur = merged[iso] || {};
+      //     const isSunday = new Date(`${iso}T00:00:00`).getDay() === 0;
+      //     // chỉ gán nếu: chưa có type & không phải CN (CN đang bị khoá là WEEKLY_OFF)
+      //     if (!cur.type && !isSunday) {
+      //       merged[iso] = { ...cur, type: "LOCAL_OFF" }; // ← 駐地放假
+      //     }
+      //   }
+      // }
+
+      // inclusive: duyệt cả from và to
+      const eachDayISOInclusive = (fromISO: string, toISO: string) => {
+        const out: string[] = [];
+        const start = new Date(`${fromISO}T00:00:00`);
+        const end = new Date(`${toISO}T00:00:00`);
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          out.push(iso);
+        }
+        return out;
+      };
+
       for (const p of periods) {
-        for (const iso of eachDayISO(p.from, p.to)) {
+        for (const iso of eachDayISOInclusive(p.from, p.to)) {
+          if (iso === p.origFrom || iso === p.origTo) continue; // KHÔNG đè 返台/返越 thật
           const cur = merged[iso] || {};
-          const isSunday = new Date(`${iso}T00:00:00`).getDay() === 0;
-          // chỉ gán nếu: chưa có type & không phải CN (CN đang bị khoá là WEEKLY_OFF)
-          if (!cur.type && !isSunday) {
-            merged[iso] = { ...cur, type: "LOCAL_OFF" }; // ← 駐地放假
-          }
+          const isSun = new Date(`${iso}T00:00:00`).getDay() === 0;
+          if (!cur.type && !isSun) merged[iso] = { ...cur, type: "LOCAL_OFF" }; // 駐地放假
         }
       }
+
 
       // 3) Đánh số 派駐假 như hiện tại
       addAssignmentOrdinal(merged);

@@ -165,21 +165,10 @@ export default function ReturnTaiwanPeriodDetailsTable({
           showDate
           dateMode="range"
           onDateChange={(from, to) => onDateChange?.(from, to)}
+
         />
       </div>
-      {empid && startDate && endDate && (
-        <div className="flex flex-wrap items-center gap-2 py-2">
-          {Object.entries(summaryCounts).map(([t, n]) => (
-            <span
-              key={t}
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border ${badgeStyle[t as DayType]}`}
-            >
-              {badgeText[t as DayType]}
-              <span className="ml-1 font-semibold">{n}</span>
-            </span>
-          ))}
-        </div>
-      )}
+
 
 
       {/* Chỉ hiện nút Lưu & ma trận khi đã đủ filter */}
@@ -206,6 +195,7 @@ export default function ReturnTaiwanPeriodDetailsTable({
                   autoSundayWeeklyOff
                   onNoteChange={onNoteChange}
                   editedNotes={editedNotes}
+                  summaryCounts={summaryCounts}
                 />
               )}
             </div>

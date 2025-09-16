@@ -32,7 +32,7 @@ export type LeaveCalendarMatrixWeeklyProps = {
   weekStartsOn?: 0 | 1; // 0: Sunday, 1: Monday (default)
   onNoteChange?: (isoDate: string, value: string) => void;
   editedNotes?: Record<string, string>;
-
+  summaryCounts?: Partial<Record<DayType, number>>;
 
 };
 
@@ -142,8 +142,8 @@ const WeekBlock: React.FC<{
   autoSundayWeeklyOff: boolean;
   editedNotes?: Record<string, string>;
   onNoteChange?: (isoDate: string, value: string) => void;
-  s: Date;   
-  e: Date;   
+  s: Date;
+  e: Date;
 }> = ({ week, values, autoSundayWeeklyOff, editedNotes, onNoteChange, s, e }) => {
   const from = week[0];
   const to = week[6];
@@ -161,7 +161,7 @@ const WeekBlock: React.FC<{
         <span className="font-semibold">{to.toLocaleDateString("zh-TW")}</span>
       </div>
 
-      {/* 4 hàng như ảnh bạn mô tả */}
+      
       <div className="overflow-x-auto">
         {/* 日期 */}
         <div className="flex">
@@ -233,7 +233,7 @@ const WeekBlock: React.FC<{
             const isSunday = d.getDay() === 0;
             const locked = autoSundayWeeklyOff && isSunday;
 
-            // lấy note từ dữ liệu (KHÔNG trim nếu bạn muốn giữ khoảng trắng người dùng)
+            
             const baseNote = (v.note ?? "").trim();
             const isIn = inRange(d, s, e); // dùng s/e từ props
 
@@ -285,11 +285,13 @@ const LeaveCalendarMatrixWeekly: React.FC<LeaveCalendarMatrixWeeklyProps> = ({
   weekStartsOn = 1,
   editedNotes,
   onNoteChange,
+  summaryCounts,
 }) => {
   const s = toDate(startDate);
   const e = toDate(endDate);
   const weeks = useMemo(() => chunkByWeek(s, e, weekStartsOn), [startDate, endDate, weekStartsOn]);
-  const totalDays = weeks.reduce((n, w) => n + w.length, 0);
+  // const totalDays = weeks.reduce((n, w) => n + w.length, 0);
+  const totalDays = weeks.flat().filter(d => inRange(d, s, e)).length;
 
   return (
     <Card className="w-full">
@@ -301,10 +303,27 @@ const LeaveCalendarMatrixWeekly: React.FC<LeaveCalendarMatrixWeeklyProps> = ({
           <span className="font-semibold">{e.toLocaleDateString("zh-TW")}</span>
           <span className="ml-2 text-gray-500">（共{totalDays}日）</span>
         </div>
+
+        {/* badge tổng hợp */}
+        <div className="flex flex-wrap items-center gap-2 ml-4">
+          {Object.entries(summaryCounts ?? {}).map(([t, n]) =>
+            n && n > 0 ? (
+              <span
+                key={t}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border ${badgeStyle[t as DayType]}`}
+              >
+                {badgeText[t as DayType]}
+                <span className="ml-1 font-semibold">{n}</span>
+              </span>
+            ) : null
+          )}
+
+        </div>
         {/* <Button variant="outline" size="sm" className="gap-2">
           <Download className="w-4 h-4" /> 匯出Excel
         </Button> */}
       </div>
+
 
       <CardContent className="p-3 overflow-y-auto max-h-[70vh]">
         {weeks.map((w, idx) => (
@@ -315,8 +334,8 @@ const LeaveCalendarMatrixWeekly: React.FC<LeaveCalendarMatrixWeeklyProps> = ({
             autoSundayWeeklyOff={autoSundayWeeklyOff}
             editedNotes={editedNotes}
             onNoteChange={onNoteChange}
-            s={s}   
-            e={e}  
+            s={s}
+            e={e}
           />
         ))}
       </CardContent>

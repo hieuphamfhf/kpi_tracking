@@ -77,7 +77,8 @@ const inRange = (d: Date, s: Date, e: Date) => d >= s && d <= e;
 
 
 // ===== UI parts =====
-const badgeText: Record<DayType, string> = {
+
+export const badgeText: Record<DayType, string> = {
   WORK: "出勤",
   WEEKLY_OFF: "例假日",
   PUBLIC_HOL: "國定假日",
@@ -91,7 +92,7 @@ const badgeText: Record<DayType, string> = {
   LOCAL_OFF: "駐地放假",
 };
 
-const badgeStyle: Record<DayType, string> = {
+export const badgeStyle: Record<DayType, string> = {
   WORK: "bg-slate-100 text-slate-700 border-slate-300",
   WEEKLY_OFF: "bg-gray-100 text-gray-700 border-gray-300",           // xám: CHỈ cho CN
   PUBLIC_HOL: "bg-rose-100 text-rose-700 border-rose-300",           // 國定假日

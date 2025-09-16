@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { exportToExcel } from "@/components/excelExportService";
 import LogoLoading from "@/components/LogoLoading";
 import FilterBar from "@/components/FilterBar";
-import LeaveCalendarMatrix, { CellData } from "@/components/LeaveCalendarMatrixProps"; // ma trận tuần:contentReference[oaicite:2]{index=2}
+import LeaveCalendarMatrix, { CellData, DayType, badgeText, badgeStyle } from "@/components/LeaveCalendarMatrixProps";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { FileOutputIcon, SaveIcon } from "lucide-react";
 import EmployeeFilterBar from "@/components/EmployeeFilterBar";
+
 type Props = {
   ReturnTaiwanPeriodDetails: any[];
   // --- các handler filter nhân sự ---
@@ -105,26 +106,81 @@ export default function ReturnTaiwanPeriodDetailsTable({
   };
 
 
+  // const summaryCounts = useMemo(() => {
+  //   const counts: Partial<Record<DayType, number>> = {};
+  //   Object.values(calendarValues ?? {}).forEach(v => {
+  //     if (!v?.type) return;
+  //     if (v.type === "WEEKLY_OFF") return; // chỉ bỏ Chủ nhật
+  //     counts[v.type] = (counts[v.type] ?? 0) + 1;
+  //   });
+  //   return counts;
+  // }, [calendarValues]);
+
+  const countWorkingDaysInRange = React.useMemo(() => {
+    if (!startDate || !endDate) return 0;
+    const s = new Date(startDate as any);
+    const e = new Date(endDate as any);
+    let n = 0;
+    for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+      if (d.getDay() !== 0) n++; // bỏ Chủ nhật
+    }
+    return n;
+  }, [startDate, endDate]);
+
+  const summaryCounts = React.useMemo(() => {
+    const counts: Partial<Record<DayType, number>> = {};
+    // Đếm tất cả loại phép (bỏ CN)
+    Object.values(calendarValues ?? {}).forEach(v => {
+      if (!v?.type) return;
+      if (v.type === "WEEKLY_OFF") return; // bỏ Chủ nhật
+      counts[v.type] = (counts[v.type] ?? 0) + 1;
+    });
+
+    // WORK = (tổng ngày làm việc trong khoảng, bỏ CN) - (mọi ngày có type khác WORK)
+    const nonWorkDays =
+      Object.values(counts).reduce((a, b) => a + (b ?? 0), 0);
+    const workDays = Math.max(0, countWorkingDaysInRange - nonWorkDays);
+
+    if (startDate && endDate) {
+      counts.WORK = workDays as any; // hiển thị badge “出勤”
+    }
+    return counts;
+  }, [calendarValues, startDate, endDate, countWorkingDaysInRange]);
+
   return (
     <>
       {/* HEADER FILTER */}
       <div className="flex items-center py-2 justify-between">
         <EmployeeFilterBar
-  empid={empid}
-  nm={nm}
-  dp={dp}
-  dpnm={dpnm}
-  newdutnm={newdutnm}
-  onEmpidChange={onEmpidChange}
-  onNmChange={onNmChange}
-  onDpChange={onDpChange}
-  onDpnmChange={onDpnmChange}
-  onNewdutnmChange={onNewdutnmChange}
-  showDate
-  dateMode="range"
-  onDateChange={(from, to) => onDateChange?.(from, to)}
-/>
+          empid={empid}
+          nm={nm}
+          dp={dp}
+          dpnm={dpnm}
+          newdutnm={newdutnm}
+          onEmpidChange={onEmpidChange}
+          onNmChange={onNmChange}
+          onDpChange={onDpChange}
+          onDpnmChange={onDpnmChange}
+          onNewdutnmChange={onNewdutnmChange}
+          showDate
+          dateMode="range"
+          onDateChange={(from, to) => onDateChange?.(from, to)}
+        />
       </div>
+      {empid && startDate && endDate && (
+        <div className="flex flex-wrap items-center gap-2 py-2">
+          {Object.entries(summaryCounts).map(([t, n]) => (
+            <span
+              key={t}
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border ${badgeStyle[t as DayType]}`}
+            >
+              {badgeText[t as DayType]}
+              <span className="ml-1 font-semibold">{n}</span>
+            </span>
+          ))}
+        </div>
+      )}
+
 
       {/* Chỉ hiện nút Lưu & ma trận khi đã đủ filter */}
       {empid && startDate && endDate ? (

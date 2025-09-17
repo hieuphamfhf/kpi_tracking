@@ -128,12 +128,23 @@ export default function ReturnTaiwanPeriodDetailsTable({
   }, [startDate, endDate]);
 
   const summaryCounts = React.useMemo(() => {
-    const counts: Partial<Record<DayType, number>> = {};
-    // Đếm tất cả loại phép (bỏ CN)
+    // const counts: Partial<Record<DayType, number>> = {};
+    // // Đếm tất cả loại phép (bỏ CN)
+    // Object.values(calendarValues ?? {}).forEach(v => {
+    //   if (!v?.type) return;
+    //   if (v.type === "WEEKLY_OFF") return; // bỏ Chủ nhật
+    //   counts[v.type] = (counts[v.type] ?? 0) + 1;
+    // });
+    
+    const counts: Record<string, number> = {};
     Object.values(calendarValues ?? {}).forEach(v => {
-      if (!v?.type) return;
-      if (v.type === "WEEKLY_OFF") return; // bỏ Chủ nhật
-      counts[v.type] = (counts[v.type] ?? 0) + 1;
+      if (v?.type === "WEEKLY_OFF") return;
+      if (v?.type) {
+        counts[v.type] = (counts[v.type] ?? 0) + 1;
+      } else if (v?.badgeLabel) {
+        const key = v.badgeLabel.trim(); // mỗi offidnm = 1 key riêng
+        counts[key] = (counts[key] ?? 0) + 1;
+      }
     });
 
     // WORK = (tổng ngày làm việc trong khoảng, bỏ CN) - (mọi ngày có type khác WORK)

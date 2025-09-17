@@ -337,7 +337,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
     "52": "ASSIGNMENT",    // 派駐假
     "03": "SPECIAL_LEAVE", // 特別休假  
     "10": "BEREAVEMENT",   // 喪假
-    "08": "COMP_LEAVE",    // 補休  ← tách riêng để có màu riêng
+    "08": "COMP_LEAVE",    // 補休 
   };
 
   // Ghi chú mặc định theo DayType
@@ -385,93 +385,52 @@ export default function ReturnTaiwanPeriodDetailsPage() {
     const nm = (r?.offidnm && String(r.offidnm).trim()) || "";
     return nm;
   };
-
-const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
-  const out: Record<string, CellData> = {};
-
-  for (const r of rows) {
-    const day = rocToISO(r.offdat);
-    if (!day) continue;
-
-    const t: DayType | undefined =
-      mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
-
-    // Chủ nhật → WEEKLY_OFF
-    if (isSunday(day)) {
-      out[day] = {
-        type: "WEEKLY_OFF",
-        note: defaultNoteByType("WEEKLY_OFF"),
-        lockedByRule: true,
-      };
-      continue;
-    }
-
-    // Badge label = tên loại phép (offidnm)
-    const badgeLabel = (r?.offidnm || "").trim();
-
-    // Note = memo nếu có, ngược lại để trống
-    const note = String(r?.memo ?? "").trim();
-
-    out[day] = { type: t, note, badgeLabel };
-  }
-
-  return out;
+ const OFFID_PRIORITY: Record<string, number> = {
+  "52": 100, // 派駐假 — cao nhất | Nghỉ phái trú / phái cử (Overseas assignment leave)
+  // "58": 90,  // 駐越假 | Nghỉ trú/đóng tại Việt Nam (Stationed in Vietnam leave)
+  // "10": 85,  // 喪假 | Nghỉ tang (Bereavement leave)
+  // "51": 80,  // 出差 | Nghỉ công tác (Business trip)
+  // "08": 60,  // 補休 | Nghỉ bù (Compensatory leave)
+  // "03": 50,  // 特別休假 | Nghỉ đặc biệt (Special leave)
+  // loại khác mặc định = 50 | Các loại chưa định nghĩa sẽ có mức ưu tiên thấp nhất
 };
 
-  // const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
-  //   const out: Record<string, CellData> = {};
 
-  //   for (const r of rows) {
-  //     const day = rocToISO(r.offdat);
-  //     if (!day) continue;
+  const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
+    const out: Record<string, CellData> = {};
+    const chosenPrio: Record<string, number> = {}; // lưu priority đã chọn cho từng ngày
 
-  //     // type từ offid (ổn định), fallback theo offidnm
-  //     const t: DayType | undefined =
-  //       mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
+    for (const r of rows) {
+      const day = rocToISO(r.offdat);
+      if (!day) continue;
 
-  //     // Chủ nhật → WEEKLY_OFF (giữ nguyên)
-  //     if (isSunday(day)) {
-  //       out[day] = {
-  //         type: "WEEKLY_OFF",
-  //         note: defaultNoteByType("WEEKLY_OFF"),
-  //         lockedByRule: true,
-  //       };
-  //       continue;
-  //     }
+      // CN → WEEKLY_OFF (khóa), luôn thắng mọi ưu tiên
+      if (isSunday(day)) {
+        out[day] = {
+          type: "WEEKLY_OFF",
+          note: defaultNoteByType("WEEKLY_OFF"),
+          lockedByRule: true,
+        };
+        chosenPrio[day] = 9999;
+        continue;
+      }
 
-  //     // === Lấy note như hiện tại ===
-  //     let note = String(r?.memo ?? "").trim();
-  //     if (!note) {
-  //       const offName = (r?.offidnm || "").trim();
-  //       if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
-  //         note = SPECIAL_NOTE_BY_OFFIDNM[offName];
-  //       } else {
-  //         note = defaultNoteByType(t);
-  //       }
-  //     }
+      const t: DayType | undefined =
+        mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
 
-  //     // === ƯU TIÊN offid === "52" (派駐假) khi cùng ngày có nhiều record ===
-  //     const isCurrentAssignment = r?.offid?.trim() === "52";
-  //     const wasSet = out[day];
-  //     const wasAssignment = wasSet?.type === "ASSIGNMENT";
+      const prio = OFFID_PRIORITY[(r.offid || "").trim()] ?? 50;
+      const note = String(r?.memo ?? "").trim();
+      const badgeLabel = (r?.offidnm || "").trim();
 
-  //     if (!wasSet) {
-  //       // chưa có gì → gán bình thường
-  //       out[day] = { type: t, note };
-  //     } else if (wasAssignment && !isCurrentAssignment) {
-  //       // đã là 派駐假 rồi → giữ nguyên, bỏ qua record mới
-  //       continue;
-  //     } else if (isCurrentAssignment) {
-  //       // record hiện tại là 派駐假 → ghi đè
-  //       out[day] = { type: t, note };
-  //     } else {
-  //       // cả hai đều không phải 派駐假 → giữ hành vi cũ: record sau ghi đè record trước
-  //       out[day] = { type: t, note };
-  //     }
-  //   }
+      // chỉ ghi nếu chưa có hoặc priority cao hơn
+      if (!chosenPrio[day] || prio > chosenPrio[day]) {
+        out[day] = { type: t, note, badgeLabel };
+        chosenPrio[day] = prio;
+      }
+    }
+    return out;
+  };
 
-  //   return out;
-  // };
 
 
   // Fetch details (ReturnTaiwanPeriodDetails) whenever empid/from/to change

@@ -161,7 +161,7 @@ const WeekBlock: React.FC<{
         <span className="font-semibold">{to.toLocaleDateString("zh-TW")}</span>
       </div>
 
-      
+
       <div className="overflow-x-auto">
         {/* 日期 */}
         <div className="flex">
@@ -236,7 +236,7 @@ const WeekBlock: React.FC<{
             const isSunday = d.getDay() === 0;
             const locked = autoSundayWeeklyOff && isSunday;
 
-            
+
             const baseNote = (v.note ?? "").trim();
             const isIn = inRange(d, s, e); // dùng s/e từ props
 
@@ -309,7 +309,7 @@ const LeaveCalendarMatrixWeekly: React.FC<LeaveCalendarMatrixWeeklyProps> = ({
 
         {/* badge tổng hợp */}
         <div className="flex flex-wrap items-center gap-2 ml-4">
-          {Object.entries(summaryCounts ?? {}).map(([t, n]) =>
+          {/* {Object.entries(summaryCounts ?? {}).map(([t, n]) =>
             n && n > 0 ? (
               <span
                 key={t}
@@ -319,8 +319,28 @@ const LeaveCalendarMatrixWeekly: React.FC<LeaveCalendarMatrixWeeklyProps> = ({
                 <span className="ml-1 font-semibold">{n}</span>
               </span>
             ) : null
-          )}
-
+          )} */}
+          {Object.entries(summaryCounts ?? {}).map(([k, n]) => {
+            if (!n) return null;
+            // const isKnown = (k as any) in badgeStyle;
+            // const cls = isKnown
+            //   ? badgeStyle[k as DayType]
+            //   : "bg-slate-50 text-slate-500 border-slate-200"; // neutral cho type lạ
+            // const label = isKnown ? badgeText[k as DayType] : k;
+            const isKnown = (k as any) in badgeStyle;
+            const cls = isKnown
+              ? badgeStyle[k as DayType]
+              : "bg-slate-50 text-slate-500 border-slate-200"; // neutral cho loại lạ
+            const label = isKnown ? badgeText[k as DayType] : k; // k = offidnm từ API
+            return (
+              <span
+                key={k}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs border ${cls}`}
+              >
+                {label}<span className="ml-1 font-semibold">{n}</span>
+              </span>
+            );
+          })}
         </div>
         {/* <Button variant="outline" size="sm" className="gap-2">
           <Download className="w-4 h-4" /> 匯出Excel

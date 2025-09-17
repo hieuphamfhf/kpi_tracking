@@ -386,109 +386,37 @@ export default function ReturnTaiwanPeriodDetailsPage() {
     return nm;
   };
 
-  // ==== Build matrix values (ƯU TIÊN: loại phép -> m
-  // ặc định; KHÔNG dùng memo) ====
-  // const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
-  //   const out: Record<string, CellData> = {};
+const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
+  const out: Record<string, CellData> = {};
 
-  //   for (const r of rows) {
-  //     const day = rocToISO(r.offdat);
+  for (const r of rows) {
+    const day = rocToISO(r.offdat);
+    if (!day) continue;
 
-  //     if (!day) continue;
+    const t: DayType | undefined =
+      mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
 
-  //     // type từ mã (ổn định), fallback theo tên
-  //     let t: DayType | undefined =
-  //       mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
-
-  //     // Chủ nhật: WEEKLY_OFF + khóa + note mặc định
-
-  //     // Chủ nhật -> giữ nguyên như đang làm
-  //     if (isSunday(day)) {
-  //       out[day] = {
-  //         type: "WEEKLY_OFF",
-  //         note: defaultNoteByType("WEEKLY_OFF"),
-  //         lockedByRule: true,
-  //       };
-  //       continue;
-  //     }
-
-
-
-
-  //     let note = noteFromType(r?.offidnm) ?? defaultNoteByType(t);
-  //     const offName = (r?.offidnm || "").trim();
-  //     if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
-  //       note = SPECIAL_NOTE_BY_OFFIDNM[offName];  // 因公返台 -> 在台上班
-  //     }
-
-  //     out[day] = { type: t, note };
-  //     //  let note = defaultNoteByType(t); // "—" (hoặc "台、越均放假" nếu là WEEKLY_OFF đã xử lý phía trên)
-  //     // const offName = (r?.offidnm || "").trim();
-  //     // if (/特別休假/.test(offName)) {
-  //     //   note = "在台上班_test";
-  //     // }
-
-  //     // out[day] = { type: t, note };
-
-  //   }
-
-  //   return out;
-  // };
-
-  const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
-    const out: Record<string, CellData> = {};
-
-    for (const r of rows) {
-      const day = rocToISO(r.offdat);
-      if (!day) continue;
-
-      // type từ offid (ổn định), fallback theo offidnm
-      const t: DayType | undefined =
-        mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
-
-      // Chủ nhật → WEEKLY_OFF (giữ nguyên)
-      if (isSunday(day)) {
-        out[day] = {
-          type: "WEEKLY_OFF",
-          note: defaultNoteByType("WEEKLY_OFF"),
-          lockedByRule: true,
-        };
-        continue;
-      }
-
-      // === Lấy note như hiện tại ===
-      let note = String(r?.memo ?? "").trim();
-      if (!note) {
-        const offName = (r?.offidnm || "").trim();
-        if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
-          note = SPECIAL_NOTE_BY_OFFIDNM[offName];
-        } else {
-          note = defaultNoteByType(t);
-        }
-      }
-
-      // === ƯU TIÊN offid === "52" (派駐假) khi cùng ngày có nhiều record ===
-      const isCurrentAssignment = r?.offid?.trim() === "52";
-      const wasSet = out[day];
-      const wasAssignment = wasSet?.type === "ASSIGNMENT";
-
-      if (!wasSet) {
-        // chưa có gì → gán bình thường
-        out[day] = { type: t, note };
-      } else if (wasAssignment && !isCurrentAssignment) {
-        // đã là 派駐假 rồi → giữ nguyên, bỏ qua record mới
-        continue;
-      } else if (isCurrentAssignment) {
-        // record hiện tại là 派駐假 → ghi đè
-        out[day] = { type: t, note };
-      } else {
-        // cả hai đều không phải 派駐假 → giữ hành vi cũ: record sau ghi đè record trước
-        out[day] = { type: t, note };
-      }
+    // Chủ nhật → WEEKLY_OFF
+    if (isSunday(day)) {
+      out[day] = {
+        type: "WEEKLY_OFF",
+        note: defaultNoteByType("WEEKLY_OFF"),
+        lockedByRule: true,
+      };
+      continue;
     }
 
-    return out;
-  };
+    // Badge label = tên loại phép (offidnm)
+    const badgeLabel = (r?.offidnm || "").trim();
+
+    // Note = memo nếu có, ngược lại để trống
+    const note = String(r?.memo ?? "").trim();
+
+    out[day] = { type: t, note, badgeLabel };
+  }
+
+  return out;
+};
 
   // const buildCalendarValues = (rows: any[]): Record<string, CellData> => {
   //   const out: Record<string, CellData> = {};
@@ -498,10 +426,10 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   //     if (!day) continue;
 
   //     // type từ offid (ổn định), fallback theo offidnm
-  //     let t: DayType | undefined =
+  //     const t: DayType | undefined =
   //       mapOffidToType(r.offid) ?? mapOffidnmToType(r.offidnm);
 
-  //     // Chủ nhật → WEEKLY_OFF (ghi chú mặc định + locked)
+  //     // Chủ nhật → WEEKLY_OFF (giữ nguyên)
   //     if (isSunday(day)) {
   //       out[day] = {
   //         type: "WEEKLY_OFF",
@@ -511,9 +439,8 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   //       continue;
   //     }
 
-  //     // === ƯU TIÊN MEMO ===
+  //     // === Lấy note như hiện tại ===
   //     let note = String(r?.memo ?? "").trim();
-
   //     if (!note) {
   //       const offName = (r?.offidnm || "").trim();
   //       if (SPECIAL_NOTE_BY_OFFIDNM[offName]) {
@@ -523,12 +450,28 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   //       }
   //     }
 
-  //     out[day] = { type: t, note };
+  //     // === ƯU TIÊN offid === "52" (派駐假) khi cùng ngày có nhiều record ===
+  //     const isCurrentAssignment = r?.offid?.trim() === "52";
+  //     const wasSet = out[day];
+  //     const wasAssignment = wasSet?.type === "ASSIGNMENT";
+
+  //     if (!wasSet) {
+  //       // chưa có gì → gán bình thường
+  //       out[day] = { type: t, note };
+  //     } else if (wasAssignment && !isCurrentAssignment) {
+  //       // đã là 派駐假 rồi → giữ nguyên, bỏ qua record mới
+  //       continue;
+  //     } else if (isCurrentAssignment) {
+  //       // record hiện tại là 派駐假 → ghi đè
+  //       out[day] = { type: t, note };
+  //     } else {
+  //       // cả hai đều không phải 派駐假 → giữ hành vi cũ: record sau ghi đè record trước
+  //       out[day] = { type: t, note };
+  //     }
   //   }
 
   //   return out;
   // };
-
 
 
   // Fetch details (ReturnTaiwanPeriodDetails) whenever empid/from/to change

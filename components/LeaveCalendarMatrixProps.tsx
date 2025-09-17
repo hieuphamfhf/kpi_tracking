@@ -199,10 +199,13 @@ const WeekBlock: React.FC<{
             const t = (locked ? "WEEKLY_OFF" : v.type) as DayType | undefined;
             // const label = (v.note && v.note.trim()) || ""; // offidnm được gửi từ page
             // const label = v.type ? badgeText[v.type] : ""; // hoặc r.offidnm nếu muốn raw text
-            const label =
-              v.type === "ASSIGNMENT"
-                ? (v as any).badgeLabel || badgeText[v.type]   //  ưu tiên badgeLabel
-                : (v.type ? badgeText[v.type] : "");
+            // const label =
+            //   v.type === "ASSIGNMENT"
+            //     ? (v as any).badgeLabel || badgeText[v.type]   //  ưu tiên badgeLabel
+            //     : (v.type ? badgeText[v.type] : "");
+
+            const label = v.badgeLabel || (v.type ? badgeText[v.type] : "");
+
             return (
               <HCell key={k}>
                 {t ? (

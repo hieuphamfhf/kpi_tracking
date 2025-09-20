@@ -135,13 +135,31 @@ async function fetchReturnTaiwanPeriodNotes(emp: string, fromISO: string, toISO:
 
 // ==== ROC(民國年) -> ISO (YYYY-MM-DD) ====
 // "1140929" -> "2025-09-29"
-const rocToISO = (roc: string): string => {
-  if (!/^\d{7}$/.test(roc || "")) return "";
-  const year = 1911 + parseInt(roc.slice(0, 3), 10);
-  const mm = roc.slice(3, 5);
-  const dd = roc.slice(5, 7);
+// const rocToISO = (roc: string): string => {
+//   if (!/^\d{7}$/.test(roc || "")) return "";
+//   const year = 1911 + parseInt(roc.slice(0, 3), 10);
+//   const mm = roc.slice(3, 5);
+//   const dd = roc.slice(5, 7);
+//   return `${year}-${mm}-${dd}`;
+// };
+
+// ==== offdat(7 ký tự) -> ISO (YYYY-MM-DD) ====
+// Hỗ trợ cả 2 kiểu:
+// - ROC:   "1140929" -> "2025-09-29"
+// - Now:   "0250825" -> "2025-08-25"
+const rocToISO = (s: string): string => {
+  if (!/^\d{7}$/.test(s || "")) return "";
+  const y3 = s.slice(0, 3);
+  const mm = s.slice(3, 5);
+  const dd = s.slice(5, 7);
+
+  const y3Num = parseInt(y3, 10);
+  // Nếu dạng mới bắt đầu bằng '0' (025 -> 2025)
+  const year = y3.startsWith("0") ? (2000 + y3Num) : (1911 + y3Num);
+
   return `${year}-${mm}-${dd}`;
 };
+
 
 
 // const isoKeySort = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
@@ -355,7 +373,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
     "因公返台": "在台上班",
     // "特別休假": "在台上班_test",
   };
-
+;;;;;
   // Giữ fallback theo tên (nếu offid chưa có trong bảng)
   const mapOffidnmToType = (name?: string): DayType | undefined => {
     const n = (name || "").trim();
@@ -390,7 +408,7 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   // "58": 90,  // 駐越假 | Nghỉ trú/đóng tại Việt Nam (Stationed in Vietnam leave)
   // "10": 85,  // 喪假 | Nghỉ tang (Bereavement leave)
   // "51": 80,  // 出差 | Nghỉ công tác (Business trip)
-  // "08": 60,  // 補休 | Nghỉ bù (Compensatory leave)
+  // "08": 60,  // 補休 | Nghỉ bù (Compensatory leave)     
   // "03": 50,  // 特別休假 | Nghỉ đặc biệt (Special leave)
   // loại khác mặc định = 50 | Các loại chưa định nghĩa sẽ có mức ưu tiên thấp nhất
 };

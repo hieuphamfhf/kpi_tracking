@@ -204,7 +204,12 @@ const WeekBlock: React.FC<{
             //     ? (v as any).badgeLabel || badgeText[v.type]   //  ưu tiên badgeLabel
             //     : (v.type ? badgeText[v.type] : "");
 
-            const label = v.badgeLabel || (v.type ? badgeText[v.type] : "");
+            // const label = v.badgeLabel || (v.type ? badgeText[v.type] : "");
+            
+            // Ưu tiên nhãn từ API (badgeLabel), fallback sang badgeText nếu cần
+            const label = (v.badgeLabel && v.badgeLabel.trim())
+              || (v.type ? badgeText[v.type] : "");
+
 
             return (
               <HCell key={k}>

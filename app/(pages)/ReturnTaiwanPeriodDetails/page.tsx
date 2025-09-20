@@ -349,14 +349,23 @@ export default function ReturnTaiwanPeriodDetailsPage() {
   // };
 
   // ==== Map theo offid (ổn định hơn) ====
+  // const OFFID_TO_DAYTYPE: Record<string, DayType> = {
+  //   "51": "BUSINESS_TW",   // 出差
+  //   "58": "BUSINESS_VN",   // 駐越假
+  //   "52": "ASSIGNMENT",    // 派駐假
+  //   "03": "SPECIAL_LEAVE", // 特別休假  
+  //   "10": "BEREAVEMENT",   // 喪假
+  //   "08": "COMP_LEAVE",    // 補休 
+  // };
   const OFFID_TO_DAYTYPE: Record<string, DayType> = {
-    "51": "BUSINESS_TW",   // 出差
-    "58": "BUSINESS_VN",   // 駐越假
-    "52": "ASSIGNMENT",    // 派駐假
-    "03": "SPECIAL_LEAVE", // 特別休假  
-    "10": "BEREAVEMENT",   // 喪假
-    "08": "COMP_LEAVE",    // 補休 
-  };
+  "51": "BUSINESS_TW",   // 出差
+  "58": "BUSINESS_VN",   // 駐越假
+  "52": "ASSIGNMENT",    // 派駐假
+  "03": "ANNUAL",        // 特休   edit 03 SPECIAL_LEAVE
+  "10": "BEREAVEMENT",   // 喪假
+  "08": "COMP_LEAVE",    // 補休
+};
+
 
   // Ghi chú mặc định theo DayType
   const defaultNoteByType = (t?: DayType): string => {
